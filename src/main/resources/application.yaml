@@ -1,0 +1,45 @@
+server:
+  port: 8080
+  error:
+    include-stacktrace: ALWAYS
+
+spring:
+  application:
+    name: Loobby
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+    properties:
+      hibernate:
+        format_sql: true
+
+    open-in-view: false
+
+  flyway:
+    enabled: false
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG
+    com.jammes: DEBUG
