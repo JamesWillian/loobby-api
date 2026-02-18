@@ -7,7 +7,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "users")
-class UserEntity(
+open class UserEntity(
 
     @Id
     @Column(name = "id", nullable = false)
@@ -22,7 +22,6 @@ class UserEntity(
     @Column(name = "avatar_url", nullable = true, length = 500)
     var avatarUrl: String? = null,
 
-    // Se o banco já preenche created_at, você pode manter insertable=false/updatable=false
     @Column(name="created_at", insertable=false, updatable=false)
     var createdAt: Instant? = null
 
