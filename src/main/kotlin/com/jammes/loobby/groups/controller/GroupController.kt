@@ -1,7 +1,9 @@
 package com.jammes.loobby.groups.controller
 
 import com.jammes.loobby.groups.dto.CreateGroupRequest
+import com.jammes.loobby.groups.dto.GroupMemberResponse
 import com.jammes.loobby.groups.dto.GroupResponse
+import com.jammes.loobby.groups.service.GroupMemberService
 import com.jammes.loobby.groups.service.GroupService
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
@@ -12,7 +14,8 @@ import jakarta.validation.Valid
 @RestController
 @RequestMapping("/groups")
 class GroupController(
-    private val groupService: GroupService
+    private val groupService: GroupService,
+    private val groupMemberService: GroupMemberService
 ) {
 
     @PostMapping
@@ -33,5 +36,32 @@ class GroupController(
     @GetMapping("/{id}")
     fun getGroup(@PathVariable id: UUID): GroupResponse {
         return groupService.getById(id)
+    }
+
+    // -------- MEMBERSHIP --------
+
+    @PostMapping("/{groupId}/members")
+    fun joinGroup(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable groupId: UUID
+    ) {
+        val userId = UUID.fromString(jwt.subject)
+        groupMemberService.joinGroup(userId, groupId)
+    }
+
+    @DeleteMapping("/{groupId}/members/me")
+    fun leaveGroup(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable groupId: UUID
+    ) {
+        val userId = UUID.fromString(jwt.subject)
+        groupMemberService.leaveGroup(userId, groupId)
+    }
+
+    @GetMapping("/{groupId}/members")
+    fun listMembers(
+        @PathVariable groupId: UUID
+    ): List<GroupMemberResponse> {
+        return groupMemberService.listMembers(groupId)
     }
 }

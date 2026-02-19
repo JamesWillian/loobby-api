@@ -3,13 +3,15 @@ package com.jammes.loobby.groups.service
 import com.jammes.loobby.groups.dto.CreateGroupRequest
 import com.jammes.loobby.groups.dto.GroupResponse
 import com.jammes.loobby.groups.model.GroupEntity
+import com.jammes.loobby.groups.repo.GroupMemberRepository
 import com.jammes.loobby.groups.repo.GroupRepository
 import org.springframework.stereotype.Service
 import java.util.UUID
 
 @Service
 class GroupService(
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val groupMemberRepository: GroupMemberRepository
 ) {
 
     fun createGroup(ownerId: UUID, req: CreateGroupRequest): GroupResponse {
@@ -27,10 +29,24 @@ class GroupService(
         return group.toResponse()
     }
 
-    fun listGroupsForUser(ownerId: UUID): List<GroupResponse> {
-        return groupRepository.findByOwnerId(ownerId)
+    fun listGroupsForUser(userId: UUID): List<GroupResponse> {
+        val owned = groupRepository.findByOwnerId(userId)
+
+        val memberships = groupMemberRepository.findByUserId(userId)
+        val memberGroupIds = memberships.map { it.groupId }.toSet()
+
+        val memberGroups = if (memberGroupIds.isNotEmpty()) {
+            groupRepository.findAllById(memberGroupIds)
+        } else {
+            emptyList()
+        }
+
+        // junta os dois sem duplicar
+        return (owned + memberGroups)
+            .distinctBy { it.id }
             .map { it.toResponse() }
     }
+
 
     fun getById(id: UUID): GroupResponse {
         val group = groupRepository.findById(id)
