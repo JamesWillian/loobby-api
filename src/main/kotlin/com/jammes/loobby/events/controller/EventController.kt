@@ -2,6 +2,9 @@ package com.jammes.loobby.events.controller
 
 import com.jammes.loobby.events.dto.CreateEventRequest
 import com.jammes.loobby.events.dto.EventResponse
+import com.jammes.loobby.events.dto.UpsertRsvpRequest
+import com.jammes.loobby.events.dto.EventRsvpResponse
+import com.jammes.loobby.events.service.EventRsvpService
 import com.jammes.loobby.events.service.EventService
 import jakarta.validation.Valid
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -12,7 +15,8 @@ import java.util.UUID
 @RestController
 @RequestMapping
 class EventController(
-    private val eventService: EventService
+    private val eventService: EventService,
+    private val eventRsvpService: EventRsvpService
 ) {
 
     // Evento associado a um grupo
@@ -50,5 +54,33 @@ class EventController(
         @PathVariable eventId: UUID
     ): EventResponse {
         return eventService.getEventById(eventId)
+    }
+
+    // ----- RSVP -----
+
+    @PutMapping("/events/{eventId}/rsvps")
+    fun upsertMyRsvp(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable eventId: UUID,
+        @Valid @RequestBody req: UpsertRsvpRequest
+    ): EventRsvpResponse {
+        val userId = UUID.fromString(jwt.subject)
+        return eventRsvpService.upsertRsvp(userId, eventId, req)
+    }
+
+    @GetMapping("/events/{eventId}/rsvps")
+    fun listRsvps(
+        @PathVariable eventId: UUID
+    ): List<EventRsvpResponse> {
+        return eventRsvpService.listRsvps(eventId)
+    }
+
+    @GetMapping("/events/{eventId}/rsvps/me")
+    fun getMyRsvp(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable eventId: UUID
+    ): EventRsvpResponse? {
+        val userId = UUID.fromString(jwt.subject)
+        return eventRsvpService.getMyRsvp(userId, eventId)
     }
 }
