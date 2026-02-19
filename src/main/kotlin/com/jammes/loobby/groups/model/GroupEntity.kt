@@ -33,7 +33,7 @@ open class GroupEntity(
         name = "",
         inviteCode = "",
         imageUrl = null,
-        ownerId = UUID.randomUUID(), //iniciando com UUID aleatório temporariamente
+        ownerId = UUID.randomUUID(),
         createdAt = null
     )
 }

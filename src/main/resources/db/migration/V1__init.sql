@@ -1,7 +1,7 @@
 create extension if not exists pgcrypto;
 
 do $$ begin
-  create type event_type as enum ('GAME_ONLINE', 'SPORTS', 'PARTY');
+  create type event_type as enum ('GAMEPLAY', 'SPORT', 'PARTY');
 exception when duplicate_object then null; end $$;
 
 do $$ begin
