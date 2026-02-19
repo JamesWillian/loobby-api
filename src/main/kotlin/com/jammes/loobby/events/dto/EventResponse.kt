@@ -16,5 +16,8 @@ data class EventResponse(
     val name: String,
     val description: String?,
     val inviteCode: String,
-    val createdAt: Instant?
+    val createdAt: Instant?,
+
+    val gameplay: GameplayEventDetailsResponse? = null,
+    val sport: SportEventDetailsResponse? = null
 )

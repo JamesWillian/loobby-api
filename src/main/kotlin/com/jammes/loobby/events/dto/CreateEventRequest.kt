@@ -18,5 +18,9 @@ data class CreateEventRequest(
 
     @field:NotNull
     @field:FutureOrPresent
-    val scheduledDatetime: Instant
+    val scheduledDatetime: Instant,
+
+    // Detalhes específicos (dependem do eventType)
+    val gameplay: GameplayEventDetailsRequest? = null,
+    val sport: SportEventDetailsRequest? = null
 )
