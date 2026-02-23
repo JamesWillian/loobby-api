@@ -6,4 +6,5 @@ import java.util.UUID
 
 interface UsersRepository : JpaRepository<UserEntity, UUID> {
     fun findByUsername(username: String): UserEntity?
+    fun existsByUsernameIgnoreCase(username: String): Boolean
 }
