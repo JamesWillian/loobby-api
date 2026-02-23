@@ -3,6 +3,7 @@ package com.jammes.loobby.auth.service
 import com.jammes.loobby.auth.dto.LoginRequest
 import com.jammes.loobby.auth.dto.RegisterRequest
 import com.jammes.loobby.auth.dto.AuthResponse
+import com.jammes.loobby.config.security.JwtConfig
 import com.jammes.loobby.users.model.UserEntity
 import com.jammes.loobby.users.model.UserCredentialsEntity
 import com.jammes.loobby.users.repo.UserCredentialsRepository
@@ -16,8 +17,40 @@ class AuthService(
     private val usersRepository: UsersRepository,
     private val credentialsRepository: UserCredentialsRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val tokenService: TokenService
+    private val tokenService: TokenService,
+    private val jwtConfig: JwtConfig
 ) {
+
+    fun loadUserById(userId: UUID): UserEntity {
+        return usersRepository.findById(userId)
+            .orElseThrow { IllegalArgumentException("User not found") }
+    }
+
+    fun generateAuthResponseForUser(user: UserEntity): AuthResponse {
+
+        val credentials = credentialsRepository.findByUserId(user.id)
+
+        val roles = credentials?.roles ?: listOf("ANON")
+
+        val accessToken = tokenService.generateAccessToken(
+            userId = user.id,
+            username = user.username,
+            roles = roles
+        )
+
+        val refreshToken = tokenService.generateRefreshToken(
+            userId = user.id
+        )
+
+        return AuthResponse(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            expiresIn = jwtConfig.accessTokenValidityMinutes * 60,
+            userId = user.id,
+            username = user.username,
+            roles = roles
+        )
+    }
 
     // --------------------------------------
     // CRIA USUÁRIO ANÔNIMO
@@ -33,13 +66,7 @@ class AuthService(
             )
         )
 
-        val token = tokenService.generateToken(
-            userId = user.id,
-            username = user.username,
-            roles = listOf("ANON")
-        )
-
-        return AuthResponse(token)
+        return generateAuthResponseForUser(user)
     }
 
     private fun generateRandomUsername(): String {
@@ -50,6 +77,7 @@ class AuthService(
     // REGISTRO (UPGRADE DE ANÔNIMO)
     // --------------------------------------
     fun register(userId: UUID, request: RegisterRequest): AuthResponse {
+
         val user = usersRepository.findById(userId)
             .orElseThrow { IllegalArgumentException("User not found") }
 
@@ -69,13 +97,7 @@ class AuthService(
 
         credentialsRepository.save(creds)
 
-        val token = tokenService.generateToken(
-            userId = user.id,
-            username = user.username,
-            roles = creds.roles
-        )
-
-        return AuthResponse(token)
+        return generateAuthResponseForUser(user)
     }
 
     // --------------------------------------
@@ -92,12 +114,6 @@ class AuthService(
         val user = usersRepository.findById(creds.userId)
             .orElseThrow { IllegalArgumentException("User not found") }
 
-        val token = tokenService.generateToken(
-            userId = user.id,
-            username = user.username,
-            roles = creds.roles
-        )
-
-        return AuthResponse(token)
+        return generateAuthResponseForUser(user)
     }
 }

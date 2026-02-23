@@ -7,7 +7,6 @@ import com.nimbusds.jose.jwk.OctetSequenceKey
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.oauth2.jwt.JwtDecoder
@@ -15,11 +14,19 @@ import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import com.nimbusds.jose.proc.SecurityContext
+import org.springframework.boot.context.properties.ConfigurationProperties
 
 @Configuration
-class JwtConfig(
-    @Value("\${security.jwt.secret}") private val secret: String
-) {
+@ConfigurationProperties(prefix = "security.jwt")
+class JwtConfig {
+
+    lateinit var secret: String
+
+    // validade do access token em minutos (ex: 15 min)
+    var accessTokenValidityMinutes: Long = 15
+
+    // validade do refresh token em minutos (ex: 7 dias)
+    var refreshTokenValidityMinutes: Long = 60 * 24 * 7
 
     @Bean
     fun jwtSecretKey(): SecretKey {

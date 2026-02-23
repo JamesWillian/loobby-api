@@ -28,10 +28,13 @@ class SecurityConfig {
                 auth
                     // auth público
                     .requestMatchers(HttpMethod.POST, "/auth/anonymous").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/auth/register").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
 
-                    // health check (opcional)
+                    // register: precisa estar logado (anônimo ou real)
+                    .requestMatchers(HttpMethod.POST, "/auth/register").authenticated()
+
+                    // health check
                     .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
 
                     // qualquer outra rota precisa de JWT válido

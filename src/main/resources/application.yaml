@@ -28,6 +28,8 @@ spring:
 security:
   jwt:
     secret: ${JWT_SECRET}
+    access-token-validity-minutes: 15
+    refresh-token-validity-minutes: 10080   # 60 * 24 * 7  (1 semana)
 
 management:
   endpoints:
