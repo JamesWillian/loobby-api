@@ -37,6 +37,11 @@ management:
       exposure:
         include: health, info
 
+file:
+  storage:
+    location: ./uploads
+    public-base-url: http://127.0.0.1:8080/files  # Mudar caminho quando em produção
+
 logging:
   level:
     root: INFO

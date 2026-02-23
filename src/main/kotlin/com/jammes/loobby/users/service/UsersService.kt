@@ -76,4 +76,22 @@ class UsersService(
             createdAt = saved.createdAt
         )
     }
+
+    @Transactional
+    fun updateAvatar(userId: UUID, avatarUrl: String): UserProfileResponse {
+        val user = usersRepository.findById(userId)
+            .orElseThrow { IllegalArgumentException("User not found") }
+
+        user.avatarUrl = avatarUrl
+
+        val saved = usersRepository.save(user)
+
+        return UserProfileResponse(
+            id = saved.id,
+            username = saved.username,
+            displayname = saved.displayname,
+            avatarUrl = saved.avatarUrl,
+            createdAt = saved.createdAt
+        )
+    }
 }
