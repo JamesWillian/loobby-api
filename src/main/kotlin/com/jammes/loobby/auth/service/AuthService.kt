@@ -26,7 +26,7 @@ class AuthService(
             .orElseThrow { IllegalArgumentException("User not found") }
     }
 
-    fun generateAuthResponseForUser(user: UserEntity): AuthResponse {
+    fun generateAuthResponseForUser(user: UserEntity, validRefreshToken: String = ""): AuthResponse {
 
         val credentials = credentialsRepository.findByUserId(user.id)
 
@@ -38,9 +38,8 @@ class AuthService(
             roles = roles
         )
 
-        val refreshToken = tokenService.generateRefreshToken(
-            userId = user.id
-        )
+        // Se não houver refreshToken, gera um novo
+        val refreshToken = validRefreshToken.ifEmpty { tokenService.generateRefreshToken(user.id) }
 
         return AuthResponse(
             accessToken = accessToken,

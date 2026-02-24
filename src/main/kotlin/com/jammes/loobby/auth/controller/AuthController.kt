@@ -10,6 +10,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.web.bind.annotation.*
+import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 @RestController
@@ -48,7 +50,7 @@ class AuthController(
     }
 
     // -------------------------------
-    // /auth/refresh  (AUTENTICADO)
+    // /auth/refresh  (público)
     // -------------------------------
     @PostMapping("/refresh")
     fun refresh(@RequestBody req: RefreshTokenRequest): AuthResponse {
@@ -64,6 +66,16 @@ class AuthController(
         val userId = UUID.fromString(jwt.subject)
         val user = authService.loadUserById(userId)
 
-        return authService.generateAuthResponseForUser(user)
+        val remaining = Duration.between(Instant.now(), jwt.expiresAt)
+
+        // limiar de rotação: 1 dia
+        val rotationThreshold = Duration.ofDays(1)
+
+        // Se o refreshToken estiver a mais de 1 dia de expirar, utiliza ele mesmo no retorno
+        return authService.generateAuthResponseForUser(
+            user = user,
+            validRefreshToken = if (remaining > rotationThreshold) req.refreshToken else ""
+        )
+
     }
 }
