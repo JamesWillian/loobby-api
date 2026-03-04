@@ -1,7 +1,5 @@
 server:
   port: 8080
-  error:
-    include-stacktrace: ALWAYS
 
 spring:
   application:
@@ -24,6 +22,9 @@ spring:
 
   flyway:
     enabled: false
+  web:
+    error:
+      include-stacktrace: ALWAYS
 
 security:
   jwt:

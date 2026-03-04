@@ -30,6 +30,7 @@ class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/auth/anonymous").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
 
                     // register: precisa estar logado (anônimo ou real)
                     .requestMatchers(HttpMethod.POST, "/auth/register").authenticated()
