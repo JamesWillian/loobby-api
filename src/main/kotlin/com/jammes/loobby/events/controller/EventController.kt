@@ -43,9 +43,11 @@ class EventController(
     // Lista eventos de um grupo
     @GetMapping("/groups/{groupId}/events")
     fun listGroupEvents(
+        @AuthenticationPrincipal jwt: Jwt,
         @PathVariable groupId: UUID
     ): List<EventResponse> {
-        return eventService.listGroupEvents(groupId)
+        val userId = UUID.fromString(jwt.subject)
+        return eventService.listGroupEvents(groupId, userId)
     }
 
     // Detalhes de um evento

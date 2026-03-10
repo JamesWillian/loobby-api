@@ -7,8 +7,10 @@ import com.jammes.loobby.events.dto.SportEventDetailsResponse
 import com.jammes.loobby.events.model.EventEntity
 import com.jammes.loobby.events.model.EventType
 import com.jammes.loobby.events.model.GameplayEventEntity
+import com.jammes.loobby.events.model.RsvpStatus
 import com.jammes.loobby.events.model.SportEventEntity
 import com.jammes.loobby.events.repo.EventRepository
+import com.jammes.loobby.events.repo.EventRsvpRepository
 import com.jammes.loobby.events.repo.GameplayEventRepository
 import com.jammes.loobby.events.repo.SportEventRepository
 import com.jammes.loobby.groups.repo.GroupRepository
@@ -21,7 +23,8 @@ class EventService(
     private val eventRepository: EventRepository,
     private val groupRepository: GroupRepository,
     private val gameplayEventRepository: GameplayEventRepository,
-    private val sportEventRepository: SportEventRepository
+    private val sportEventRepository: SportEventRepository,
+    private val eventRsvpRepository: EventRsvpRepository
 ) {
 
     fun createGroupEvent(
@@ -159,14 +162,22 @@ class EventService(
         return buildResponse(event)
     }
 
-    fun listGroupEvents(groupId: UUID): List<EventResponse> {
-        // garante que o grupo existe
-        if (!groupRepository.existsById(groupId)) {
-            throw IllegalArgumentException("Group not found")
-        }
+    fun listGroupEvents(groupId: UUID, userId: UUID): List<EventResponse> {
+        val events = eventRepository.findByGroupIdOrderByScheduledDatetimeAsc(groupId)
+        if (events.isEmpty()) return emptyList()
 
-        return eventRepository.findByGroupIdOrderByScheduledDatetimeAsc(groupId)
-            .map { buildResponse(it) }
+        val eventIds = events.map { it.id }
+
+        // carrega RSVP do usuário logado para esses eventos
+        val rsvps = eventRsvpRepository.findByEventIdInAndUserId(eventIds, userId)
+        val rsvpByEventId = rsvps.associateBy({ it.eventId }, { it.status }) // status: RsvpStatus
+
+        return events.map { event ->
+            buildResponse(
+                event = event,
+                rsvpStatus = rsvpByEventId[event.id]
+            )
+        }
     }
 
     fun getEventById(eventId: UUID): EventResponse {
@@ -189,7 +200,8 @@ class EventService(
         return "L-$code" //retorna uma codigo no formato L-A1B2-C3D4
     }
 
-    private fun buildResponse(event: EventEntity): EventResponse {
+    private
+    fun buildResponse(event: EventEntity, rsvpStatus: RsvpStatus? = null): EventResponse {
         val gameplayDetails = if (event.eventType == EventType.GAMEPLAY) {
             gameplayEventRepository.findByEventId(event.id)?.let {
                 GameplayEventDetailsResponse(
@@ -223,7 +235,8 @@ class EventService(
             inviteCode = event.inviteCode,
             createdAt = event.createdAt,
             gameplay = gameplayDetails,
-            sport = sportDetails
+            sport = sportDetails,
+            rsvpStatus = rsvpStatus
         )
     }
 

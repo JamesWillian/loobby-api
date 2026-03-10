@@ -11,6 +11,8 @@ interface EventRsvpRepository : JpaRepository<EventRsvpEntity, EventRsvpId> {
 
     fun findByEventIdAndUserId(eventId: UUID, userId: UUID): EventRsvpEntity?
 
+    fun findByEventIdInAndUserId(eventIds: Collection<UUID>, userId: UUID): List<EventRsvpEntity>
+
     fun existsByEventIdAndUserId(eventId: UUID, userId: UUID): Boolean
 
     fun deleteByEventIdAndUserId(eventId: UUID, userId: UUID)

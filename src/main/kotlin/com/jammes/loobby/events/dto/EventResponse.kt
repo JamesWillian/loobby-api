@@ -2,6 +2,7 @@ package com.jammes.loobby.events.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.jammes.loobby.events.model.EventType
+import com.jammes.loobby.events.model.RsvpStatus
 import java.time.Instant
 import java.util.UUID
 
@@ -17,6 +18,7 @@ data class EventResponse(
     val description: String?,
     val inviteCode: String,
     val createdAt: Instant?,
+    val rsvpStatus: RsvpStatus?,
 
     val gameplay: GameplayEventDetailsResponse? = null,
     val sport: SportEventDetailsResponse? = null

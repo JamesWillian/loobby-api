@@ -17,5 +17,6 @@ data class EventRsvpResponse(
     val username: String,
     val displayname: String?,
     val avatarUrl: String?,
+    @get:JsonProperty("isOwner")
     val isOwner: Boolean
 )

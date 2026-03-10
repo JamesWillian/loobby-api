@@ -66,16 +66,7 @@ class AuthController(
         val userId = UUID.fromString(jwt.subject)
         val user = authService.loadUserById(userId)
 
-        val remaining = Duration.between(Instant.now(), jwt.expiresAt)
-
-        // limiar de rotação: 1 dia
-        val rotationThreshold = Duration.ofDays(1)
-
-        // Se o refreshToken estiver a mais de 1 dia de expirar, utiliza ele mesmo no retorno
-        return authService.generateAuthResponseForUser(
-            user = user,
-            validRefreshToken = if (remaining > rotationThreshold) req.refreshToken else ""
-        )
+        return authService.generateAuthResponseForUser(user)
 
     }
 }
