@@ -8,5 +8,7 @@ interface GroupRepository : JpaRepository<GroupEntity, UUID> {
 
     fun findByOwnerId(ownerId: UUID): List<GroupEntity>
 
+    fun findByInviteCode(inviteCode: String): GroupEntity?
+
     fun existsByInviteCode(inviteCode: String): Boolean
 }

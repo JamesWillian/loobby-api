@@ -38,6 +38,11 @@ class GroupController(
         return groupService.getById(id)
     }
 
+    @GetMapping("/findByCode/{code}")
+    fun getByCode(@PathVariable code: String): GroupResponse {
+        return groupService.getByCode(code.uppercase())
+    }
+
     // -------- MEMBERSHIP --------
 
     @PostMapping("/{groupId}/members")

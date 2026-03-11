@@ -55,6 +55,12 @@ class GroupService(
         return group.toResponse()
     }
 
+    fun getByCode(code: String): GroupResponse {
+        val group = groupRepository.findByInviteCode(code)
+
+        return group?.toResponse() ?: throw IllegalStateException("Invalid Invite Code")
+    }
+
     private fun generateInviteCode(): String {
         // L + 6 letras maiúsculas e números
         var code: String
