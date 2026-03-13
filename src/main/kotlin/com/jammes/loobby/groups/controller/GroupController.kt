@@ -38,7 +38,7 @@ class GroupController(
         return groupService.getById(id)
     }
 
-    @GetMapping("/findByCode/{code}")
+    @GetMapping("/invite/{code}")
     fun getByCode(@PathVariable code: String): GroupResponse {
         return groupService.getByCode(code.uppercase())
     }
