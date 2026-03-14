@@ -20,6 +20,10 @@ data class EventResponse(
     val createdAt: Instant?,
     val rsvpStatus: RsvpStatus?,
 
+    val confirmedCount: Int = 0,
+    val confirmedAvatars: List<String?>? = null,
+
     val gameplay: GameplayEventDetailsResponse? = null,
-    val sport: SportEventDetailsResponse? = null
+    val sport: SportEventDetailsResponse? = null,
+
 )

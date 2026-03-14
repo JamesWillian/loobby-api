@@ -14,6 +14,7 @@ import com.jammes.loobby.events.repo.EventRsvpRepository
 import com.jammes.loobby.events.repo.GameplayEventRepository
 import com.jammes.loobby.events.repo.SportEventRepository
 import com.jammes.loobby.groups.repo.GroupRepository
+import com.jammes.loobby.users.repo.UsersRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.util.UUID
@@ -24,7 +25,8 @@ class EventService(
     private val groupRepository: GroupRepository,
     private val gameplayEventRepository: GameplayEventRepository,
     private val sportEventRepository: SportEventRepository,
-    private val eventRsvpRepository: EventRsvpRepository
+    private val eventRsvpRepository: EventRsvpRepository,
+    private val usersRepository: UsersRepository
 ) {
 
     fun createGroupEvent(
@@ -168,14 +170,31 @@ class EventService(
 
         val eventIds = events.map { it.id }
 
-        // carrega RSVP do usuário logado para esses eventos
+        // RSVP do usuário logado (para o campo rsvpStatus)
         val rsvps = eventRsvpRepository.findByEventIdInAndUserId(eventIds, userId)
         val rsvpByEventId = rsvps.associateBy({ it.eventId }, { it.status }) // status: RsvpStatus
 
+        // Todos os RSVPs YES agrupados por evento
+        val allYesRsvps = eventRsvpRepository.findByEventIdInAndStatus(eventIds, RsvpStatus.YES)
+        val yesByEventId = allYesRsvps.groupBy { it.eventId }
+
+        // Busca os usuários dos primeiros 5 YES de cada evento (em batch)
+        val top5UserIds = yesByEventId.values
+            .flatMap { rsvpList -> rsvpList.take(5).map { it.userId } }
+            .toSet()
+        val usersById = usersRepository.findAllById(top5UserIds).associateBy { it.id }
+
         return events.map { event ->
+            val yesRsvps = yesByEventId[event.id] ?: emptyList()
+            val avatars = yesRsvps.take(5)
+                .map { usersById[it.userId]?.avatarUrl }
+                .takeIf { it.isNotEmpty() }
+
             buildResponse(
                 event = event,
-                rsvpStatus = rsvpByEventId[event.id]
+                rsvpStatus = rsvpByEventId[event.id],
+                confirmedCount = yesRsvps.size,
+                confirmedAvatars = avatars
             )
         }
     }
@@ -200,8 +219,14 @@ class EventService(
         return "L-$code" //retorna uma codigo no formato L-A1B2-C3D4
     }
 
-    private
-    fun buildResponse(event: EventEntity, rsvpStatus: RsvpStatus? = null): EventResponse {
+    private fun buildResponse(
+        event: EventEntity,
+        rsvpStatus: RsvpStatus? = null,
+        confirmedCount: Int = 0,
+        confirmedAvatars: List<String?>? = null
+    ): EventResponse {
+
+        // GAMEPLAY
         val gameplayDetails = if (event.eventType == EventType.GAMEPLAY) {
             gameplayEventRepository.findByEventId(event.id)?.let {
                 GameplayEventDetailsResponse(
@@ -211,6 +236,7 @@ class EventService(
             }
         } else null
 
+        // SPORT
         val sportDetails = if (event.eventType == EventType.SPORT) {
             sportEventRepository.findByEventId(event.id)?.let {
                 SportEventDetailsResponse(
@@ -223,6 +249,7 @@ class EventService(
             }
         } else null
 
+        // RESPONSE
         return EventResponse(
             id = event.id,
             eventType = event.eventType,
@@ -234,9 +261,11 @@ class EventService(
             description = event.description,
             inviteCode = event.inviteCode,
             createdAt = event.createdAt,
+            rsvpStatus = rsvpStatus,
+            confirmedCount = confirmedCount,
+            confirmedAvatars = confirmedAvatars,
             gameplay = gameplayDetails,
             sport = sportDetails,
-            rsvpStatus = rsvpStatus
         )
     }
 
