@@ -30,7 +30,7 @@ class EventController(
         return eventService.createGroupEvent(ownerId, groupId, req)
     }
 
-    // Evento instantâneo (sem grupo)
+    // Evento instantâneo
     @PostMapping("/events/instant")
     fun createInstantEvent(
         @AuthenticationPrincipal jwt: Jwt,
@@ -50,12 +50,14 @@ class EventController(
         return eventService.listGroupEvents(groupId, userId)
     }
 
-    // Detalhes de um evento
+    // Detalhes de um evento — agora inclui o rsvpStatus do usuário autenticado
     @GetMapping("/events/{eventId}")
     fun getEvent(
+        @AuthenticationPrincipal jwt: Jwt,
         @PathVariable eventId: UUID
     ): EventResponse {
-        return eventService.getEventById(eventId)
+        val userId = UUID.fromString(jwt.subject)
+        return eventService.getEventById(eventId, userId)
     }
 
     // ----- RSVP -----
@@ -75,14 +77,5 @@ class EventController(
         @PathVariable eventId: UUID
     ): List<EventRsvpResponse> {
         return eventRsvpService.listRsvps(eventId)
-    }
-
-    @GetMapping("/events/{eventId}/rsvps/me")
-    fun getMyRsvp(
-        @AuthenticationPrincipal jwt: Jwt,
-        @PathVariable eventId: UUID
-    ): EventRsvpResponse? {
-        val userId = UUID.fromString(jwt.subject)
-        return eventRsvpService.getMyRsvp(userId, eventId)
     }
 }
