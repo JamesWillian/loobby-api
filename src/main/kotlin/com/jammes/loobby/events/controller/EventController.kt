@@ -78,4 +78,13 @@ class EventController(
     ): List<EventRsvpResponse> {
         return eventRsvpService.listRsvps(eventId)
     }
+
+    @GetMapping("/events/{eventId}/rsvps/me")
+    fun getMyRsvp(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable eventId: UUID
+    ): EventRsvpResponse? {
+        val userId = UUID.fromString(jwt.subject)
+        return eventRsvpService.getMyRsvp(userId, eventId)
+    }
 }
