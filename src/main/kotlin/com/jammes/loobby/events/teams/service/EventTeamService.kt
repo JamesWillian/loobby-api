@@ -9,6 +9,8 @@ import com.jammes.loobby.events.teams.model.TeamPlayerEntity
 import com.jammes.loobby.events.teams.repo.EventTeamRepository
 import com.jammes.loobby.events.teams.repo.TeamPlayerRepository
 import com.jammes.loobby.users.repo.UsersRepository
+import jakarta.persistence.EntityManager
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -199,6 +201,9 @@ class EventTeamService(
 
     // -------- AUTO-GERAR TIMES --------
 
+    @Autowired
+    private lateinit var entityManager: EntityManager
+
     /**
      * Gera times automaticamente:
      * - Usa apenas RSVPs YES como jogadores distribuídos em times numéricos.
@@ -210,13 +215,16 @@ class EventTeamService(
         val event = eventRepository.findById(eventId)
             .orElseThrow { IllegalArgumentException("Event not found") }
 
-        val rsvps = eventRsvpRepository.findByEventId(eventId)
+        val rsvps = eventRsvpRepository.findByEventIdOrderByCreatedAtAsc(eventId)
 
         val confirmedIds = rsvps.filter { it.status == RsvpStatus.YES }.map { it.userId }
         val reserveIds = rsvps.filter { it.status == RsvpStatus.RESERVE }.map { it.userId }
 
         // limpa times atuais do evento (cascade remove players)
         eventTeamRepository.deleteByEventId(eventId)
+
+        entityManager.flush()   // força o DELETE ir pro banco agora
+        entityManager.clear()   // limpa o contexto de persistência
 
         if (confirmedIds.isEmpty() && reserveIds.isEmpty()) {
             return emptyList()

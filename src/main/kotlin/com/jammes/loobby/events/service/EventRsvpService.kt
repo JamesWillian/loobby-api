@@ -74,7 +74,7 @@ class EventRsvpService(
         val event = eventRepository.findById(eventId)
             .orElseThrow { IllegalArgumentException("Event not found") }
 
-        val rsvps = eventRsvpRepository.findByEventId(eventId)
+        val rsvps = eventRsvpRepository.findByEventIdOrderByCreatedAtAsc(eventId)
         if (rsvps.isEmpty()) return emptyList()
 
         val userIds = rsvps.map { it.userId }.toSet()

@@ -8,7 +8,7 @@ import java.util.UUID
 
 interface EventRsvpRepository : JpaRepository<EventRsvpEntity, EventRsvpId> {
 
-    fun findByEventId(eventId: UUID): List<EventRsvpEntity>
+    fun findByEventIdOrderByCreatedAtAsc(eventId: UUID): List<EventRsvpEntity>
 
     fun findByEventIdAndUserId(eventId: UUID, userId: UUID): EventRsvpEntity?
 
