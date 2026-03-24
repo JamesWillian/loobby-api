@@ -4,11 +4,13 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.annotations.BatchSize
 import java.math.BigDecimal
 import java.util.UUID
 
 @Entity
 @Table(name = "sport_events")
+@BatchSize(size = 25)
 open class SportEventEntity(
 
     @Id

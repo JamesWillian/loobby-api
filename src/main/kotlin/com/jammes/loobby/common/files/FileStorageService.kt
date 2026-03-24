@@ -63,7 +63,7 @@ class FileStorageService(
             Files.copy(input, destination)
         }
 
-        // URL pública: <publicBaseUrl>/<subfolder>/<ownerId>/<filename>
-        return "${props.publicBaseUrl}/$subfolder/$ownerId/$filename"
+        // URL Relative Path: /files/<subfolder>/<ownerId>/<filename>
+        return "/files/$subfolder/$ownerId/$filename"
     }
 }
