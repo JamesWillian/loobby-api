@@ -3,6 +3,7 @@ package com.jammes.loobby.groups.controller
 import com.jammes.loobby.groups.dto.CreateGroupRequest
 import com.jammes.loobby.groups.dto.GroupMemberResponse
 import com.jammes.loobby.groups.dto.GroupResponse
+import com.jammes.loobby.groups.dto.UpdateGroupRequest
 import com.jammes.loobby.groups.service.GroupMemberService
 import com.jammes.loobby.groups.service.GroupService
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -10,6 +11,8 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
+import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/groups")
@@ -43,6 +46,42 @@ class GroupController(
         return groupService.getByCode(code.uppercase())
     }
 
+    // -------- UPDATE GROUP NAME --------
+
+    @PatchMapping("/{groupId}")
+    fun updateGroup(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable groupId: UUID,
+        @Valid @RequestBody req: UpdateGroupRequest
+    ): GroupResponse {
+        val userId = UUID.fromString(jwt.subject)
+        return groupService.updateGroupName(userId, groupId, req)
+    }
+
+    // -------- UPDATE GROUP IMAGE --------
+
+    @PostMapping("/{groupId}/image")
+    fun uploadGroupImage(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable groupId: UUID,
+        @RequestParam("file") file: MultipartFile
+    ): GroupResponse {
+        val userId = UUID.fromString(jwt.subject)
+        return groupService.updateGroupImage(userId, groupId, file)
+    }
+
+    // -------- DELETE GROUP --------
+
+    @DeleteMapping("/{groupId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteGroup(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable groupId: UUID
+    ) {
+        val userId = UUID.fromString(jwt.subject)
+        groupService.deleteGroup(userId, groupId)
+    }
+
     // -------- MEMBERSHIP --------
 
     @PostMapping("/{groupId}/members")
@@ -68,5 +107,16 @@ class GroupController(
         @PathVariable groupId: UUID
     ): List<GroupMemberResponse> {
         return groupMemberService.listMembers(groupId)
+    }
+
+    @DeleteMapping("/{groupId}/members/{memberId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun removeMember(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable groupId: UUID,
+        @PathVariable memberId: UUID
+    ) {
+        val userId = UUID.fromString(jwt.subject)
+        groupMemberService.removeMember(userId, groupId, memberId)
     }
 }

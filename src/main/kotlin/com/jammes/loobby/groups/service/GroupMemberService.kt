@@ -5,6 +5,7 @@ import com.jammes.loobby.groups.model.GroupMemberEntity
 import com.jammes.loobby.groups.repo.GroupMemberRepository
 import com.jammes.loobby.groups.repo.GroupRepository
 import com.jammes.loobby.users.repo.UsersRepository
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -44,6 +45,35 @@ class GroupMemberService(
         }
 
         groupMemberRepository.deleteByGroupIdAndUserId(groupId, userId)
+    }
+
+    // ========================= removeMember =========================
+
+    /**
+     * Remove um membro do grupo. Apenas o dono do grupo pode fazer isso.
+     * O dono não pode remover a si próprio.
+     */
+    @Transactional
+    fun removeMember(requesterId: UUID, groupId: UUID, memberId: UUID) {
+        val group = groupRepository.findById(groupId)
+            .orElseThrow { IllegalArgumentException("Group not found") }
+
+        // Apenas o dono do grupo pode remover membros
+        if (group.ownerId != requesterId) {
+            throw AccessDeniedException("Only the group owner can remove members")
+        }
+
+        // Dono não pode se remover por esta rota
+        if (memberId == group.ownerId) {
+            throw IllegalStateException("Cannot remove the group owner.")
+        }
+
+        // Verifica se o usuário é membro
+        if (!groupMemberRepository.existsByGroupIdAndUserId(groupId, memberId)) {
+            throw IllegalArgumentException("User is not a member of this group")
+        }
+
+        groupMemberRepository.deleteByGroupIdAndUserId(groupId, memberId)
     }
 
     fun listMembers(groupId: UUID): List<GroupMemberResponse> {
