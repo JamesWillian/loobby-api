@@ -4,6 +4,7 @@ import com.jammes.loobby.events.dto.CreateEventRequest
 import com.jammes.loobby.events.dto.EventResponse
 import com.jammes.loobby.events.dto.GameplayEventDetailsResponse
 import com.jammes.loobby.events.dto.SportEventDetailsResponse
+import com.jammes.loobby.events.dto.UpdateEventRequest
 import com.jammes.loobby.events.model.EventEntity
 import com.jammes.loobby.events.model.EventType
 import com.jammes.loobby.events.model.GameplayEventEntity
@@ -15,7 +16,9 @@ import com.jammes.loobby.events.repo.GameplayEventRepository
 import com.jammes.loobby.events.repo.SportEventRepository
 import com.jammes.loobby.groups.repo.GroupRepository
 import com.jammes.loobby.users.repo.UsersRepository
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.util.UUID
 
@@ -187,6 +190,108 @@ class EventService(
             confirmedCount = yesRsvps.size,
             confirmedAvatars = avatars
         )
+    }
+
+    // ========================= updateEvent =========================
+
+    /**
+     * Atualiza um evento existente.
+     *
+     * Regras:
+     *  - Apenas o criador do evento OU o dono do grupo (se houver) podem alterar.
+     *  - Não é permitido alterar: eventType, groupId, isInstant.
+     *  - Detalhes específicos (gameplay/sport) só são atualizados se o tipo bater.
+     */
+    @Transactional
+    fun updateEvent(
+        userId: UUID,
+        eventId: UUID,
+        req: UpdateEventRequest
+    ): EventResponse {
+        val event = eventRepository.findById(eventId)
+            .orElseThrow { IllegalArgumentException("Event not found") }
+
+        // ---------- autorização ----------
+        assertCanManageEvent(userId, event)
+
+        // ---------- campos gerais ----------
+        req.name?.let { event.name = it }
+
+        if (req.clearDescription) {
+            event.description = null
+        } else {
+            req.description?.let { event.description = it }
+        }
+
+        req.scheduledDatetime?.let { event.scheduledDatetime = it }
+
+        eventRepository.save(event)
+
+        // ---------- detalhes específicos ----------
+        when (event.eventType) {
+            EventType.GAMEPLAY -> {
+                req.gameplay?.let { details ->
+                    val gameplay = gameplayEventRepository.findByEventId(event.id)
+                        ?: throw IllegalStateException("Gameplay details not found for event ${event.id}")
+                    if (details.gameName.isNotBlank()) gameplay.gameName = details.gameName
+                    details.gameId?.let { gameplay.gameId = it }
+                    gameplayEventRepository.save(gameplay)
+                }
+            }
+            EventType.SPORT -> {
+                req.sport?.let { details ->
+                    val sport = sportEventRepository.findByEventId(event.id)
+                        ?: throw IllegalStateException("Sport details not found for event ${event.id}")
+                    if (details.durationMinutes > 0) sport.durationMinutes = details.durationMinutes
+                    details.arena?.let { sport.arena = it }
+                    details.pricePerPlayer?.let { sport.pricePerPlayer = it }
+                    details.maxPlayers?.let { sport.maxPlayers = it }
+                    details.acceptReserve?.let { sport.acceptReserve = it }
+                    sportEventRepository.save(sport)
+                }
+            }
+            else -> {}
+        }
+
+        return buildResponse(event)
+    }
+
+    // ========================= deleteEvent =========================
+
+    /**
+     * Exclui um evento
+     *
+     * Regras:
+     *  - Apenas o criador do evento OU o dono do grupo (se houver) podem excluir.
+     */
+    @Transactional
+    fun deleteEvent(userId: UUID, eventId: UUID) {
+        val event = eventRepository.findById(eventId)
+            .orElseThrow { IllegalArgumentException("Event not found") }
+
+        // ---------- autorização ----------
+        assertCanManageEvent(userId, event)
+
+        eventRepository.delete(event)
+    }
+
+    // ========================= helper de autorização =========================
+
+    /**
+     * Verifica se o usuário é o criador do evento OU o dono do grupo associado.
+     * Lança AccessDeniedException se não tiver permissão.
+     */
+    private fun assertCanManageEvent(userId: UUID, event: EventEntity) {
+        val isEventOwner = event.ownerId == userId
+        val isGroupOwner = event.groupId?.let { gid ->
+            groupRepository.findById(gid).map { it.ownerId == userId }.orElse(false)
+        } ?: false
+
+        if (!isEventOwner && !isGroupOwner) {
+            throw AccessDeniedException(
+                "Only the event creator or the group owner can manage this event"
+            )
+        }
     }
 
     private fun generateInviteCode(): String {

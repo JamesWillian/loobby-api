@@ -4,9 +4,11 @@ import com.jammes.loobby.events.dto.CreateEventRequest
 import com.jammes.loobby.events.dto.EventResponse
 import com.jammes.loobby.events.dto.UpsertRsvpRequest
 import com.jammes.loobby.events.dto.EventRsvpResponse
+import com.jammes.loobby.events.dto.UpdateEventRequest
 import com.jammes.loobby.events.service.EventRsvpService
 import com.jammes.loobby.events.service.EventService
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
@@ -58,6 +60,30 @@ class EventController(
     ): EventResponse {
         val userId = UUID.fromString(jwt.subject)
         return eventService.getEventById(eventId, userId)
+    }
+
+    // ----- UPDATE -----
+
+    @PutMapping("/events/{eventId}")
+    fun updateEvent(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable eventId: UUID,
+        @Valid @RequestBody req: UpdateEventRequest
+    ): EventResponse {
+        val userId = UUID.fromString(jwt.subject)
+        return eventService.updateEvent(userId, eventId, req)
+    }
+
+    // ----- DELETE -----
+
+    @DeleteMapping("/events/{eventId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteEvent(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable eventId: UUID
+    ) {
+        val userId = UUID.fromString(jwt.subject)
+        eventService.deleteEvent(userId, eventId)
     }
 
     // ----- RSVP -----
