@@ -8,7 +8,9 @@ import com.jammes.loobby.users.model.UserEntity
 import com.jammes.loobby.users.model.UserCredentialsEntity
 import com.jammes.loobby.users.repo.UserCredentialsRepository
 import com.jammes.loobby.users.repo.UsersRepository
+import com.nimbusds.jwt.SignedJWT
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.jwt.JwtException
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -49,6 +51,47 @@ class AuthService(
             username = user.username,
             roles = roles
         )
+    }
+
+    // ──────────────────────────────────────────────────────
+    // Tenta renovar tokens para anônimos com refresh expirado.
+    // Se o user NÃO for anônimo, re-lança a exceção original (401).
+    // ──────────────────────────────────────────────────────
+    fun refreshExpiredAnonymousOrThrow(
+        rawRefreshToken: String,
+        originalException: JwtException
+    ): AuthResponse {
+        // 1. Parse manual do JWT (sem validar expiração) para extrair o subject
+        val userId: UUID = try {
+            val signedJWT = SignedJWT.parse(rawRefreshToken)
+            val claims = signedJWT.jwtClaimsSet
+
+            // Garante que é um refresh token (mesmo expirado, a claim "type" permanece)
+            val type = claims.getStringClaim("type")
+            if (type != "refresh") {
+                throw originalException
+            }
+
+            UUID.fromString(claims.subject)
+        } catch (ex: JwtException) {
+            throw originalException
+        } catch (ex: Exception) {
+            // Parse falhou (token corrompido/adulterado) → mantém o erro original
+            throw originalException
+        }
+
+        // 2. Verifica se o user existe
+        val user = usersRepository.findById(userId).orElseThrow { originalException }
+
+        // 3. Verifica se é anônimo (sem credentials no banco)
+        val hasCredentials = credentialsRepository.existsByUserId(userId)
+        if (hasCredentials) {
+            // Não é anônimo → não pode renovar com token expirado
+            throw originalException
+        }
+
+        // 4. É anônimo → gera novos tokens
+        return generateAuthResponseForUser(user)
     }
 
     // --------------------------------------

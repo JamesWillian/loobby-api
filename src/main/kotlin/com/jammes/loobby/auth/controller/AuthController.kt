@@ -9,9 +9,8 @@ import jakarta.validation.Valid
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.JwtException
 import org.springframework.web.bind.annotation.*
-import java.time.Duration
-import java.time.Instant
 import java.util.UUID
 
 @RestController
@@ -22,7 +21,7 @@ class AuthController(
 ) {
 
     // -------------------------------
-    // /auth/anonymous  (público)
+    // /auth/anonymous (público)
     // -------------------------------
     @PostMapping("/anonymous")
     fun createAnonymous(): AuthResponse {
@@ -30,7 +29,7 @@ class AuthController(
     }
 
     // -------------------------------
-    // /auth/register  (AUTENTICADO COMO ANÔNIMO)
+    // /auth/register (AUTENTICADO COMO ANÔNIMO)
     // -------------------------------
     @PostMapping("/register")
     fun register(
@@ -42,7 +41,7 @@ class AuthController(
     }
 
     // -------------------------------
-    // /auth/login  (público)
+    // /auth/login (público)
     // -------------------------------
     @PostMapping("/login")
     fun login(@RequestBody req: LoginRequest): AuthResponse {
@@ -50,12 +49,26 @@ class AuthController(
     }
 
     // -------------------------------
-    // /auth/refresh  (público)
+    // /auth/refresh (público)
+    // se o refreshToken estiver expirado e o user for anônimo,
+    // gera novos tokens automaticamente em vez de retornar 401.
     // -------------------------------
     @PostMapping("/refresh")
     fun refresh(@RequestBody req: RefreshTokenRequest): AuthResponse {
-        val jwt = jwtDecoder.decode(req.refreshToken)
+        return try {
+            // Fluxo normal: token válido (não expirado)
+            val jwt = jwtDecoder.decode(req.refreshToken)
+            validateAndRefresh(jwt)
+        } catch (ex: JwtException) {
+            // Token expirado ou inválido — tenta recuperar anônimo
+            authService.refreshExpiredAnonymousOrThrow(req.refreshToken, ex)
+        }
+    }
 
+    /**
+     * Valida claims do JWT já decodificado e gera novos tokens.
+     */
+    private fun validateAndRefresh(jwt: Jwt): AuthResponse {
         val type = jwt.claims["type"] as? String
             ?: throw IllegalArgumentException("Invalid token: missing type")
 
@@ -67,6 +80,5 @@ class AuthController(
         val user = authService.loadUserById(userId)
 
         return authService.generateAuthResponseForUser(user)
-
     }
 }
