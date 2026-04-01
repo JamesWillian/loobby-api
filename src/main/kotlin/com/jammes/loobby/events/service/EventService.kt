@@ -303,7 +303,7 @@ class EventService(
                 .chunked(4)
                 .joinToString("-")
         } while (eventRepository.existsByInviteCode(code))
-        return "L-$code"
+        return "$-$code"
     }
 
     private fun buildResponse(

@@ -140,7 +140,7 @@ class GroupService(
     }
 
     private fun generateInviteCode(): String {
-        // L + 6 letras maiúsculas e números
+        // $ + 6 letras maiúsculas e números
         var code: String
         do {
             code = (1..6)
@@ -148,7 +148,7 @@ class GroupService(
                 .joinToString("")
         } while (groupRepository.existsByInviteCode(code))
 
-        return "L-$code"
+        return "$-$code"
     }
 
     private fun GroupEntity.toResponse() =
