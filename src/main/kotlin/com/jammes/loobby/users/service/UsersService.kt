@@ -1,18 +1,23 @@
 package com.jammes.loobby.users.service
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.jammes.loobby.users.dto.UpdateUserProfileRequest
+import com.jammes.loobby.users.dto.UserFeedResponse
 import com.jammes.loobby.users.dto.UserMeResponse
 import com.jammes.loobby.users.dto.UserProfileResponse
 import com.jammes.loobby.users.repo.UserCredentialsRepository
+import com.jammes.loobby.users.repo.UserFeedRepository
 import com.jammes.loobby.users.repo.UsersRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
+import kotlin.String
 
 @Service
 class UsersService(
     private val usersRepository: UsersRepository,
-    private val credentialsRepository: UserCredentialsRepository
+    private val credentialsRepository: UserCredentialsRepository,
+    private val userFeedRepository: UserFeedRepository
 ) {
 
     fun getMe(userId: UUID): UserMeResponse {
@@ -93,5 +98,23 @@ class UsersService(
             avatarUrl = saved.avatarUrl,
             createdAt = saved.createdAt
         )
+    }
+
+    fun getUserFeed(userId: UUID): List<UserFeedResponse> {
+//        val user = usersRepository.findById(userId)
+//            .orElseThrow { IllegalArgumentException("User not found") }
+
+        val feed = userFeedRepository.findByUserId(userId)
+
+        return feed.map {
+            UserFeedResponse(
+                id = it.id,
+                userId = it.userId,
+                name = it.name,
+                imageUrl = it.imageUrl,
+                entryType = it.entryType,
+                isFinished = it.isFinished
+            )
+        }
     }
 }

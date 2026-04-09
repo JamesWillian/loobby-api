@@ -34,6 +34,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server") // JWT bearer parsing/validation
     implementation("org.springframework.security:spring-security-oauth2-jose") // Nimbus
 
+    implementation("org.hibernate.orm:hibernate-core")
     implementation("org.flywaydb:flyway-core")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

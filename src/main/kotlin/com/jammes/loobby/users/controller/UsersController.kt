@@ -2,6 +2,7 @@ package com.jammes.loobby.users.controller
 
 import com.jammes.loobby.common.files.FileStorageService
 import com.jammes.loobby.users.dto.UpdateUserProfileRequest
+import com.jammes.loobby.users.dto.UserFeedResponse
 import com.jammes.loobby.users.dto.UserMeResponse
 import com.jammes.loobby.users.dto.UserProfileResponse
 import com.jammes.loobby.users.service.UsersService
@@ -54,5 +55,13 @@ class UsersController(
         )
 
         return usersService.updateAvatar(userId, avatarUrl)
+    }
+
+    @GetMapping("/feed")
+    fun getUserFeed(
+        @AuthenticationPrincipal jwt: Jwt
+    ): List<UserFeedResponse> {
+        val userId = UUID.fromString(jwt.subject)
+        return usersService.getUserFeed(userId)
     }
 }
