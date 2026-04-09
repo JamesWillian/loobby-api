@@ -3,6 +3,7 @@ package app.loobby.users.model
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import java.time.Instant
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Entity
@@ -26,6 +27,15 @@ class UserCredentialsEntity(
 
     @Column(name = "roles", nullable = false, length = 200)
     var rolesCsv: String = "USER",
+
+    @Column(name = "email_verified", nullable = false)
+    var emailVerified: Boolean = false,
+
+    @Column(name = "email_verification_token")
+    var emailVerificationToken: String? = null,
+
+    @Column(name = "email_verification_expires_at")
+    var emailVerificationExpiresAt: OffsetDateTime? = null,
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

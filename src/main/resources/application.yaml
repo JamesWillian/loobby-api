@@ -45,6 +45,13 @@ file:
 
 resend:
   api-key: ${RESEND_API_KEY}
+  from-email: "Loobby <noreply@loobby.app>"
+
+app:
+   base-url: ${APP_BASE_URL:https://api.loobby.app}
+   email-verification:
+     expiration-hours: 24
+     resend-cooldown-minutes: 3
 
 logging:
   level:

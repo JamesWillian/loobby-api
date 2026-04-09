@@ -36,6 +36,7 @@ class UsersService(
             isAnonymous = credentials == null,
             roles = roles,
             email = credentials?.email,
+            emailVerified = credentials?.emailVerified ?: false,
             createdAt = user.createdAt
         )
     }

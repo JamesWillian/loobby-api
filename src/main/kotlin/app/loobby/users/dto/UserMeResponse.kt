@@ -13,5 +13,6 @@ data class UserMeResponse(
     val isAnonymous: Boolean,
     val roles: List<String>,
     val email: String?,            // null para anônimo
+    val emailVerified: Boolean = false,
     val createdAt: Instant?
 )
