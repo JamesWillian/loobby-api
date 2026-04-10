@@ -37,6 +37,12 @@ class UserCredentialsEntity(
     @Column(name = "email_verification_expires_at")
     var emailVerificationExpiresAt: OffsetDateTime? = null,
 
+    @Column(name = "password_reset_token")
+    var passwordResetToken: String? = null,
+
+    @Column(name = "password_reset_expires_at")
+    var passwordResetExpiresAt: OffsetDateTime? = null,
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: Instant? = null

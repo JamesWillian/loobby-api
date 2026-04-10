@@ -9,4 +9,5 @@ interface UserCredentialsRepository : JpaRepository<UserCredentialsEntity, UUID>
     fun existsByUserId(userId: UUID): Boolean
     fun findByUserId(userId: UUID): UserCredentialsEntity?
     fun findByEmailVerificationToken(token: String): UserCredentialsEntity?
+    fun findByPasswordResetToken(token: String): UserCredentialsEntity?
 }

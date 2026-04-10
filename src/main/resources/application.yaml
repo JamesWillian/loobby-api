@@ -52,6 +52,9 @@ app:
    email-verification:
      expiration-hours: 24
      resend-cooldown-minutes: 3
+   password-reset:
+     expiration-hours: 1
+     resend-cooldown-minutes: 3
 
 logging:
   level:
