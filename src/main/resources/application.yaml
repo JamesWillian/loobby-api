@@ -45,7 +45,7 @@ file:
 
 resend:
   api-key: ${RESEND_API_KEY}
-  from-email: "Loobby <noreply@loobby.app>"
+  from-email: "Loobby <noreply@mail.loobby.app>"
 
 app:
    base-url: ${APP_BASE_URL:https://api.loobby.app}

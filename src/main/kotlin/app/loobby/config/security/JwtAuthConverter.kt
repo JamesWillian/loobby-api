@@ -13,7 +13,7 @@ class JwtAuthConverter : Converter<Jwt, AbstractAuthenticationToken> {
     override fun convert(jwt: Jwt): AbstractAuthenticationToken {
         val authorities = extractAuthorities(jwt)
         // principalName padrão do JwtAuthenticationToken = jwt.subject (sub)
-        return JwtAuthenticationToken(jwt, authorities, jwt.subject)
+        return JwtAuthenticationToken(jwt, authorities, jwt.subject ?: "")
     }
 
     private fun extractAuthorities(jwt: Jwt): List<SimpleGrantedAuthority> {

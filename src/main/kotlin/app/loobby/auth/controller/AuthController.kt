@@ -41,9 +41,9 @@ class AuthController(
         @Valid @RequestBody req: RegisterRequest
     ): AuthResponse {
         val userId = UUID.fromString(jwt.subject)
-        val response = authService.register(userId, req)
+        val authResponse = authService.register(userId, req)
         emailVerificationService.sendVerificationEmail(userId)
-        return response
+        return authResponse
     }
 
     // -------------------------------
@@ -51,7 +51,10 @@ class AuthController(
     // -------------------------------
     @PostMapping("/login")
     fun login(@RequestBody req: LoginRequest): AuthResponse {
-        return authService.login(req)
+        val authResponse = authService.login(req)
+        if (!emailVerificationService.isEmailVerified(authResponse.userId))
+            emailVerificationService.sendVerificationEmail(authResponse.userId)
+        return authResponse
     }
 
     // -------------------------------
@@ -76,7 +79,7 @@ class AuthController(
      * Público — chamado quando o usuário clica no link do email.
      * Retorna uma página HTML simples de sucesso/erro.
      */
-    @GetMapping("/auth/verify-email")
+    @GetMapping("/verify-email")
     fun verifyEmail(@RequestParam token: String): ResponseEntity<String> {
         return try {
             emailVerificationService.verifyEmail(token)
@@ -94,7 +97,7 @@ class AuthController(
      * POST /auth/resend-verification
      * Autenticado — reenvia o email de verificação com rate limit.
      */
-    @PostMapping("/auth/resend-verification")
+    @PostMapping("/resend-verification")
     fun resendVerification(@AuthenticationPrincipal jwt: Jwt): ResponseEntity<Map<String, String>> {
         val userId = UUID.fromString(jwt.subject)
         emailVerificationService.resendVerificationEmail(userId)
