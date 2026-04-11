@@ -1,5 +1,6 @@
 package app.loobby.users.service
 
+import app.loobby.users.dto.ChangePasswordRequest
 import com.fasterxml.jackson.annotation.JsonProperty
 import app.loobby.users.dto.UpdateUserProfileRequest
 import app.loobby.users.dto.UserFeedResponse
@@ -8,8 +9,11 @@ import app.loobby.users.dto.UserProfileResponse
 import app.loobby.users.repo.UserCredentialsRepository
 import app.loobby.users.repo.UserFeedRepository
 import app.loobby.users.repo.UsersRepository
+import org.springframework.http.HttpStatus
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 import kotlin.String
 
@@ -17,7 +21,8 @@ import kotlin.String
 class UsersService(
     private val usersRepository: UsersRepository,
     private val credentialsRepository: UserCredentialsRepository,
-    private val userFeedRepository: UserFeedRepository
+    private val userFeedRepository: UserFeedRepository,
+    private val passwordEncoder: PasswordEncoder
 ) {
 
     fun getMe(userId: UUID): UserMeResponse {
@@ -117,5 +122,30 @@ class UsersService(
                 isFinished = it.isFinished
             )
         }
+    }
+
+    @Transactional
+    fun changePassword(userId: UUID, request: ChangePasswordRequest) {
+        // Validações
+        if (request.newPassword.length < 6) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A nova senha deve ter pelo menos 6 caracteres.")
+        }
+        if (request.newPassword != request.confirmPassword) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "As senhas não coincidem.")
+        }
+        if (request.currentPassword == request.newPassword) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "A nova senha deve ser diferente da atual.")
+        }
+
+        val credential = credentialsRepository.findById(userId)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado.") }
+
+        // Verifica senha atual
+        if (!passwordEncoder.matches(request.currentPassword, credential.passwordHash)) {
+            throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha atual incorreta.")
+        }
+
+        credential.passwordHash = passwordEncoder.encode(request.newPassword).toString()
+        credentialsRepository.save(credential)
     }
 }
