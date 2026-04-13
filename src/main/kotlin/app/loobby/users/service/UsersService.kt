@@ -213,8 +213,8 @@ class UsersService(
         // 6. Anonimiza o registro em users (mantém o id para integridade referencial)
         val user = usersRepository.findById(userId)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado.") }
-        user.username = "[deleted]"
-        user.displayname = null
+        user.username = ""
+        user.displayname = "[deleted]"
         user.avatarUrl = null
         usersRepository.save(user)
     }
