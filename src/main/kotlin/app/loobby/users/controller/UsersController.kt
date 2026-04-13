@@ -2,6 +2,7 @@ package app.loobby.users.controller
 
 import app.loobby.common.files.FileStorageService
 import app.loobby.users.dto.ChangePasswordRequest
+import app.loobby.users.dto.DeleteAccountRequest
 import app.loobby.users.dto.UpdateUserProfileRequest
 import app.loobby.users.dto.UserFeedResponse
 import app.loobby.users.dto.UserMeResponse
@@ -11,6 +12,7 @@ import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -80,5 +82,20 @@ class UsersController(
         val userId = UUID.fromString(jwt.subject)
         usersService.changePassword(userId, request)
         return ResponseEntity.ok(mapOf("message" to "Senha alterada com sucesso."))
+    }
+
+    /**
+     * DELETE /users/me
+     * Autenticado — exclui permanentemente a conta do usuário logado.
+     * Requer confirmação com senha. Ação irreversível.
+     */
+    @DeleteMapping("/me")
+    fun deleteAccount(
+        @AuthenticationPrincipal jwt: Jwt,
+        @RequestBody request: DeleteAccountRequest
+    ): ResponseEntity<Map<String, String>> {
+        val userId = UUID.fromString(jwt.subject)
+        usersService.deleteAccount(userId, request)
+        return ResponseEntity.ok(mapOf("message" to "Conta excluída com sucesso."))
     }
 }

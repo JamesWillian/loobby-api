@@ -7,19 +7,9 @@ import java.util.UUID
 
 interface EventRepository : JpaRepository<EventEntity, UUID> {
 
+    fun findByOwnerIdAndIsInstantTrue(ownerId: UUID): List<EventEntity>
+
     fun findByGroupIdOrderByScheduledDatetimeAsc(groupId: UUID): List<EventEntity>
-
-    fun findByOwnerIdOrderByScheduledDatetimeAsc(ownerId: UUID): List<EventEntity>
-
-    fun findByGroupIdAndScheduledDatetimeAfterOrderByScheduledDatetimeAsc(
-        groupId: UUID,
-        after: Instant
-    ): List<EventEntity>
-
-    fun findByIsInstantAndOwnerIdOrderByScheduledDatetimeDesc(
-        isInstant: Boolean,
-        ownerId: UUID
-    ): List<EventEntity>
 
     fun existsByInviteCode(inviteCode: String): Boolean
 }

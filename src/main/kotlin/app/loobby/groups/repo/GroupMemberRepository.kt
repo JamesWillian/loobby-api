@@ -6,6 +6,8 @@ import java.util.UUID
 
 interface GroupMemberRepository : JpaRepository<GroupMemberEntity, UUID> {
 
+    fun findFirstByGroupIdAndUserIdNot(groupId: UUID, userId: UUID): GroupMemberEntity?
+
     fun existsByGroupIdAndUserId(groupId: UUID, userId: UUID): Boolean
 
     fun findByGroupId(groupId: UUID): List<GroupMemberEntity>

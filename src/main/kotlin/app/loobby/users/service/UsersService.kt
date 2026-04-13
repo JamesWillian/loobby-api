@@ -1,6 +1,12 @@
 package app.loobby.users.service
 
+import app.loobby.events.model.RsvpStatus
+import app.loobby.events.repo.EventRepository
+import app.loobby.events.repo.EventRsvpRepository
+import app.loobby.groups.repo.GroupMemberRepository
+import app.loobby.groups.repo.GroupRepository
 import app.loobby.users.dto.ChangePasswordRequest
+import app.loobby.users.dto.DeleteAccountRequest
 import com.fasterxml.jackson.annotation.JsonProperty
 import app.loobby.users.dto.UpdateUserProfileRequest
 import app.loobby.users.dto.UserFeedResponse
@@ -22,7 +28,11 @@ class UsersService(
     private val usersRepository: UsersRepository,
     private val credentialsRepository: UserCredentialsRepository,
     private val userFeedRepository: UserFeedRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val groupRepository: GroupRepository,
+    private val groupMemberRepository: GroupMemberRepository,
+    private val eventRepository: EventRepository,
+    private val eventRsvpRepository: EventRsvpRepository,
 ) {
 
     fun getMe(userId: UUID): UserMeResponse {
@@ -147,5 +157,65 @@ class UsersService(
 
         credential.passwordHash = passwordEncoder.encode(request.newPassword).toString()
         credentialsRepository.save(credential)
+    }
+
+    @Transactional
+    fun deleteAccount(userId: UUID, request: DeleteAccountRequest) {
+        // 1. Valida a senha antes de qualquer alteração
+        val credential = credentialsRepository.findById(userId)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado.") }
+
+        if (!passwordEncoder.matches(request.password, credential.passwordHash)) {
+            throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha incorreta.")
+        }
+
+        // 2. Grupos onde o usuário é dono
+        val ownedGroups = groupRepository.findByOwnerId(userId)
+        for (group in ownedGroups) {
+            val nextOwner = groupMemberRepository.findFirstByGroupIdAndUserIdNot(group.id, userId)
+            if (nextOwner != null) {
+                // Transfere ownership para qualquer outro membro
+                group.ownerId = nextOwner.userId
+                groupRepository.save(group)
+            } else {
+                // Sem outros membros — deleta o grupo
+                // CASCADE no banco remove eventos, rsvps, teams e tudo mais associado
+                groupRepository.deleteById(group.id)
+            }
+        }
+
+        // 3. Eventos instantâneos onde o usuário é owner
+        // (eventos de grupo já foram cobertos pelo CASCADE acima, se o grupo foi deletado,
+        //  ou permanecem com o grupo transferido onde o dono do grupo gerencia)
+        val instantEvents = eventRepository.findByOwnerIdAndIsInstantTrue(userId)
+        for (event in instantEvents) {
+            val nextOwner = eventRsvpRepository
+                .findFirstByEventIdAndUserIdNotAndStatusOrderByCreatedAtAsc(
+                    event.id, userId, RsvpStatus.YES
+                )
+            if (nextOwner != null) {
+                // Transfere ownership para o confirmado mais antigo
+                event.ownerId = nextOwner.userId
+                eventRepository.save(event)
+            } else {
+                // Sem confirmados — deleta o evento
+                // CASCADE no banco remove rsvps e detalhes associados
+                eventRepository.deleteById(event.id)
+            }
+        }
+
+        // 4. Zera o campo obs de todos os RSVPs restantes do usuário
+        eventRsvpRepository.clearObsByUserId(userId)
+
+        // 5. Deleta as credenciais (remove todos os dados pessoais: email, senha, etc.)
+        credentialsRepository.deleteById(userId)
+
+        // 6. Anonimiza o registro em users (mantém o id para integridade referencial)
+        val user = usersRepository.findById(userId)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado.") }
+        user.username = "[deleted]"
+        user.displayname = null
+        user.avatarUrl = null
+        usersRepository.save(user)
     }
 }
