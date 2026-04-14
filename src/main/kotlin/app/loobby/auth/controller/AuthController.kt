@@ -2,12 +2,14 @@ package app.loobby.auth.controller
 
 import app.loobby.auth.dto.AuthResponse
 import app.loobby.auth.dto.ForgotPasswordRequest
+import app.loobby.auth.dto.GoogleAuthRequest
 import app.loobby.auth.dto.LoginRequest
 import app.loobby.auth.dto.RefreshTokenRequest
 import app.loobby.auth.dto.RegisterRequest
 import app.loobby.auth.dto.ResetPasswordFormRequest
 import app.loobby.auth.service.AuthService
 import app.loobby.auth.service.EmailVerificationService
+import app.loobby.auth.service.GoogleAuthService
 import app.loobby.auth.service.PasswordResetService
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -25,6 +27,7 @@ class AuthController(
     private val authService: AuthService,
     private val emailVerificationService: EmailVerificationService,
     private val passwordResetService: PasswordResetService,
+    private val googleAuthService: GoogleAuthService,
     private val jwtDecoder: JwtDecoder
 ) {
 
@@ -59,6 +62,14 @@ class AuthController(
         if (!emailVerificationService.isEmailVerified(authResponse.userId))
             emailVerificationService.sendVerificationEmail(authResponse.userId)
         return authResponse
+    }
+
+    // -------------------------------
+    // /auth/google (público)
+    // -------------------------------
+    @PostMapping("/google")
+    fun loginWithGoogle(@RequestBody req: GoogleAuthRequest): AuthResponse {
+        return googleAuthService.loginOrRegister(req.idToken)
     }
 
     // -------------------------------

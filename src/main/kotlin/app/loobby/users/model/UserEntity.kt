@@ -22,6 +22,10 @@ open class UserEntity(
     @Column(name = "avatar_url", nullable = true, length = 500)
     var avatarUrl: String? = null,
 
+    // 0 = ANON, 1 = EMAIL, 2 = GOOGLE
+    @Column(name = "auth_provider", nullable = false)
+    var authProvider: Int = 0,
+
     @Column(name="created_at", insertable=false, updatable=false)
     var createdAt: Instant? = null
 
@@ -32,6 +36,7 @@ open class UserEntity(
         username = "",
         displayname = null,
         avatarUrl = null,
+        authProvider = 0,
         createdAt = null
     )
 }

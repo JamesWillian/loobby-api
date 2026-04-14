@@ -30,9 +30,10 @@ class AuthService(
 
     fun generateAuthResponseForUser(user: UserEntity): AuthResponse {
 
-        val credentials = credentialsRepository.findByUserId(user.id)
-
-        val roles = credentials?.roles ?: listOf("ANON")
+        val roles = when (user.authProvider) {
+            0    -> listOf("ANON")
+            else -> listOf("USER")  // 1=EMAIL, 2=GOOGLE
+        }
 
         val accessToken = tokenService.generateAccessToken(
             userId = user.id,
@@ -83,12 +84,8 @@ class AuthService(
         // 2. Verifica se o user existe
         val user = usersRepository.findById(userId).orElseThrow { originalException }
 
-        // 3. Verifica se é anônimo (sem credentials no banco)
-        val hasCredentials = credentialsRepository.existsByUserId(userId)
-        if (hasCredentials) {
-            // Não é anônimo → não pode renovar com token expirado
-            throw originalException
-        }
+        // 3. Verifica se é anônimo
+        if (user.authProvider != 0) throw originalException
 
         // 4. É anônimo → gera novos tokens
         return generateAuthResponseForUser(user)
@@ -137,6 +134,7 @@ class AuthService(
             passwordHash = passwordEncoder.encode(request.password)!!,
         ).apply { setRoles(listOf("USER")) }
 
+        user.authProvider = 1
         credentialsRepository.save(creds)
 
         return generateAuthResponseForUser(user)

@@ -56,6 +56,9 @@ app:
      expiration-hours: 1
      resend-cooldown-minutes: 3
 
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
+
 logging:
   level:
     root: INFO

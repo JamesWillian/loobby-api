@@ -30,6 +30,7 @@ class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/auth/anonymous").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/google").permitAll()
                     .requestMatchers(HttpMethod.GET, "/auth/verify-email").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/forgot-password").permitAll()
                     .requestMatchers(HttpMethod.GET, "/auth/reset-password").permitAll()
