@@ -6,5 +6,5 @@ import java.util.UUID
 
 interface UserGoogleCredentialsRepository : JpaRepository<UserGoogleCredentialsEntity, UUID> {
     fun findByGoogleId(googleId: String): UserGoogleCredentialsEntity?
-    fun findByUserId(userId: UUID): UserGoogleCredentialsEntity
+    fun findByUserId(userId: UUID): UserGoogleCredentialsEntity?
 }

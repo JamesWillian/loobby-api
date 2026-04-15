@@ -44,7 +44,7 @@ class UsersService(
         val googleCredentials = googleCredentialsRepository.findByUserId(userId)
 
         val roles = if (user.authProvider == 0) listOf("ANON") else listOf("USER")
-        val email = if (user.authProvider == 1) credentials?.email else googleCredentials.email
+        val email = if (user.authProvider == 1) credentials?.email else googleCredentials?.email
         val emailVerified = credentials?.emailVerified ?: (user.authProvider != 0)
 
         return UserMeResponse(
