@@ -7,13 +7,13 @@ import app.loobby.groups.repo.GroupMemberRepository
 import app.loobby.groups.repo.GroupRepository
 import app.loobby.users.dto.ChangePasswordRequest
 import app.loobby.users.dto.DeleteAccountRequest
-import com.fasterxml.jackson.annotation.JsonProperty
 import app.loobby.users.dto.UpdateUserProfileRequest
 import app.loobby.users.dto.UserFeedResponse
 import app.loobby.users.dto.UserMeResponse
 import app.loobby.users.dto.UserProfileResponse
 import app.loobby.users.repo.UserCredentialsRepository
 import app.loobby.users.repo.UserFeedRepository
+import app.loobby.users.repo.UserGoogleCredentialsRepository
 import app.loobby.users.repo.UsersRepository
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -27,6 +27,7 @@ import kotlin.String
 class UsersService(
     private val usersRepository: UsersRepository,
     private val credentialsRepository: UserCredentialsRepository,
+    private val googleCredentialsRepository: UserGoogleCredentialsRepository,
     private val userFeedRepository: UserFeedRepository,
     private val passwordEncoder: PasswordEncoder,
     private val groupRepository: GroupRepository,
@@ -40,18 +41,21 @@ class UsersService(
             .orElseThrow { IllegalArgumentException("User not found") }
 
         val credentials = credentialsRepository.findByUserId(userId)
+        val googleCredentials = googleCredentialsRepository.findByUserId(userId)
 
-        val roles = credentials?.roles ?: listOf("ANON")
+        val roles = if (user.authProvider == 0) listOf("ANON") else listOf("USER")
+        val email = if (user.authProvider == 1) credentials?.email else googleCredentials.email
+        val emailVerified = credentials?.emailVerified ?: (user.authProvider != 0)
 
         return UserMeResponse(
             id = user.id,
             username = user.username,
             displayname = user.displayname,
             avatarUrl = user.avatarUrl,
-            isAnonymous = credentials == null,
+            isAnonymous = user.authProvider == 0,
             roles = roles,
-            email = credentials?.email,
-            emailVerified = credentials?.emailVerified ?: false,
+            email = email,
+            emailVerified = emailVerified,
             createdAt = user.createdAt
         )
     }
