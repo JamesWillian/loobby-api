@@ -48,7 +48,7 @@ resend:
   from-email: "Loobby <noreply@mail.loobby.app>"
 
 app:
-   base-url: ${APP_BASE_URL:https://api.loobby.app}
+   base-url: ${APP_BASE_URL:https://fasciately-unsoaped-justus.ngrok-free.dev}
    email-verification:
      expiration-hours: 24
      resend-cooldown-minutes: 3
@@ -57,7 +57,8 @@ app:
      resend-cooldown-minutes: 3
 
 google:
-  client-id: ${GOOGLE_CLIENT_ID}
+  client-ids:
+    ${GOOGLE_WEB_CLIENT_ID},${GOOGLE_IOS_CLIENT_ID},${GOOGLE_ANDROID_CLIENT_ID}
 
 logging:
   level:
