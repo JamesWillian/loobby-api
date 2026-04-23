@@ -72,8 +72,7 @@ class NotificationService(
                             title = title,
                             body = body,
                             type = NotificationType.RSVP_CONFIRMED_BY_PEER,
-                            data = mapOf(
-                                "eventId" to event.id.toString(),
+                            data = buildEventData(event) + mapOf(
                                 "actorId" to actorUserId.toString()
                             )
                         )
@@ -149,7 +148,7 @@ class NotificationService(
                 title = "Evento hoje",
                 body = "${event.name} é hoje — você ainda não confirmou presença",
                 type = NotificationType.EVENT_TODAY_PENDING_RSVP,
-                data = mapOf("eventId" to event.id.toString())
+                data = buildEventData(event)
             )
         )
     }
@@ -161,7 +160,7 @@ class NotificationService(
                 title = event.name,
                 body = "Começa em $hoursBefore horas — se prepare!",
                 type = NotificationType.EVENT_REMINDER_HOURS_BEFORE,
-                data = mapOf("eventId" to event.id.toString())
+                data = buildEventData(event)
             )
         )
     }
@@ -173,8 +172,19 @@ class NotificationService(
                 title = "Pagamento pendente",
                 body = "Você ainda não pagou ${event.name}",
                 type = NotificationType.PAYMENT_DUE_DAILY,
-                data = mapOf("eventId" to event.id.toString())
+                data = buildEventData(event)
             )
         )
+    }
+
+    /**
+     * Monta o map `data` comum a todas as notificações relacionadas a evento.
+     * Quando [EventEntity.groupId] existe, o mobile usa esse campo pra montar o
+     * backstack [Group → EventDetail] — garantindo a seta de voltar pro grupo.
+     * Eventos instantâneos ficam só com eventId e abrem como root.
+     */
+    private fun buildEventData(event: EventEntity): Map<String, String> {
+        val base = mapOf("eventId" to event.id.toString())
+        return event.groupId?.let { base + ("groupId" to it.toString()) } ?: base
     }
 }

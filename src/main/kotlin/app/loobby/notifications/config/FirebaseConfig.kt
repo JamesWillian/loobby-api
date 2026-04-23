@@ -9,7 +9,10 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.io.ResourceLoader
 import java.io.FileInputStream
+import java.io.InputStream
+import java.nio.file.Paths
 
 /**
  * Inicializa o FirebaseApp default a partir do service account JSON e
@@ -17,6 +20,12 @@ import java.io.FileInputStream
  *
  * Quando `loobby.notifications.enabled=false`, nenhuma inicialização é feita e o
  * FcmSender cai em modo "dry run" (apenas loga).
+ *
+ * O caminho do JSON aceita várias formas:
+ *  - Absoluto: `/Users/james/secrets/loobby-fcm.json`
+ *  - Relativo ao working dir do processo: `secrets/loobby-fcm.json`
+ *  - Com `~`: `~/secrets/loobby-fcm.json`
+ *  - Com prefixo Spring: `file:./secrets/loobby-fcm.json`, `classpath:loobby-fcm.json`
  */
 @Configuration
 class FirebaseConfig(
@@ -25,7 +34,9 @@ class FirebaseConfig(
     private val credentialsPath: String,
 
     @Value("\${loobby.notifications.enabled}")
-    private val enabled: Boolean
+    private val enabled: Boolean,
+
+    private val resourceLoader: ResourceLoader
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -43,18 +54,60 @@ class FirebaseConfig(
         }
 
         try {
-            val credentials = FileInputStream(credentialsPath).use {
-                GoogleCredentials.fromStream(it)
+            openCredentials().use { input ->
+                val credentials = GoogleCredentials.fromStream(input)
+                val options = FirebaseOptions.builder()
+                    .setCredentials(credentials)
+                    .build()
+                FirebaseApp.initializeApp(options)
             }
-            val options = FirebaseOptions.builder()
-                .setCredentials(credentials)
-                .build()
-            FirebaseApp.initializeApp(options)
             log.info("FirebaseApp initialized from {}", credentialsPath)
         } catch (t: Throwable) {
-            log.error("Failed to initialize FirebaseApp from $credentialsPath", t)
+            log.error(
+                "Failed to initialize FirebaseApp from '{}'. " +
+                    "Working dir: '{}'. Verifique se o arquivo existe e se o caminho está correto.",
+                credentialsPath,
+                System.getProperty("user.dir"),
+                t
+            )
             throw t
         }
+    }
+
+    /**
+     * Resolve o caminho em múltiplos formatos:
+     *  1. Se começar com `~`, expande para o home do usuário.
+     *  2. Se tiver prefixo Spring (`classpath:`, `file:`, `http:`...), delega ao ResourceLoader.
+     *  3. Caso contrário, tenta como caminho do sistema (absoluto ou relativo ao user.dir).
+     *     Relativos implícitos caem no working dir do processo (= diretório do projeto quando
+     *     rodando via `./gradlew bootRun`).
+     */
+    private fun openCredentials(): InputStream {
+        val path = credentialsPath.trim()
+
+        if (path.startsWith("~")) {
+            val home = System.getProperty("user.home")
+            val expanded = home + path.substring(1)
+            return FileInputStream(expanded)
+        }
+
+        if (path.contains(":") && !path.startsWith("/")) {
+            // Prefixos Spring: classpath:, file:, http:, etc.
+            val resource = resourceLoader.getResource(path)
+            if (!resource.exists()) {
+                throw java.io.FileNotFoundException("Resource not found: $path")
+            }
+            return resource.inputStream
+        }
+
+        // Caminho plano: pode ser absoluto ou relativo ao working dir.
+        val file = Paths.get(path).toFile()
+        if (!file.isAbsolute) {
+            val workingDir = System.getProperty("user.dir")
+            val resolved = Paths.get(workingDir, path).toFile()
+            return FileInputStream(resolved)
+        }
+        return FileInputStream(file)
     }
 
     /**

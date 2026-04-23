@@ -62,10 +62,14 @@ google:
 
 loobby:
   notifications:
-    # Caminho absoluto para o service account JSON do Firebase.
-    # Em dev: coloque o arquivo fora do repo (ex: ~/secrets/loobby-fcm.json)
-    # Em prod: injete via variável de ambiente FIREBASE_CREDENTIALS_PATH
-    firebase-credentials-path: ${FIREBASE_CREDENTIALS_PATH:/secrets/loobby-fcm.json}
+    # Caminho para o service account JSON do Firebase.
+    # Aceita: caminhos absolutos, relativos (resolvidos a partir do working dir onde
+    # o Spring Boot roda, normalmente o diretório do projeto), `~/...` ou prefixos
+    # Spring (`classpath:`, `file:`, etc.).
+    # Em dev: salve em `secrets/loobby-fcm.json` dentro do projeto (adicione a pasta
+    # ao .gitignore) ou em `~/secrets/loobby-fcm.json` fora do repo.
+    # Em prod: injete o caminho via variável de ambiente FIREBASE_CREDENTIALS_PATH.
+    firebase-credentials-path: ${FIREBASE_CREDENTIALS_PATH:secrets/loobby-fcm.json}
     # Se false, NotificationService loga mas não envia (útil para testes locais sem Firebase)
     enabled: ${NOTIFICATIONS_ENABLED:true}
     # Timezone para jobs diários e cálculo de "hoje"
