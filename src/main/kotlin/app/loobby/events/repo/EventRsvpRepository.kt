@@ -30,4 +30,10 @@ interface EventRsvpRepository : JpaRepository<EventRsvpEntity, EventRsvpId> {
     fun findByEventIdInAndUserId(eventIds: Collection<UUID>, userId: UUID): List<EventRsvpEntity>
 
     fun findByEventIdInAndStatus(eventIds: Collection<UUID>, status: RsvpStatus): List<EventRsvpEntity>
+
+    /** Usado pelo job de pagamento pendente: busca RSVPs confirmados e não pagos em eventos futuros. */
+    fun findByEventIdInAndStatusAndIsPaidFalse(
+        eventIds: Collection<UUID>,
+        status: RsvpStatus
+    ): List<EventRsvpEntity>
 }

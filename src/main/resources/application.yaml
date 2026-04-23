@@ -59,6 +59,25 @@ app:
 google:
   client-id: ${GOOGLE_CLIENT_ID}
 
+loobby:
+  notifications:
+    # Caminho absoluto para o service account JSON do Firebase.
+    # Em dev: coloque o arquivo fora do repo (ex: ~/secrets/loobby-fcm.json)
+    # Em prod: injete via variável de ambiente FIREBASE_CREDENTIALS_PATH
+    firebase-credentials-path: ${FIREBASE_CREDENTIALS_PATH:/secrets/loobby-fcm.json}
+    # Se false, NotificationService loga mas não envia (útil para testes locais sem Firebase)
+    enabled: ${NOTIFICATIONS_ENABLED:true}
+    # Timezone para jobs diários e cálculo de "hoje"
+    timezone: America/Sao_Paulo
+    # Horas de antecedência para lembrete de evento
+    reminder-hours-before: 4
+    # Horário do job diário matinal (8h da manhã em America/Sao_Paulo)
+    daily-job-cron: "0 0 8 * * *"
+    # Granularidade do job de lembrete (a cada 15 min)
+    reminder-job-cron: "0 */15 * * * *"
+    # Debounce para agrupamento de RSVP_CONFIRMED_BY_PEER (em minutos)
+    rsvp-peer-debounce-minutes: 15
+
 logging:
   level:
     root: INFO

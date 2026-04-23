@@ -42,6 +42,9 @@ dependencies {
 
 	implementation("com.google.api-client:google-api-client:2.7.0")
 
+	// Push notifications — Firebase Admin SDK (FCM)
+	implementation("com.google.firebase:firebase-admin:9.3.0")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")

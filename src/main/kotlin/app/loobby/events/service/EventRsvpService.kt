@@ -3,9 +3,11 @@ package app.loobby.events.service
 import app.loobby.events.dto.EventRsvpResponse
 import app.loobby.events.dto.UpsertRsvpRequest
 import app.loobby.events.model.EventRsvpEntity
+import app.loobby.events.model.RsvpStatus
 import app.loobby.events.repo.EventRepository
 import app.loobby.events.repo.EventRsvpRepository
 import app.loobby.groups.repo.GroupMemberRepository
+import app.loobby.notifications.service.NotificationService
 import app.loobby.users.repo.UsersRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,7 +18,8 @@ class EventRsvpService(
     private val eventRepository: EventRepository,
     private val eventRsvpRepository: EventRsvpRepository,
     private val usersRepository: UsersRepository,
-    private val groupMemberRepository: GroupMemberRepository
+    private val groupMemberRepository: GroupMemberRepository,
+    private val notificationService: NotificationService
 ) {
 
     @Transactional
@@ -33,6 +36,7 @@ class EventRsvpService(
         }
 
         val existing = eventRsvpRepository.findByEventIdAndUserId(eventId, userId)
+        val previousStatus = existing?.status
 
         val saved = if (existing == null) {
             eventRsvpRepository.save(
@@ -51,6 +55,11 @@ class EventRsvpService(
             }
             existing.obs = req.obs
             eventRsvpRepository.save(existing)
+        }
+
+        // Notificação Caso 1: dispara somente em transição → YES (nova ou mudando de MAYBE/NO/RESERVE)
+        if (saved.status == RsvpStatus.YES && previousStatus != RsvpStatus.YES) {
+            notificationService.onRsvpConfirmed(event, userId)
         }
 
         val user = usersRepository.findById(userId)

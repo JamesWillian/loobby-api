@@ -14,4 +14,7 @@ interface EventRepository : JpaRepository<EventEntity, UUID> {
     fun existsByInviteCode(inviteCode: String): Boolean
 
     fun findByInviteCode(inviteCode: String): EventEntity?
+
+    /** Usado pelos jobs de notificação para buscar eventos com início em uma janela. */
+    fun findByScheduledDatetimeBetween(start: Instant, end: Instant): List<EventEntity>
 }

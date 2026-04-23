@@ -15,6 +15,7 @@ import app.loobby.events.repo.EventRsvpRepository
 import app.loobby.events.repo.GameplayEventRepository
 import app.loobby.events.repo.SportEventRepository
 import app.loobby.groups.repo.GroupRepository
+import app.loobby.notifications.service.NotificationService
 import app.loobby.users.repo.UsersRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
@@ -29,7 +30,8 @@ class EventService(
     private val gameplayEventRepository: GameplayEventRepository,
     private val sportEventRepository: SportEventRepository,
     private val eventRsvpRepository: EventRsvpRepository,
-    private val usersRepository: UsersRepository
+    private val usersRepository: UsersRepository,
+    private val notificationService: NotificationService
 ) {
 
     fun createGroupEvent(
@@ -83,6 +85,9 @@ class EventService(
             }
             else -> {}
         }
+
+        // Caso 5: notifica todos os membros do grupo (exceto o criador)
+        notificationService.onGroupEventCreated(event, ownerId)
 
         return buildResponse(event)
     }
