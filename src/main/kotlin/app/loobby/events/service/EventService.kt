@@ -192,6 +192,34 @@ class EventService(
         )
     }
 
+    // ========================= getByInviteCode =========================
+
+    /**
+     * Busca um evento pelo invite code.
+     * Retorna o evento com o rsvpStatus do usuário autenticado,
+     * seguindo a mesma convenção de getEventById.
+     */
+    fun getByInviteCode(code: String, userId: UUID): EventResponse {
+        val event = eventRepository.findByInviteCode(code)
+            ?: throw IllegalStateException("Invalid Invite Code")
+
+        val rsvpStatus = eventRsvpRepository
+            .findByEventIdAndUserId(event.id, userId)
+            ?.status
+
+        val yesRsvps = eventRsvpRepository.findByEventIdInAndStatus(listOf(event.id), RsvpStatus.YES)
+        val userIds = yesRsvps.take(5).map { it.userId }.toSet()
+        val usersById = usersRepository.findAllById(userIds).associateBy { it.id }
+        val avatars = yesRsvps.take(5).map { usersById[it.userId]?.avatarUrl }.takeIf { it.isNotEmpty() }
+
+        return buildResponse(
+            event = event,
+            rsvpStatus = rsvpStatus,
+            confirmedCount = yesRsvps.size,
+            confirmedAvatars = avatars
+        )
+    }
+
     // ========================= updateEvent =========================
 
     /**

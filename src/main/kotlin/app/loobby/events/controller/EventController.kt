@@ -62,6 +62,16 @@ class EventController(
         return eventService.getEventById(eventId, userId)
     }
 
+    // Busca evento pelo invite code
+    @GetMapping("/events/invite/{code}")
+    fun getByCode(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable code: String
+    ): EventResponse {
+        val userId = UUID.fromString(jwt.subject)
+        return eventService.getByInviteCode(code.uppercase(), userId)
+    }
+
     // ----- UPDATE -----
 
     @PutMapping("/events/{eventId}")

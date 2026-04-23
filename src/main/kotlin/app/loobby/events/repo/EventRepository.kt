@@ -12,4 +12,6 @@ interface EventRepository : JpaRepository<EventEntity, UUID> {
     fun findByGroupIdOrderByScheduledDatetimeAsc(groupId: UUID): List<EventEntity>
 
     fun existsByInviteCode(inviteCode: String): Boolean
+
+    fun findByInviteCode(inviteCode: String): EventEntity?
 }
