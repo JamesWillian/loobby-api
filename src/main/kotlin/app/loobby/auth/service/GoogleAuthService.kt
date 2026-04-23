@@ -20,7 +20,7 @@ class GoogleAuthService(
     private val authService: AuthService,
     private val usersRepository: UsersRepository,
     private val googleCredentialsRepository: UserGoogleCredentialsRepository,
-    @Value("\${google.client-id}") private val googleClientId: String
+    @Value("\${google.client-ids}") private val googleClientIds: List<String>
 ) {
 
     fun loginOrRegister(idToken: String): AuthResponse {
@@ -74,7 +74,7 @@ class GoogleAuthService(
 
     private fun verifyToken(idToken: String): GoogleIdToken.Payload {
         val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory())
-            .setAudience(listOf(googleClientId))
+            .setAudience(googleClientIds)
             .build()
 
         return verifier.verify(idToken)?.payload
