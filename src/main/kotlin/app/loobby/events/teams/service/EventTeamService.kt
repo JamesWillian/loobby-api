@@ -207,7 +207,8 @@ class EventTeamService(
     /**
      * Gera times automaticamente:
      * - Usa apenas RSVPs YES como jogadores distribuídos em times numéricos.
-     * - RSVPs RESERVE vão para um time "Reserva" (se existirem).
+     * - RSVPs RESERVE vão para um time "Reserva" quando [AutoGenerateTeamsRequest.includeReserves] for true.
+     * - Usuários deletados (username vazio) são ignorados.
      * - Apaga times existentes do evento antes de gerar novos.
      */
     @Transactional
@@ -217,8 +218,27 @@ class EventTeamService(
 
         val rsvps = eventRsvpRepository.findByEventIdOrderByCreatedAtAsc(eventId)
 
-        val confirmedIds = rsvps.filter { it.status == RsvpStatus.YES }.map { it.userId }
-        val reserveIds = rsvps.filter { it.status == RsvpStatus.RESERVE }.map { it.userId }
+        // descarta usuarios deletados (username vazio) de qualquer geração
+        val rsvpUserIds = rsvps.map { it.userId }.toSet()
+        val activeUserIds = if (rsvpUserIds.isEmpty()) {
+            emptySet()
+        } else {
+            usersRepository.findAllById(rsvpUserIds)
+                .filter { it.username.isNotBlank() }
+                .map { it.id }
+                .toSet()
+        }
+
+        val confirmedIds = rsvps
+            .filter { it.status == RsvpStatus.YES && it.userId in activeUserIds }
+            .map { it.userId }
+        val reserveIds = if (req.includeReserves) {
+            rsvps
+                .filter { it.status == RsvpStatus.RESERVE && it.userId in activeUserIds }
+                .map { it.userId }
+        } else {
+            emptyList()
+        }
 
         // limpa times atuais do evento (cascade remove players)
         eventTeamRepository.deleteByEventId(eventId)
@@ -308,6 +328,8 @@ class EventTeamService(
         return teams.map { team ->
             val teamPlayers = playersByTeam[team.id].orEmpty().mapNotNull { tp ->
                 val user = usersById[tp.userId] ?: return@mapNotNull null
+                // ignora usuarios deletados (username vazio) na resposta
+                if (user.username.isBlank()) return@mapNotNull null
 
                 TeamPlayerResponse(
                     userId = user.id,
