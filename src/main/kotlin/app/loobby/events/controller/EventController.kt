@@ -123,4 +123,16 @@ class EventController(
         val userId = UUID.fromString(jwt.subject)
         return eventRsvpService.getMyRsvp(userId, eventId)
     }
+
+    // Remove a presença (RSVP) do usuário autenticado de um evento.
+    // Operação idempotente: 204 mesmo se o usuário não tinha RSVP.
+    @DeleteMapping("/events/{eventId}/rsvps/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteMyRsvp(
+        @AuthenticationPrincipal jwt: Jwt,
+        @PathVariable eventId: UUID
+    ) {
+        val userId = UUID.fromString(jwt.subject)
+        eventRsvpService.deleteMyRsvp(userId, eventId)
+    }
 }

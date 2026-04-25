@@ -131,4 +131,23 @@ class EventRsvpService(
             isOwner = (user.id == event.ownerId)
         )
     }
+
+    /**
+     * Remove a presença do usuário autenticado em um evento, apagando o registro
+     * de event_rsvps. Operação idempotente: se o usuário não tinha RSVP, não faz
+     * nada. Não há restrição por evento finalizado — o usuário pode "sair" de
+     * eventos passados também (ex.: limpar histórico).
+     */
+    @Transactional
+    fun deleteMyRsvp(userId: UUID, eventId: UUID) {
+        // Garante que o evento existe — assim devolvemos 404 quando o eventId é inválido
+        // em vez de simplesmente um 204 enganoso.
+        eventRepository.findById(eventId)
+            .orElseThrow { IllegalArgumentException("Event not found") }
+
+        val existing = eventRsvpRepository.findByEventIdAndUserId(eventId, userId)
+            ?: return // idempotente: nada a fazer
+
+        eventRsvpRepository.delete(existing)
+    }
 }
