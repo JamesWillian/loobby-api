@@ -10,11 +10,11 @@ group = "app.loobby"
 version = "0.0.1-SNAPSHOT"
 description = "Demo project for Spring Boot"
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(25)
-	}
-}
+//java {
+//	toolchain {
+//		languageVersion = JavaLanguageVersion.of(21)
+//	}
+//}
 
 repositories {
 	mavenCentral()
