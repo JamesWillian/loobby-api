@@ -12,6 +12,7 @@ import com.nimbusds.jwt.SignedJWT
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.jwt.JwtException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -115,6 +116,11 @@ class AuthService(
     // --------------------------------------
     // REGISTRO (UPGRADE DE ANÔNIMO)
     // --------------------------------------
+    // @Transactional garante atomicidade entre o save de UserEntity e
+    // UserCredentialsEntity — sem ele, se um falhasse o outro ficaria órfão.
+    // Também garante que a mutação `user.authProvider = 1` seja persistida
+    // (com `usersRepository.save(user)` explícito por clareza).
+    @Transactional
     fun register(userId: UUID, request: RegisterRequest): AuthResponse {
 
         val user = usersRepository.findById(userId)
@@ -135,6 +141,7 @@ class AuthService(
         ).apply { setRoles(listOf("USER")) }
 
         user.authProvider = 1
+        usersRepository.save(user)
         credentialsRepository.save(creds)
 
         return generateAuthResponseForUser(user)
@@ -143,6 +150,7 @@ class AuthService(
     // --------------------------------------
     // LOGIN
     // --------------------------------------
+    @Transactional
     fun login(request: LoginRequest): AuthResponse {
         val creds = credentialsRepository.findByEmail(request.email)
             ?: throw IllegalArgumentException("Invalid credentials")
@@ -153,6 +161,16 @@ class AuthService(
 
         val user = usersRepository.findById(creds.userId)
             .orElseThrow { IllegalArgumentException("User not found") }
+
+        // Self-heal: usuários registrados com a versão antiga de register()
+        // (que nunca persistia user.authProvider = 1) ficaram com authProvider=0
+        // no banco. Se chegamos aqui é porque existem credenciais EMAIL válidas
+        // pra esse user — corrige o flag pra que /users/me devolva
+        // isAnonymous=false na próxima chamada.
+        if (user.authProvider == 0) {
+            user.authProvider = 1
+            usersRepository.save(user)
+        }
 
         return generateAuthResponseForUser(user)
     }
