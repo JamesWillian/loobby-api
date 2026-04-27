@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="index, follow">
+    <title>Política de Privacidade — Loobby</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #ffffff;
+            --fg: #1a1a1a;
+            --muted: #5a5a5a;
+            --border: #e5e5e5;
+            --accent: #2563eb;
+            --table-head: #f5f5f5;
+            --code-bg: #f3f4f6;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1115;
+                --fg: #e7e7e7;
+                --muted: #a0a0a0;
+                --border: #2a2d34;
+                --accent: #60a5fa;
+                --table-head: #1a1d24;
+                --code-bg: #1a1d24;
+            }
+        }
+        * { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--fg);
+            background: var(--bg);
+        }
+        main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 32px 20px 80px;
+        }
+        h1 {
+            font-size: 28px;
+            line-height: 1.3;
+            margin: 0 0 8px;
+        }
+        h2 {
+            font-size: 20px;
+            line-height: 1.3;
+            margin: 40px 0 12px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+        h3 {
+            font-size: 17px;
+            line-height: 1.3;
+            margin: 28px 0 10px;
+        }
+        p, ul, ol { margin: 0 0 14px; }
+        ul, ol { padding-left: 22px; }
+        li { margin-bottom: 6px; }
+        a { color: var(--accent); text-decoration: underline; word-break: break-word; }
+        a:hover { text-decoration: none; }
+        strong { font-weight: 600; }
+        .updated {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 0 0 18px;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        th {
+            background: var(--table-head);
+            font-weight: 600;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+        code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+        @media (max-width: 480px) {
+            main { padding: 20px 16px 60px; }
+            h1 { font-size: 24px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 16px; }
+            body, p, li { font-size: 15px; }
+            table { font-size: 14px; }
+            th, td { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+<main>
+
+    <h1>Política de Privacidade — Loobby</h1>
+    <p class="updated"><strong>Última atualização:</strong> 27 de abril de 2026</p>
+
+    <h2>1. Quem somos</h2>
+    <p>O Loobby é desenvolvido e operado por <strong>James Willian Da Mata</strong>, pessoa física, atuando como desenvolvedor independente. Para todos os efeitos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — LGPD), atuo como <strong>controlador</strong> dos dados pessoais tratados pelo aplicativo Loobby.</p>
+    <p><strong>Contato:</strong> <a href="mailto:jammeswm@gmail.com">jammeswm@gmail.com</a></p>
+    <p>Esta política se aplica ao uso do aplicativo Loobby, disponível para Android e iOS, e descreve quais dados pessoais são coletados, como são utilizados, com quem são compartilhados, por quanto tempo são mantidos e quais são os seus direitos.</p>
+
+    <h2>2. Resumo rápido</h2>
+    <ul>
+        <li>Coletamos <strong>e-mail, senha (em hash), nome de usuário</strong> e, opcionalmente, <strong>nome de exibição e foto de perfil</strong>.</li>
+        <li>Se você usar o login com Google, recebemos do Google <strong>e-mail, nome, foto</strong> e um identificador único da conta.</li>
+        <li>Não coletamos <strong>localização</strong>, <strong>lista de contatos</strong>, <strong>dados de cartão</strong>, <strong>identificadores de publicidade</strong>, e não usamos ferramentas de <strong>analytics ou rastreamento</strong>.</li>
+        <li>Compartilhamos dados com poucos prestadores: <strong>Google</strong> (login e notificações), <strong>Resend</strong> (envio de e-mails), <strong>AWS</strong> e <strong>Supabase</strong> (hospedagem e banco de dados).</li>
+        <li>Você pode <strong>excluir sua conta a qualquer momento</strong> dentro do app. Seus dados pessoais são removidos imediatamente.</li>
+        <li>O Loobby é destinado a usuários de <strong>13 anos ou mais</strong>.</li>
+    </ul>
+
+    <h2>3. Dados que coletamos</h2>
+
+    <h3>3.1 Dados que você fornece</h3>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Dado</th><th>Quando é coletado</th><th>Obrigatório?</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>E-mail</td><td>Cadastro com e-mail e senha, ou login com Google</td><td>Sim</td></tr>
+                <tr><td>Senha (apenas em hash bcrypt)</td><td>Cadastro com e-mail e senha</td><td>Sim, se não usar Google</td></tr>
+                <tr><td>Nome de usuário (username)</td><td>Cadastro</td><td>Sim</td></tr>
+                <tr><td>Nome de exibição</td><td>Edição de perfil</td><td>Não</td></tr>
+                <tr><td>Foto de perfil</td><td>Edição de perfil</td><td>Não</td></tr>
+                <tr><td>Nome, descrição e imagem de capa de grupo</td><td>Ao criar um grupo</td><td>Conforme uso do app</td></tr>
+                <tr><td>Nome, descrição, data, local (texto livre) e preço por participante de evento</td><td>Ao criar um evento</td><td>Conforme uso do app</td></tr>
+                <tr><td>Observação no RSVP (até 255 caracteres)</td><td>Ao confirmar presença</td><td>Não</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>3.2 Dados recebidos de terceiros</h3>
+    <p>Se você optar por entrar com sua conta Google, recebemos do Google:</p>
+    <ul>
+        <li>Identificador único da conta Google</li>
+        <li>E-mail</li>
+        <li>Nome</li>
+        <li>URL da foto de perfil</li>
+    </ul>
+    <p>Esses dados são tratados conforme esta política e a <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de Privacidade do Google</a>.</p>
+
+    <h3>3.3 Dados técnicos</h3>
+    <ul>
+        <li><strong>Token de notificação push</strong> (Firebase Cloud Messaging) associado ao seu dispositivo, para envio de notificações sobre seus eventos.</li>
+        <li><strong>Estado da conexão de rede</strong> do dispositivo, usado apenas em memória para indicar se o app está online ou offline. Não é transmitido aos nossos servidores.</li>
+    </ul>
+
+    <h3>3.4 O que não coletamos</h3>
+    <p>Para evitar dúvidas, o Loobby <strong>não coleta</strong>:</p>
+    <ul>
+        <li>Localização (GPS ou aproximada)</li>
+        <li>Lista de contatos</li>
+        <li>Calendário</li>
+        <li>Microfone ou câmera (apenas seleção de imagem da galeria, quando você escolhe enviar uma foto de perfil)</li>
+        <li>Dados biométricos</li>
+        <li>Identificadores de publicidade (GAID/IDFA)</li>
+        <li>Dados de cartão de crédito ou bancários</li>
+        <li>Histórico de navegação</li>
+        <li>Métricas de uso, telemetria ou analytics</li>
+    </ul>
+
+    <h2>4. Para que usamos seus dados</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Finalidade</th><th>Dados utilizados</th><th>Base legal (LGPD)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Criar e manter sua conta</td><td>E-mail, senha (hash), username, ID Google</td><td>Execução de contrato (art. 7º, V)</td></tr>
+                <tr><td>Verificar seu e-mail e permitir reset de senha</td><td>E-mail, tokens temporários</td><td>Execução de contrato + segurança</td></tr>
+                <tr><td>Permitir que você crie e participe de grupos e eventos</td><td>Nome de exibição, foto, conteúdo de grupos, eventos e RSVPs</td><td>Execução de contrato</td></tr>
+                <tr><td>Enviar notificações sobre seus eventos</td><td>Token de push (FCM)</td><td>Execução de contrato</td></tr>
+                <tr><td>Personalizar seu perfil (nome de exibição e foto)</td><td>Nome de exibição, foto</td><td>Consentimento (art. 7º, I)</td></tr>
+                <tr><td>Prevenir fraude, abuso e proteger contas</td><td>E-mail, hash de senha, dados de autenticação</td><td>Legítimo interesse (art. 7º, IX)</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Você pode revogar o consentimento para os dados opcionais a qualquer momento, removendo-os do seu perfil dentro do app.</p>
+
+    <h2>5. Com quem compartilhamos seus dados</h2>
+    <p>Não vendemos seus dados. Compartilhamos apenas com prestadores de serviço estritamente necessários para o funcionamento do app, que atuam como <strong>operadores</strong> dos dados sob contrato:</p>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Prestador</th><th>Finalidade</th><th>Dados compartilhados</th><th>Onde processa</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Google (Firebase Cloud Messaging)</strong></td><td>Entrega de notificações push</td><td>Token de push do dispositivo, conteúdo da notificação</td><td>EUA / global</td></tr>
+                <tr><td><strong>Google (Sign-In)</strong></td><td>Autenticação via conta Google</td><td>Verificação de token Google</td><td>EUA / global</td></tr>
+                <tr><td><strong>Resend</strong></td><td>Envio de e-mails de verificação e recuperação de senha</td><td>Seu e-mail, conteúdo da mensagem</td><td>EUA</td></tr>
+                <tr><td><strong>Amazon Web Services (AWS)</strong></td><td>Hospedagem do servidor backend</td><td>Todos os dados processados pelo app</td><td>Brasil (São Paulo, sa-east-1)</td></tr>
+                <tr><td><strong>Supabase</strong></td><td>Banco de dados gerenciado</td><td>Todos os dados de conta e conteúdo</td><td>Brasil (São Paulo, sa-east-1)</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Cada prestador é regido pela sua própria política de privacidade:</p>
+    <ul>
+        <li>Google: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">https://policies.google.com/privacy</a></li>
+        <li>Resend: <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">https://resend.com/legal/privacy-policy</a></li>
+        <li>AWS: <a href="https://aws.amazon.com/privacy/" target="_blank" rel="noopener">https://aws.amazon.com/privacy/</a></li>
+        <li>Supabase: <a href="https://supabase.com/privacy" target="_blank" rel="noopener">https://supabase.com/privacy</a></li>
+    </ul>
+
+    <h3>5.1 Transferência internacional</h3>
+    <p>O backend e o banco de dados ficam no Brasil. Porém, <strong>Google e Resend operam globalmente</strong> e podem processar dados em servidores fora do Brasil. Essa transferência ocorre com base nas garantias contratuais oferecidas por esses provedores, conforme art. 33 da LGPD.</p>
+
+    <h2>6. Por quanto tempo guardamos seus dados</h2>
+    <ul>
+        <li><strong>Conta ativa:</strong> enquanto você mantiver sua conta no Loobby.</li>
+        <li><strong>Após exclusão da conta</strong> (a partir do menu de configurações no app):
+            <ul>
+                <li><strong>Removidos imediatamente:</strong> e-mail, senha (hash), tokens de autenticação, identificador Google e tokens de push.</li>
+                <li><strong>Anonimizados:</strong> seu registro de usuário tem o nome de usuário esvaziado, o nome de exibição substituído por "[deleted]" e a foto removida. Isso preserva a integridade dos eventos e grupos dos quais você participou, sem permitir sua identificação.</li>
+                <li><strong>Conteúdo associado:</strong> grupos e eventos dos quais você era proprietário são transferidos para outro participante ou apagados, conforme a regra do app. Observações em RSVPs são apagadas.</li>
+            </ul>
+        </li>
+        <li><strong>Logs do servidor:</strong> não armazenam dados pessoais identificáveis.</li>
+        <li><strong>Backups:</strong> o aplicativo atualmente não realiza backups automatizados separados; os dados existem apenas no banco de produção.</li>
+    </ul>
+
+    <h2>7. Segurança</h2>
+    <p>Aplicamos as seguintes medidas técnicas:</p>
+    <ul>
+        <li><strong>Tráfego em trânsito:</strong> todas as comunicações entre o app e o servidor utilizam <strong>HTTPS</strong>.</li>
+        <li><strong>Senhas:</strong> armazenadas apenas em forma de hash criptográfico <strong>bcrypt</strong>. Sua senha em texto puro nunca é guardada.</li>
+        <li><strong>Banco de dados:</strong> o Supabase aplica criptografia em repouso (AES-256) ao banco PostgreSQL.</li>
+        <li><strong>Tokens locais:</strong> no Android, os tokens de autenticação ficam em armazenamento criptografado (<code>EncryptedSharedPreferences</code>).</li>
+        <li><strong>Autenticação:</strong> tokens de acesso de curta duração (15 minutos) e de refresh (15 dias).</li>
+    </ul>
+    <p>Nenhum sistema é 100% seguro. Em caso de incidente de segurança que afete dados pessoais, comunicaremos os titulares afetados e a Autoridade Nacional de Proteção de Dados (ANPD) nos prazos exigidos pela LGPD.</p>
+
+    <h2>8. Seus direitos</h2>
+    <p>Como titular dos dados, você pode, a qualquer momento, exercer os direitos previstos no art. 18 da LGPD:</p>
+    <ul>
+        <li><strong>Confirmação</strong> de que tratamos seus dados.</li>
+        <li><strong>Acesso</strong> aos seus dados.</li>
+        <li><strong>Correção</strong> de dados incompletos, inexatos ou desatualizados.</li>
+        <li><strong>Anonimização, bloqueio ou eliminação</strong> de dados desnecessários ou tratados em desconformidade.</li>
+        <li><strong>Portabilidade</strong> dos seus dados a outro fornecedor.</li>
+        <li><strong>Eliminação</strong> dos dados tratados com base em consentimento.</li>
+        <li><strong>Informação</strong> sobre as entidades com as quais compartilhamos seus dados.</li>
+        <li><strong>Revogação do consentimento</strong>.</li>
+    </ul>
+    <p><strong>Como exercer:</strong> envie um e-mail para <a href="mailto:jammeswm@gmail.com">jammeswm@gmail.com</a> com o assunto "LGPD — [direito desejado]". Responderemos em até <strong>15 dias</strong>, conforme prazo da LGPD.</p>
+    <p>A exclusão da conta também pode ser feita diretamente no app, em <strong>Configurações → Excluir conta</strong>.</p>
+
+    <h2>9. Menores de idade</h2>
+    <p>O Loobby é destinado a usuários com <strong>13 anos ou mais</strong>. Ao criar uma conta, o usuário declara possuir pelo menos essa idade. Não realizamos verificação ativa de idade.</p>
+    <p>Caso identifiquemos uma conta pertencente a uma criança menor de 13 anos, ela será removida. Se você é responsável por uma criança e acredita que ela criou uma conta no Loobby, entre em contato pelo e-mail acima e providenciaremos a remoção.</p>
+
+    <h2>10. Cookies, rastreadores e publicidade</h2>
+    <p>O aplicativo Loobby <strong>não utiliza cookies, rastreadores de terceiros nem identificadores de publicidade</strong>. Não exibimos anúncios e não recebemos remuneração de anunciantes.</p>
+
+    <h2>11. Alterações nesta política</h2>
+    <p>Podemos atualizar esta política para refletir mudanças no aplicativo, novos prestadores de serviço ou requisitos legais. Quando a alteração for relevante, avisaremos com destaque dentro do app ou por e-mail antes que ela entre em vigor.</p>
+    <p>A data da última atualização aparece no topo deste documento.</p>
+
+    <h2>12. Contato</h2>
+    <p>Dúvidas, solicitações de exercício de direitos ou denúncias relacionadas à privacidade:</p>
+    <p><strong>E-mail:</strong> <a href="mailto:jammeswm@gmail.com">jammeswm@gmail.com</a></p>
+    <p>Você também pode registrar uma reclamação junto à <strong>Autoridade Nacional de Proteção de Dados (ANPD)</strong>: <a href="https://www.gov.br/anpd" target="_blank" rel="noopener">https://www.gov.br/anpd</a></p>
+
+</main>
+</body>
+</html>
