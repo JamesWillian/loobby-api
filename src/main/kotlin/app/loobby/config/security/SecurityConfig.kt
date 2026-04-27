@@ -37,6 +37,9 @@ class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/auth/reset-password").permitAll()
                     .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
 
+                    // documentos legais públicos (Política de Privacidade, Termos)
+                    .requestMatchers(HttpMethod.GET, "/legal/**").permitAll()
+
                     // register: precisa estar logado (anônimo ou real)
                     .requestMatchers(HttpMethod.POST, "/auth/register").authenticated()
 
