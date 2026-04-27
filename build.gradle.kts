@@ -1,8 +1,8 @@
 plugins {
 	kotlin("jvm") version "2.3.10"
 	kotlin("plugin.spring") version "2.3.10"
-    kotlin("plugin.jpa") version "2.1.20"
-	id("org.springframework.boot") version "4.1.0-SNAPSHOT"
+    kotlin("plugin.jpa") version "2.3.10"
+	id("org.springframework.boot") version "3.5.6"
 	id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -10,15 +10,8 @@ group = "app.loobby"
 version = "0.0.1-SNAPSHOT"
 description = "Demo project for Spring Boot"
 
-//java {
-//	toolchain {
-//		languageVersion = JavaLanguageVersion.of(21)
-//	}
-//}
-
 repositories {
 	mavenCentral()
-	maven { url = uri("https://repo.spring.io/snapshot") }
 }
 
 dependencies {

@@ -38,3 +38,30 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### macOS ###
+.DS_Store
+
+### Secrets / credenciais — NUNCA commitar ###
+# Service account JSON do Firebase, chaves privadas, etc.
+secrets/
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+loobby-fcm.json
+google-credentials.json
+
+### Variáveis de ambiente locais ###
+.env
+.env.*
+!.env.example
+
+### Configs de produção ###
+application-prod.yml
+application-prod.yaml
+application-prod.properties
+
+### Uploads locais (em produção usa volume/cloud storage) ###
+uploads/
