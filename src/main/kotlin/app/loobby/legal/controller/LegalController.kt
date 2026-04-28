@@ -20,13 +20,19 @@ import java.util.concurrent.TimeUnit
 class LegalController {
 
     private val privacyHtml: String by lazy { readResource("legal/privacy.html") }
+    private val accountDeletionHtml: String by lazy { readResource("legal/account-deletion.html") }
 
     @GetMapping("/privacy", produces = [MediaType.TEXT_HTML_VALUE])
-    fun privacy(): ResponseEntity<String> =
+    fun privacy(): ResponseEntity<String> = htmlResponse(privacyHtml)
+
+    @GetMapping("/account-deletion", produces = [MediaType.TEXT_HTML_VALUE])
+    fun accountDeletion(): ResponseEntity<String> = htmlResponse(accountDeletionHtml)
+
+    private fun htmlResponse(body: String): ResponseEntity<String> =
         ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/html;charset=UTF-8"))
             .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS).cachePublic())
-            .body(privacyHtml)
+            .body(body)
 
     private fun readResource(path: String): String =
         ClassPathResource(path).inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
