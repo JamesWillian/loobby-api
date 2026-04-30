@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="index, follow">
+    <title>Padrões de Segurança Infantil — Loobby</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #ffffff;
+            --fg: #1a1a1a;
+            --muted: #5a5a5a;
+            --border: #e5e5e5;
+            --accent: #2563eb;
+            --table-head: #f5f5f5;
+            --code-bg: #f3f4f6;
+            --callout-bg: #f8fafc;
+            --warn-bg: #fef2f2;
+            --warn-border: #fecaca;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1115;
+                --fg: #e7e7e7;
+                --muted: #a0a0a0;
+                --border: #2a2d34;
+                --accent: #60a5fa;
+                --table-head: #1a1d24;
+                --code-bg: #1a1d24;
+                --callout-bg: #161922;
+                --warn-bg: #2a1414;
+                --warn-border: #7f1d1d;
+            }
+        }
+        * { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--fg);
+            background: var(--bg);
+        }
+        main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 32px 20px 80px;
+        }
+        h1 {
+            font-size: 28px;
+            line-height: 1.3;
+            margin: 0 0 8px;
+        }
+        h2 {
+            font-size: 20px;
+            line-height: 1.3;
+            margin: 40px 0 12px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+        h3 {
+            font-size: 17px;
+            line-height: 1.3;
+            margin: 28px 0 10px;
+        }
+        p, ul, ol { margin: 0 0 14px; }
+        ul, ol { padding-left: 22px; }
+        li { margin-bottom: 6px; }
+        a { color: var(--accent); text-decoration: underline; word-break: break-word; }
+        a:hover { text-decoration: none; }
+        strong { font-weight: 600; }
+        .updated {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .callout {
+            background: var(--callout-bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 6px;
+            padding: 16px 18px;
+            margin: 20px 0;
+        }
+        .callout p:last-child { margin-bottom: 0; }
+        .warn {
+            background: var(--warn-bg);
+            border: 1px solid var(--warn-border);
+            border-left: 4px solid #dc2626;
+            border-radius: 6px;
+            padding: 16px 18px;
+            margin: 20px 0;
+        }
+        .warn p:last-child { margin-bottom: 0; }
+        @media (max-width: 480px) {
+            main { padding: 20px 16px 60px; }
+            h1 { font-size: 24px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 16px; }
+            body, p, li { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+<main>
+
+    <h1>Padrões de Segurança Infantil — Loobby</h1>
+    <p class="updated"><strong>Última atualização:</strong> 27 de abril de 2026</p>
+
+    <p>Esta página descreve o compromisso do Loobby com a proteção de crianças e adolescentes, como prevenimos a presença de material de abuso sexual infantil (CSAM) e exploração infantil (CSAE) no aplicativo, e como qualquer pessoa pode denunciar conteúdo inapropriado.</p>
+
+    <div class="warn">
+        <p><strong>Tolerância zero.</strong> O Loobby <strong>não tolera</strong>, em nenhuma hipótese, qualquer forma de abuso, exploração ou conteúdo sexual envolvendo crianças e adolescentes. Toda denúncia recebida é tratada com prioridade máxima e cooperamos integralmente com as autoridades competentes.</p>
+    </div>
+
+    <h2>1. Compromisso e escopo</h2>
+    <p>O Loobby é destinado a usuários com <strong>13 anos ou mais</strong>. Não permitimos:</p>
+    <ul>
+        <li>Material de abuso sexual infantil (CSAM) em qualquer forma — imagens, vídeos, textos, áudios ou referências.</li>
+        <li>Exploração sexual infantil (CSAE), incluindo aliciamento (<em>grooming</em>), sextorsão e qualquer tentativa de contato sexual com menores.</li>
+        <li>Conteúdo que sexualize ou objetifique crianças e adolescentes, mesmo que de forma estilizada, ficcional ou implícita.</li>
+        <li>Compartilhamento de informações pessoais de menores que possam expô-los a riscos.</li>
+        <li>Qualquer comportamento que coloque crianças e adolescentes em situação de perigo, dentro ou fora do app.</li>
+    </ul>
+    <p>Esses princípios se aplicam a todo conteúdo gerado pelos usuários: nomes e imagens de perfil, nomes e descrições de grupos e eventos, imagens de capa, e o campo de observação dos RSVPs.</p>
+
+    <h2>2. Como denunciar</h2>
+    <p>Se você se deparou com conteúdo, comportamento ou suspeita relacionada a abuso ou exploração infantil no Loobby, há vários caminhos:</p>
+
+    <h3>2.1 Pelo próprio aplicativo</h3>
+    <p>Acesse a aba <strong>Perfil</strong> e toque em <strong>"Denunciar/Reportar Conteúdo Inapropriado"</strong>. O aplicativo abre um e-mail pré-preenchido para o nosso canal de segurança.</p>
+
+    <h3>2.2 Por e-mail</h3>
+    <div class="callout">
+        <p><strong>Para:</strong> <a href="mailto:jammeswm@gmail.com?subject=Den%C3%BAncia%20de%20Conte%C3%BAdo%20Inapropriado%20no%20App">jammeswm@gmail.com</a></p>
+        <p><strong>Assunto:</strong> Denúncia de Conteúdo Inapropriado no App</p>
+        <p><strong>Inclua, se possível:</strong></p>
+        <ul>
+            <li>Descrição do conteúdo ou comportamento.</li>
+            <li>Identificação da conta, grupo ou evento envolvido (nome de usuário, nome do grupo, etc.).</li>
+            <li>Data e horário aproximados.</li>
+            <li>Capturas de tela, se houver — sem reproduzir o conteúdo abusivo em si.</li>
+        </ul>
+        <p>Você não precisa se identificar para denunciar. Tratamos a denúncia com confidencialidade.</p>
+    </div>
+
+    <h3>2.3 Diretamente às autoridades</h3>
+    <p>Em situações graves ou urgentes, recomendamos que você também denuncie diretamente aos canais oficiais:</p>
+    <ul>
+        <li><strong>SaferNet Brasil</strong> — denúncia online de crimes contra crianças e adolescentes na internet: <a href="https://new.safernet.org.br/denuncie" target="_blank" rel="noopener">https://new.safernet.org.br/denuncie</a></li>
+        <li><strong>Disque 100</strong> — Disque Direitos Humanos, do Ministério dos Direitos Humanos e da Cidadania. Funciona 24 horas por dia. Ligue <strong>100</strong> de qualquer telefone no Brasil.</li>
+        <li><strong>Polícia Federal</strong> — para crimes cibernéticos, registro de ocorrência online: <a href="https://www.gov.br/pf" target="_blank" rel="noopener">https://www.gov.br/pf</a></li>
+        <li><strong>Polícia Civil</strong> do seu estado — em situações de risco imediato, ligue <strong>190</strong>.</li>
+    </ul>
+
+    <h2>3. Como tratamos denúncias</h2>
+    <p>Quando recebemos uma denúncia, seguimos o seguinte processo:</p>
+    <ol>
+        <li><strong>Triagem em até 48 horas úteis.</strong> O conteúdo ou conta denunciada é avaliada com base nesta política.</li>
+        <li><strong>Ação imediata em casos confirmados.</strong> Se a denúncia se confirma, removemos o conteúdo, suspendemos ou banimos as contas envolvidas e preservamos evidências (logs, conteúdo, identificadores) para eventual cooperação com autoridades.</li>
+        <li><strong>Reporte às autoridades.</strong> Em casos envolvendo CSAM ou exploração infantil, comunicamos as autoridades competentes — SaferNet, Polícia Federal e/ou Ministério Público — em conformidade com a legislação brasileira.</li>
+        <li><strong>Resposta ao denunciante.</strong> Sempre que houver canal de retorno, confirmamos o recebimento e informamos o desfecho geral, sem expor dados de terceiros.</li>
+        <li><strong>Revisão contínua.</strong> Padrões e processos são revisados periodicamente para incorporar novas práticas recomendadas e responder a ameaças emergentes.</li>
+    </ol>
+
+    <h2>4. Prevenção</h2>
+    <p>Embora o Loobby seja um app pequeno, operado por desenvolvedor independente e usado em grupos privados de amigos, adotamos as seguintes medidas preventivas:</p>
+    <ul>
+        <li><strong>Idade mínima declarada de 13 anos.</strong> Ao se cadastrar, o usuário declara ter pelo menos 13 anos.</li>
+        <li><strong>Grupos fechados.</strong> O app é estruturado em grupos privados, com participação por convite. Não há feed público nem descoberta de estranhos.</li>
+        <li><strong>Sem mensagens privadas anônimas.</strong> O Loobby não tem chat aberto entre estranhos. As interações ocorrem dentro de grupos onde os participantes se conhecem.</li>
+        <li><strong>Banimento de contas.</strong> Contas envolvidas em violações desta política são suspensas ou removidas, e o e-mail/identificador é bloqueado para novos cadastros sempre que tecnicamente viável.</li>
+    </ul>
+
+    <h2>5. Leis e referências aplicáveis</h2>
+    <p>O Loobby observa, no Brasil, as seguintes normas:</p>
+    <ul>
+        <li><strong>Estatuto da Criança e do Adolescente (ECA, Lei nº 8.069/1990)</strong> — em especial os artigos 240 a 241-E, que tipificam a produção, divulgação, posse e aliciamento de crianças e adolescentes para fins sexuais.</li>
+        <li><strong>Lei nº 14.811/2024</strong> — institui medidas de proteção de crianças e adolescentes contra violência em ambientes escolares e sociais, incluindo o ambiente digital.</li>
+        <li><strong>Marco Civil da Internet (Lei nº 12.965/2014)</strong> — define obrigações de provedores de aplicação no tratamento de denúncias e na cooperação com autoridades.</li>
+        <li><strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018)</strong> — em especial o art. 14, sobre o tratamento de dados de crianças e adolescentes.</li>
+        <li><strong>Código Penal Brasileiro</strong> — tipos penais aplicáveis a crimes contra a dignidade sexual.</li>
+    </ul>
+    <p>Cooperamos integralmente com solicitações legais de autoridades brasileiras competentes, mediante apresentação dos documentos cabíveis.</p>
+
+    <h2>6. Atualização</h2>
+    <p>Esta página pode ser atualizada para refletir mudanças no aplicativo, em práticas de segurança ou em requisitos legais. A data da última atualização aparece no topo deste documento.</p>
+
+    <h2>7. Contato</h2>
+    <p>Ponto de contato designado para questões de segurança infantil, prevenção de CSAM e cooperação com autoridades:</p>
+    <p><strong>E-mail:</strong> <a href="mailto:jammeswm@gmail.com">jammeswm@gmail.com</a></p>
+    <p>Responsável: <strong>James Willian Da Mata</strong>, desenvolvedor independente do Loobby.</p>
+
+</main>
+</body>
+</html>

@@ -21,12 +21,16 @@ class LegalController {
 
     private val privacyHtml: String by lazy { readResource("legal/privacy.html") }
     private val accountDeletionHtml: String by lazy { readResource("legal/account-deletion.html") }
+    private val childSafetyHtml: String by lazy { readResource("legal/child-safety.html") }
 
     @GetMapping("/privacy", produces = [MediaType.TEXT_HTML_VALUE])
     fun privacy(): ResponseEntity<String> = htmlResponse(privacyHtml)
 
     @GetMapping("/account-deletion", produces = [MediaType.TEXT_HTML_VALUE])
     fun accountDeletion(): ResponseEntity<String> = htmlResponse(accountDeletionHtml)
+
+    @GetMapping("/child-safety", produces = [MediaType.TEXT_HTML_VALUE])
+    fun childSafety(): ResponseEntity<String> = htmlResponse(childSafetyHtml)
 
     private fun htmlResponse(body: String): ResponseEntity<String> =
         ResponseEntity.ok()
