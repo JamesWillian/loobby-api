@@ -69,7 +69,7 @@ class AuthController(
     // -------------------------------
     @PostMapping("/google")
     fun loginWithGoogle(@RequestBody req: GoogleAuthRequest): AuthResponse {
-        return googleAuthService.loginOrRegister(req.idToken)
+        return googleAuthService.loginOrRegister(req.idToken, req.firebaseIdToken)
     }
 
     // -------------------------------

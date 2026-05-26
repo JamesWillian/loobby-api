@@ -28,6 +28,16 @@ open class EventRsvpEntity(
     @Column(name = "obs")
     var obs: String? = null,
 
+    /** Por onde essa confirmação entrou (app autenticado ou link público com OTP). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 20)
+    var source: RsvpSource = RsvpSource.APP,
+
+    /** Nível de confiança da identidade por trás da confirmação. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_level", nullable = false, length = 30)
+    var verificationLevel: RsvpVerificationLevel = RsvpVerificationLevel.APP_AUTHENTICATED,
+
     @Column(name = "created_at", insertable = false, updatable = false)
     var createdAt: Instant? = null
 
@@ -38,6 +48,8 @@ open class EventRsvpEntity(
         status = RsvpStatus.MAYBE,
         isPaid = false,
         obs = null,
+        source = RsvpSource.APP,
+        verificationLevel = RsvpVerificationLevel.APP_AUTHENTICATED,
         createdAt = null
     )
 }

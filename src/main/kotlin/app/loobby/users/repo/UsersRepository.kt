@@ -10,4 +10,7 @@ import java.util.UUID
 interface UsersRepository : JpaRepository<UserEntity, UUID> {
     fun findByUsername(username: String): UserEntity?
     fun existsByUsernameIgnoreCase(username: String): Boolean
+
+    /** Busca usuário pelo telefone em E.164 — chave do fluxo de confirmação por link/WhatsApp. */
+    fun findByPhoneE164(phoneE164: String): UserEntity?
 }

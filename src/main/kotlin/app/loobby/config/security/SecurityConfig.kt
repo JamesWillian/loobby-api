@@ -40,6 +40,13 @@ class SecurityConfig {
                     // documentos legais públicos (Política de Privacidade, Termos)
                     .requestMatchers(HttpMethod.GET, "/legal/**").permitAll()
 
+                    // RSVP via link público compartilhado (loobby.app/c/{token})
+                    // Autorização é feita pelo próprio token na URL — quem tem o
+                    // link tem permissão. Sem JWT.
+                    .requestMatchers("/public/**").permitAll()
+                    // Página HTML servida em /c/{token} para os convidados
+                    .requestMatchers(HttpMethod.GET, "/c/**").permitAll()
+
                     // register: precisa estar logado (anônimo ou real)
                     .requestMatchers(HttpMethod.POST, "/auth/register").authenticated()
 
