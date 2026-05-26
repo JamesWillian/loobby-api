@@ -18,7 +18,9 @@ import app.loobby.events.repo.EventRsvpPendingRepository
 import app.loobby.events.repo.EventRsvpRepository
 import app.loobby.users.model.UserEntity
 import app.loobby.users.repo.UsersRepository
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -55,6 +57,8 @@ class PublicRsvpService(
     @Value("\${loobby.public.pending-rsvp-ttl-hours:24}")
     private val pendingRsvpTtlHours: Long
 ) {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     // -------------------------------------------------------------------------
     // Read API
@@ -134,7 +138,6 @@ class PublicRsvpService(
         firebaseIdToken: String
     ): ConfirmConfirmationResponse {
         val token = resolveTokenOrThrow(rawToken)
-
         val verifiedPhone = verifyPhoneOrThrow(firebaseIdToken)
 
         val pending = pendingRepository.findById(pendingId)
@@ -144,34 +147,48 @@ class PublicRsvpService(
 
         validatePendingMatches(pending, token, verifiedPhone)
 
-        // Se enquanto isso alguém já confirmou (race), devolve idempotente.
-        val existingRsvp = rsvpRepository.findByEventIdAndUserId(
-            pending.eventId,
-            usersRepository.findByPhoneE164(verifiedPhone)?.id ?: UUID.randomUUID()
-        )
-        if (existingRsvp != null) {
-            pendingRepository.delete(pending)
-            val user = usersRepository.findByPhoneE164(verifiedPhone)!!
-            return ConfirmConfirmationResponse(
-                userId = user.id,
-                name = user.displayname ?: pending.displayName,
-                phone = verifiedPhone
-            )
-        }
-
         val user = findOrCreateLiteUser(verifiedPhone, pending.displayName)
 
-        rsvpRepository.save(
-            EventRsvpEntity(
-                eventId = pending.eventId,
-                userId = user.id,
-                status = RsvpStatus.YES,
-                isPaid = false,
-                obs = null,
-                source = RsvpSource.WEB_LINK,
-                verificationLevel = RsvpVerificationLevel.PHONE_VERIFIED
-            )
-        )
+        // Idempotência explícita: se já há RSVP para esse evento/usuário,
+        // devolve sucesso sem tentar reinserir.
+        val existingRsvp = rsvpRepository.findByEventIdAndUserId(pending.eventId, user.id)
+        if (existingRsvp == null) {
+            // Caminho normal: insere a RSVP. Capturamos
+            // DataIntegrityViolationException como rede de segurança contra
+            // races (duas chamadas /confirm chegando juntas) ou violação de
+            // check constraint do banco — nesse último caso, propagamos um
+            // 500 com mensagem clara em vez do 409 genérico do Spring.
+            try {
+                rsvpRepository.save(
+                    EventRsvpEntity(
+                        eventId = pending.eventId,
+                        userId = user.id,
+                        status = RsvpStatus.YES,
+                        isPaid = false,
+                        obs = null,
+                        source = RsvpSource.WEB_LINK,
+                        verificationLevel = RsvpVerificationLevel.PHONE_VERIFIED
+                    )
+                )
+            } catch (e: DataIntegrityViolationException) {
+                // Recheca se foi race condition (RSVP inserida em paralelo).
+                val recheck = rsvpRepository.findByEventIdAndUserId(pending.eventId, user.id)
+                if (recheck == null) {
+                    log.error(
+                        "RSVP insert failed and not present after recheck — " +
+                            "verifique check constraints em event_rsvps (source/verification_level) " +
+                            "e estado do banco. event={} user={}",
+                        pending.eventId, user.id, e
+                    )
+                    throw ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "não foi possível registrar a confirmação — contate o suporte"
+                    )
+                }
+                log.info("Race detectada na RSVP — tratando como idempotente. event={} user={}",
+                    pending.eventId, user.id)
+            }
+        }
 
         pendingRepository.delete(pending)
 
@@ -268,20 +285,39 @@ class PublicRsvpService(
      * Quando esse usuário eventualmente fizer signup no app com o mesmo
      * telefone, o [app.loobby.users.service.UserMergeService] mescla as
      * RSVPs e descarta o lite.
+     *
+     * Captura [DataIntegrityViolationException] como rede de segurança:
+     *  - Race condition entre duas chamadas /confirm criando o mesmo lite
+     *  - Colisão de `username` ou `phone_e164` por estado residual do banco
+     * Em qualquer um desses casos, refazemos o lookup. Se ainda assim não
+     * achar, logamos e propagamos um erro claro em vez do 409 genérico.
      */
     private fun findOrCreateLiteUser(phoneE164: String, displayName: String): UserEntity {
         usersRepository.findByPhoneE164(phoneE164)?.let { return it }
 
-        return usersRepository.save(
-            UserEntity(
-                id = UUID.randomUUID(),
-                username = generateLiteUsername(phoneE164),
-                displayname = displayName,
-                avatarUrl = null,
-                authProvider = 0,
-                phoneE164 = phoneE164
+        return try {
+            usersRepository.save(
+                UserEntity(
+                    id = UUID.randomUUID(),
+                    username = generateLiteUsername(phoneE164),
+                    displayname = displayName,
+                    avatarUrl = null,
+                    authProvider = 0,
+                    phoneE164 = phoneE164
+                )
             )
-        )
+        } catch (e: DataIntegrityViolationException) {
+            usersRepository.findByPhoneE164(phoneE164)?.let { return it }
+            log.error(
+                "Falha ao criar lite user e nada encontrado no recheck. " +
+                    "Possíveis causas: colisão de username='{}' ou estado inconsistente. phone={}",
+                generateLiteUsername(phoneE164), phoneE164, e
+            )
+            throw ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "não foi possível registrar — telefone em conflito no servidor"
+            )
+        }
     }
 
     /**
