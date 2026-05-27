@@ -38,13 +38,6 @@ dependencies {
 	// Push notifications — Firebase Admin SDK (FCM)
 	implementation("com.google.firebase:firebase-admin:9.3.0")
 
-	// Normalização e validação de telefones (E.164) — usado no fluxo de RSVP via link público
-	implementation("com.googlecode.libphonenumber:libphonenumber:8.13.50")
-
-	// Minificação de JavaScript ES6+ servido pelo backend (PublicWebController).
-	// Roda uma vez no boot (lazy), resultado cacheado em memória.
-	implementation("com.google.javascript:closure-compiler:v20240317")
-
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")

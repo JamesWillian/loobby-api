@@ -117,7 +117,7 @@
 <main>
 
     <h1>Política de Privacidade — Loobby</h1>
-    <p class="updated"><strong>Última atualização:</strong> 24 de maio de 2026</p>
+    <p class="updated"><strong>Última atualização:</strong> 27 de abril de 2026</p>
 
     <h2>1. Quem somos</h2>
     <p>O Loobby é desenvolvido e operado por <strong>James Willian Da Mata</strong>, pessoa física, atuando como desenvolvedor independente. Para todos os efeitos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — LGPD), atuo como <strong>controlador</strong> dos dados pessoais tratados pelo aplicativo Loobby.</p>
@@ -126,9 +126,8 @@
 
     <h2>2. Resumo rápido</h2>
     <ul>
-        <li>Coletamos <strong>e-mail, senha (em hash), nome de usuário</strong> e, opcionalmente, <strong>nome de exibição, foto de perfil e número de telefone</strong>.</li>
+        <li>Coletamos <strong>e-mail, senha (em hash), nome de usuário</strong> e, opcionalmente, <strong>nome de exibição e foto de perfil</strong>.</li>
         <li>Se você usar o login com Google, recebemos do Google <strong>e-mail, nome, foto</strong> e um identificador único da conta.</li>
-        <li>Em alguns casos, <strong>terceiros (anfitriões de eventos) podem informar o seu telefone</strong> ao confirmar a sua presença via link público compartilhado. Saiba mais na seção 3.5.</li>
         <li>Não coletamos <strong>localização</strong>, <strong>lista de contatos</strong>, <strong>dados de cartão</strong>, <strong>identificadores de publicidade</strong>, e não usamos ferramentas de <strong>analytics ou rastreamento</strong>.</li>
         <li>Compartilhamos dados com poucos prestadores: <strong>Google</strong> (login e notificações), <strong>Resend</strong> (envio de e-mails), <strong>AWS</strong> e <strong>Supabase</strong> (hospedagem e banco de dados).</li>
         <li>Você pode <strong>excluir sua conta a qualquer momento</strong> dentro do app. Seus dados pessoais são removidos imediatamente.</li>
@@ -149,7 +148,6 @@
                 <tr><td>Nome de usuário (username)</td><td>Cadastro</td><td>Sim</td></tr>
                 <tr><td>Nome de exibição</td><td>Edição de perfil</td><td>Não</td></tr>
                 <tr><td>Foto de perfil</td><td>Edição de perfil</td><td>Não</td></tr>
-                <tr><td>Número de telefone (formato E.164)</td><td>Cadastro opcional, confirmação de presença via link público, ou (quando habilitado) verificação por WhatsApp</td><td>Não</td></tr>
                 <tr><td>Nome, descrição e imagem de capa de grupo</td><td>Ao criar um grupo</td><td>Conforme uso do app</td></tr>
                 <tr><td>Nome, descrição, data, local (texto livre) e preço por participante de evento</td><td>Ao criar um evento</td><td>Conforme uso do app</td></tr>
                 <tr><td>Observação no RSVP (até 255 caracteres)</td><td>Ao confirmar presença</td><td>Não</td></tr>
@@ -173,20 +171,7 @@
         <li><strong>Estado da conexão de rede</strong> do dispositivo, usado apenas em memória para indicar se o app está online ou offline. Não é transmitido aos nossos servidores.</li>
     </ul>
 
-    <h3>3.4 Confirmação de presença via link público</h3>
-    <p>Anfitriões de eventos podem gerar um link público no Loobby (no formato <code>loobby.app/c/…</code>) e compartilhá-lo em grupos de mensagens (WhatsApp, etc.) para que convidados confirmem presença <strong>sem precisar baixar o aplicativo</strong>.</p>
-    <p>Como esse fluxo funciona:</p>
-    <ul>
-        <li>O convidado informa <strong>nome</strong> e <strong>telefone</strong> no formulário público.</li>
-        <li>O telefone é validado por <strong>OTP via SMS enviado pelo Firebase Authentication</strong> (Google) — só após o convidado digitar o código recebido a confirmação é gravada como válida.</li>
-        <li>Apenas o titular do telefone consegue completar o fluxo, já que precisa receber o SMS. Não é possível confirmar a presença de outra pessoa.</li>
-        <li>Os dados de nome+telefone enviados antes da confirmação por SMS ficam armazenados em uma tabela de pendentes por até 24h e são apagados automaticamente se o OTP não for concluído.</li>
-        <li>Não usamos esses dados para marketing, divulgação ou qualquer contato fora do contexto do evento em que você foi confirmado.</li>
-        <li>A qualquer momento você pode solicitar a remoção pelo e-mail de contato indicado na seção 12.</li>
-    </ul>
-    <p><strong>Base legal:</strong> execução de contrato entre o Loobby e o anfitrião, combinada com o consentimento do convidado manifestado pelo ato de receber e digitar o código SMS (art. 7º, V e I, LGPD).</p>
-
-    <h3>3.5 O que não coletamos</h3>
+    <h3>3.4 O que não coletamos</h3>
     <p>Para evitar dúvidas, o Loobby <strong>não coleta</strong>:</p>
     <ul>
         <li>Localização (GPS ou aproximada)</li>
@@ -210,9 +195,8 @@
                 <tr><td>Criar e manter sua conta</td><td>E-mail, senha (hash), username, ID Google</td><td>Execução de contrato (art. 7º, V)</td></tr>
                 <tr><td>Verificar seu e-mail e permitir reset de senha</td><td>E-mail, tokens temporários</td><td>Execução de contrato + segurança</td></tr>
                 <tr><td>Permitir que você crie e participe de grupos e eventos</td><td>Nome de exibição, foto, conteúdo de grupos, eventos e RSVPs</td><td>Execução de contrato</td></tr>
-                <tr><td>Identificar participantes em confirmações via link público</td><td>Telefone (E.164), nome</td><td>Execução de contrato + legítimo interesse (art. 7º, IX)</td></tr>
                 <tr><td>Enviar notificações sobre seus eventos</td><td>Token de push (FCM)</td><td>Execução de contrato</td></tr>
-                <tr><td>Personalizar seu perfil (nome de exibição, foto, telefone)</td><td>Nome de exibição, foto, telefone</td><td>Consentimento (art. 7º, I)</td></tr>
+                <tr><td>Personalizar seu perfil (nome de exibição e foto)</td><td>Nome de exibição, foto</td><td>Consentimento (art. 7º, I)</td></tr>
                 <tr><td>Prevenir fraude, abuso e proteger contas</td><td>E-mail, hash de senha, dados de autenticação</td><td>Legítimo interesse (art. 7º, IX)</td></tr>
             </tbody>
         </table>
@@ -228,7 +212,6 @@
             </thead>
             <tbody>
                 <tr><td><strong>Google (Firebase Cloud Messaging)</strong></td><td>Entrega de notificações push</td><td>Token de push do dispositivo, conteúdo da notificação</td><td>EUA / global</td></tr>
-                <tr><td><strong>Google (Firebase Authentication)</strong></td><td>Envio e validação de OTP por SMS para confirmação de presença e cadastro</td><td>Número de telefone</td><td>EUA / global</td></tr>
                 <tr><td><strong>Google (Sign-In)</strong></td><td>Autenticação via conta Google</td><td>Verificação de token Google</td><td>EUA / global</td></tr>
                 <tr><td><strong>Resend</strong></td><td>Envio de e-mails de verificação e recuperação de senha</td><td>Seu e-mail, conteúdo da mensagem</td><td>EUA</td></tr>
                 <tr><td><strong>Amazon Web Services (AWS)</strong></td><td>Hospedagem do servidor backend</td><td>Todos os dados processados pelo app</td><td>Brasil (São Paulo, sa-east-1)</td></tr>
@@ -252,13 +235,11 @@
         <li><strong>Conta ativa:</strong> enquanto você mantiver sua conta no Loobby.</li>
         <li><strong>Após exclusão da conta</strong> (a partir do menu de configurações no app):
             <ul>
-                <li><strong>Removidos imediatamente:</strong> e-mail, senha (hash), tokens de autenticação, identificador Google, tokens de push e <strong>telefone</strong>.</li>
+                <li><strong>Removidos imediatamente:</strong> e-mail, senha (hash), tokens de autenticação, identificador Google e tokens de push.</li>
                 <li><strong>Anonimizados:</strong> seu registro de usuário tem o nome de usuário esvaziado, o nome de exibição substituído por "[deleted]" e a foto removida. Isso preserva a integridade dos eventos e grupos dos quais você participou, sem permitir sua identificação.</li>
                 <li><strong>Conteúdo associado:</strong> grupos e eventos dos quais você era proprietário são transferidos para outro participante ou apagados, conforme a regra do app. Observações em RSVPs são apagadas.</li>
             </ul>
         </li>
-        <li><strong>Dados de não-usuários informados via link público</strong> (nome + telefone de pessoas que não têm conta no Loobby): removidos automaticamente quando o evento associado for apagado, ou imediatamente mediante solicitação pelo e-mail de contato indicado na seção 12.</li>
-        <li><strong>Confirmações pendentes de verificação por WhatsApp</strong> (quando o recurso estiver habilitado): descartadas automaticamente após 24 horas sem confirmação do titular do telefone.</li>
         <li><strong>Logs do servidor:</strong> não armazenam dados pessoais identificáveis.</li>
         <li><strong>Backups:</strong> o aplicativo atualmente não realiza backups automatizados separados; os dados existem apenas no banco de produção.</li>
     </ul>
@@ -271,8 +252,6 @@
         <li><strong>Banco de dados:</strong> o Supabase aplica criptografia em repouso (AES-256) ao banco PostgreSQL.</li>
         <li><strong>Tokens locais:</strong> no Android, os tokens de autenticação ficam em armazenamento criptografado (<code>EncryptedSharedPreferences</code>).</li>
         <li><strong>Autenticação:</strong> tokens de acesso de curta duração (15 minutos) e de refresh (15 dias).</li>
-        <li><strong>Telefone:</strong> armazenado normalizado no formato E.164. O número só é vinculado a uma conta após o Firebase Authentication confirmar a posse via OTP por SMS. O backend recebe do Firebase um token JWT assinado contendo o telefone já verificado, sem nunca lidar com o código SMS em si.</li>
-        <li><strong>Tokens de link público:</strong> guardamos no banco apenas o hash SHA-256 do token; o valor original existe somente na URL compartilhada e nunca é armazenado em texto puro.</li>
     </ul>
     <p>Nenhum sistema é 100% seguro. Em caso de incidente de segurança que afete dados pessoais, comunicaremos os titulares afetados e a Autoridade Nacional de Proteção de Dados (ANPD) nos prazos exigidos pela LGPD.</p>
 
@@ -294,7 +273,6 @@
     <h2>9. Menores de idade</h2>
     <p>O Loobby é destinado a usuários com <strong>13 anos ou mais</strong>. Ao criar uma conta, o usuário declara possuir pelo menos essa idade. Não realizamos verificação ativa de idade.</p>
     <p>Caso identifiquemos uma conta pertencente a uma criança menor de 13 anos, ela será removida. Se você é responsável por uma criança e acredita que ela criou uma conta no Loobby, entre em contato pelo e-mail acima e providenciaremos a remoção.</p>
-    <p>O fluxo de confirmação via link público (seção 3.4) exige um SMS enviado ao telefone informado — pessoas que não tenham acesso ao próprio telefone celular não conseguem completar o cadastro. Caso ainda assim um menor de 13 anos seja registrado, o responsável pode solicitar a remoção pelo e-mail de contato; a solicitação é atendida sem necessidade de comprovação documental adicional.</p>
 
     <h2>10. Cookies, rastreadores e publicidade</h2>
     <p>O aplicativo Loobby <strong>não utiliza cookies, rastreadores de terceiros nem identificadores de publicidade</strong>. Não exibimos anúncios e não recebemos remuneração de anunciantes.</p>

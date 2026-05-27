@@ -6,7 +6,6 @@ import java.util.UUID
 
 interface UserCredentialsRepository : JpaRepository<UserCredentialsEntity, UUID> {
     fun findByEmail(email: String): UserCredentialsEntity?
-    fun existsByEmail(email: String): Boolean
     fun existsByUserId(userId: UUID): Boolean
     fun findByUserId(userId: UUID): UserCredentialsEntity?
     fun findByEmailVerificationToken(token: String): UserCredentialsEntity?

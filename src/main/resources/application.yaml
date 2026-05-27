@@ -61,28 +61,6 @@ google:
     ${GOOGLE_WEB_CLIENT_ID},${GOOGLE_IOS_CLIENT_ID},${GOOGLE_ANDROID_CLIENT_ID}
 
 loobby:
-  public:
-    # Base URL do site público (frontend) — usada para montar a URL completa
-    # devolvida quando o host gera um link de RSVP.
-    web-base-url: ${LOOBBY_WEB_BASE_URL:https://loobby.app}
-    # Quantas horas após a data do evento o link continua válido.
-    link-token-extra-hours: 24
-    # TTL (em horas) do registro em event_rsvp_pending. Se o usuário não
-    # concluir o OTP dentro desse prazo após chamar /rsvps/start, o registro
-    # é apagado pelo PendingRsvpCleanupScheduler.
-    pending-rsvp-ttl-hours: 24
-    # Cron do job que limpa pendings expirados (hourly por padrão).
-    pending-cleanup-cron: "0 0 * * * *"
-
-  # Config web do Firebase — valores são públicos (apiKey é identificador, não secret).
-  # São injetados no public-rsvp.html para o SDK JavaScript inicializar o Auth.
-  firebase:
-    web-config:
-      api-key: ${FIREBASE_WEB_API_KEY:}
-      auth-domain: ${FIREBASE_WEB_AUTH_DOMAIN:}
-      project-id: ${FIREBASE_WEB_PROJECT_ID:}
-      app-id: ${FIREBASE_WEB_APP_ID:}
-
   notifications:
     # Caminho para o service account JSON do Firebase.
     firebase-credentials-path: ${FIREBASE_CREDENTIALS_PATH:./secrets/loobby-fcm.json}
@@ -95,9 +73,9 @@ loobby:
     # Horário do job diário matinal (8h da manhã em America/Sao_Paulo)
     daily-job-cron: "0 0 8 * * *"
     # Granularidade do job de lembrete (a cada 15 min)
-    reminder-job-cron: "0 */10 * * * *"
+    reminder-job-cron: "0 */15 * * * *"
     # Debounce para agrupamento de RSVP_CONFIRMED_BY_PEER (em minutos)
-    rsvp-peer-debounce-minutes: 10
+    rsvp-peer-debounce-minutes: 15
 
 logging:
   level:

@@ -1,7 +1,6 @@
 package app.loobby.common.errors
 
 import jakarta.servlet.http.HttpServletRequest
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.FieldError
@@ -63,40 +62,6 @@ class ApiExceptionHandler {
             status = status.value(),
             error = status.reasonPhrase,
             message = ex.message,
-            path = request.requestURI
-        )
-
-        return ResponseEntity.status(status).body(body)
-    }
-
-    // -----------------------------
-    // Violação de constraint do banco
-    // (ex.: corrida em /auth/register com email duplicado, UNIQUE violado)
-    // -----------------------------
-    @ExceptionHandler(DataIntegrityViolationException::class)
-    fun handleDataIntegrityViolation(
-        ex: DataIntegrityViolationException,
-        request: HttpServletRequest
-    ): ResponseEntity<ApiErrorResponse> {
-        val status = HttpStatus.CONFLICT
-
-        // Detecta violação do índice único de email para devolver
-        // uma mensagem amigável ao mobile.
-        val rootMessage = (ex.mostSpecificCause.message ?: ex.message ?: "").lowercase()
-        val message = if (
-            rootMessage.contains("ix_user_credentials_email") ||
-            (rootMessage.contains("email") && rootMessage.contains("unique"))
-        ) {
-            "Email already registered"
-        } else {
-            "Conflict"
-        }
-
-        val body = ApiErrorResponse(
-            timestamp = Instant.now(),
-            status = status.value(),
-            error = status.reasonPhrase,
-            message = message,
             path = request.requestURI
         )
 

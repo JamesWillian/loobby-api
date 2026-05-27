@@ -220,9 +220,6 @@ class UsersService(
         user.username = ""
         user.displayname = "[deleted]"
         user.avatarUrl = null
-        // Libera o telefone para que outra conta possa reusá-lo no futuro e
-        // garante que o número não fique associado a um registro anonimizado.
-        user.phoneE164 = null
         usersRepository.save(user)
     }
 }

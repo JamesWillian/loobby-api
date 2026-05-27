@@ -3,7 +3,6 @@ package app.loobby.notifications.config
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessaging
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
@@ -120,20 +119,5 @@ class FirebaseConfig(
     fun firebaseMessaging(): FirebaseMessaging? {
         if (!enabled) return null
         return FirebaseMessaging.getInstance()
-    }
-
-    /**
-     * Bean do FirebaseAuth — usado pelo [app.loobby.common.phone.FirebasePhoneVerifier]
-     * para validar ID tokens recebidos do Firebase Phone Auth (no fluxo de RSVP
-     * por link público e no registro com telefone obrigatório).
-     *
-     * Compartilha a inicialização do FirebaseApp com FCM; quando notifications
-     * estão desabilitadas, o bean fica nulo e o verifier deve falhar de forma
-     * limpa em qualquer chamada.
-     */
-    @Bean
-    fun firebaseAuth(): FirebaseAuth? {
-        if (!enabled) return null
-        return FirebaseAuth.getInstance()
     }
 }
