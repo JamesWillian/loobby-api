@@ -9,7 +9,7 @@ interface EventRepository : JpaRepository<EventEntity, UUID> {
 
     fun findByOwnerIdAndIsInstantTrue(ownerId: UUID): List<EventEntity>
 
-    fun findByGroupIdOrderByScheduledDatetimeAsc(groupId: UUID): List<EventEntity>
+    fun findByGroupIdOrderByScheduledDatetimeDesc(groupId: UUID): List<EventEntity>
 
     fun existsByInviteCode(inviteCode: String): Boolean
 

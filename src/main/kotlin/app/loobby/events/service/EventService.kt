@@ -144,7 +144,7 @@ class EventService(
     }
 
     fun listGroupEvents(groupId: UUID, userId: UUID): List<EventResponse> {
-        val events = eventRepository.findByGroupIdOrderByScheduledDatetimeAsc(groupId)
+        val events = eventRepository.findByGroupIdOrderByScheduledDatetimeDesc(groupId)
         if (events.isEmpty()) return emptyList()
 
         val eventIds = events.map { it.id }

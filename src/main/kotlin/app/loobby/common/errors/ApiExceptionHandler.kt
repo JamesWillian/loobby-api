@@ -3,6 +3,7 @@ package app.loobby.common.errors
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.oauth2.jwt.JwtException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -65,6 +66,22 @@ class ApiExceptionHandler {
             path = request.requestURI
         )
 
+        return ResponseEntity.status(status).body(body)
+    }
+
+    @ExceptionHandler(JwtException::class)
+    fun handleJwtException(
+        ex: JwtException,
+        request: HttpServletRequest
+    ): ResponseEntity<ApiErrorResponse> {
+        val status = HttpStatus.UNAUTHORIZED
+        val body = ApiErrorResponse(
+            timestamp = Instant.now(),
+            status = status.value(),
+            error = status.reasonPhrase,
+            message = "Refresh token expired or invalid",
+            path = request.requestURI
+        )
         return ResponseEntity.status(status).body(body)
     }
 
