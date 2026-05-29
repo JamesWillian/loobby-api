@@ -31,7 +31,8 @@ class EventService(
     private val sportEventRepository: SportEventRepository,
     private val eventRsvpRepository: EventRsvpRepository,
     private val usersRepository: UsersRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val gameService: app.loobby.games.service.GameService
 ) {
 
     fun createGroupEvent(
@@ -66,6 +67,8 @@ class EventService(
                 gameplayEventRepository.save(
                     GameplayEventEntity(eventId = event.id, gameId = details.gameId, gameName = details.gameName)
                 )
+                // Garante (em background) que o jogo está no cache local para detalhe futuro.
+                details.gameId?.let { gameService.ensureCached(it) }
             }
             EventType.SPORT -> {
                 val details = req.sport
@@ -120,6 +123,8 @@ class EventService(
                 gameplayEventRepository.save(
                     GameplayEventEntity(eventId = event.id, gameId = details.gameId, gameName = details.gameName)
                 )
+                // Garante (em background) que o jogo está no cache local para detalhe futuro.
+                details.gameId?.let { gameService.ensureCached(it) }
             }
             EventType.SPORT -> {
                 val details = req.sport
@@ -269,6 +274,7 @@ class EventService(
                     if (details.gameName.isNotBlank()) gameplay.gameName = details.gameName
                     details.gameId?.let { gameplay.gameId = it }
                     gameplayEventRepository.save(gameplay)
+                    details.gameId?.let { gameService.ensureCached(it) }
                 }
             }
             EventType.SPORT -> {

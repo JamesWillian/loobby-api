@@ -30,6 +30,10 @@ dependencies {
     implementation("org.hibernate.orm:hibernate-core")
     implementation("org.flywaydb:flyway-core")
 
+    // Cache do proxy RAWG (Caffeine, gerenciado pelo BOM do Spring Boot)
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 

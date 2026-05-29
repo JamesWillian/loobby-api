@@ -47,6 +47,18 @@ resend:
   api-key: ${RESEND_API_KEY}
   from-email: "Loobby <noreply@mail.loobby.app>"
 
+# Integração com o catálogo de jogos RAWG (https://rawg.io). A key fica só no servidor.
+rawg:
+  api-key: ${RAWG_API_KEY}
+  base-url: https://api.rawg.io/api
+  connect-timeout-ms: 3000
+  read-timeout-ms: 5000
+  search-page-size: 20
+  soft-ttl-days: 7        # stale-while-revalidate: serve do cache e atualiza em background
+  hard-ttl-days: 30       # força refresh síncrono
+  circuit-failure-threshold: 5
+  circuit-open-minutes: 2
+
 app:
    base-url: ${APP_BASE_URL:https://api.loobby.app}
    email-verification:
@@ -72,10 +84,10 @@ loobby:
     reminder-hours-before: 4
     # Horário do job diário matinal (8h da manhã em America/Sao_Paulo)
     daily-job-cron: "0 0 8 * * *"
-    # Granularidade do job de lembrete (a cada 15 min)
-    reminder-job-cron: "0 */15 * * * *"
+    # Granularidade do job de lembrete (a cada 5 min)
+    reminder-job-cron: "0 */5 * * * *"
     # Debounce para agrupamento de RSVP_CONFIRMED_BY_PEER (em minutos)
-    rsvp-peer-debounce-minutes: 15
+    rsvp-peer-debounce-minutes: 5
 
 logging:
   level:
