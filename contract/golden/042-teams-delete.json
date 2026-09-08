@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/events/{uuid}/teams/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {},
+    "body_raw": "",
+    "body": null,
+    "body_empty": true
+  }
+}

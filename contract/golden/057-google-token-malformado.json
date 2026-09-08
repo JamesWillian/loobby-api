@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/google",
+    "body": {
+      "idToken": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"timestamp\":\"2026-09-08T17:50:41.621961986Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":null,\"path\":\"/auth/google\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": null,
+      "path": "/auth/google",
+      "fieldErrors": null
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/devices/register",
+    "body": {
+      "token": "contract-baseline-fake-fcm-token",
+      "platform": "ANDROID"
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {},
+    "body_raw": "",
+    "body": null,
+    "body_empty": true
+  }
+}

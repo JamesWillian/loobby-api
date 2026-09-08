@@ -1,0 +1,32 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/groups",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "[{\"id\":\"bc1a0143-4e19-42ee-8aec-c42eb1ad2b4b\",\"name\":\"My First Group\",\"inviteCode\":\"$-2ISBVV\",\"imageUrl\":null,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"createdAt\":\"2026-04-29T22:14:43.122528Z\"},{\"id\":\"0e09a1dd-027f-4063-befb-04115a8e3ec8\",\"name\":\"contract-baseline-group\",\"inviteCode\":\"$-70G0HO\",\"imageUrl\":null,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"createdAt\":\"2026-09-08T17:50:31.178742Z\"}]",
+    "body": [
+      {
+        "id": "<uuid>",
+        "name": "My First Group",
+        "inviteCode": "$-2ISBVV",
+        "imageUrl": null,
+        "ownerId": "<id:me>",
+        "createdAt": "<timestamp>"
+      },
+      {
+        "id": "<id:group>",
+        "name": "contract-baseline-group",
+        "inviteCode": "$-70G0HO",
+        "imageUrl": null,
+        "ownerId": "<id:me>",
+        "createdAt": "<timestamp>"
+      }
+    ]
+  }
+}

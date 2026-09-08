@@ -1,0 +1,35 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/events/{uuid}/teams/auto-generate",
+    "body": {
+      "teamCount": 2,
+      "includeReserves": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "[{\"id\":\"fa950b6a-67d7-4ce2-bb25-69eea80b357b\",\"eventId\":\"efd98d25-0ffd-4a06-b545-9aaff13184e7\",\"order\":1,\"name\":\"Time 1\",\"color\":\"#F44336\",\"players\":[{\"userId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"role\":null,\"username\":\"user_demo\",\"displayname\":\"Contract Baseline\",\"avatarUrl\":null}]}]",
+    "body": [
+      {
+        "id": "<uuid>",
+        "eventId": "<id:event>",
+        "order": 1,
+        "name": "Time 1",
+        "color": "#F44336",
+        "players": [
+          {
+            "userId": "<id:me>",
+            "role": null,
+            "username": "user_demo",
+            "displayname": "Contract Baseline",
+            "avatarUrl": null
+          }
+        ]
+      }
+    ]
+  }
+}

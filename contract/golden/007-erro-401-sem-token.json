@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/users/me",
+    "body": null
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "www-authenticate": "Bearer"
+    },
+    "body_raw": "",
+    "body": null,
+    "body_empty": true
+  }
+}

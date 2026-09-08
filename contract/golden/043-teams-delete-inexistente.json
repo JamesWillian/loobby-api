@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/events/{uuid}/teams/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"timestamp\":\"2026-09-08T17:50:38.133609716Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Team not found\",\"path\":\"/events/efd98d25-0ffd-4a06-b545-9aaff13184e7/teams/aa7bc414-6dfc-48c4-9ca7-5a62db0e144b\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Team not found",
+      "path": "/events/efd98d25-0ffd-4a06-b545-9aaff13184e7/teams/aa7bc414-6dfc-48c4-9ca7-5a62db0e144b",
+      "fieldErrors": null
+    }
+  }
+}
