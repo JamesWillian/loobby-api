@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/register",
+    "body": {
+      "email": "user@loobby.app",
+      "password": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"timestamp\":\"2026-09-08T17:50:41.454035052Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"User already registered\",\"path\":\"/auth/register\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "User already registered",
+      "path": "/auth/register",
+      "fieldErrors": null
+    }
+  }
+}

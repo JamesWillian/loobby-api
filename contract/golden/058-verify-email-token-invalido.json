@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/auth/verify-email?token={uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "text/html"
+    },
+    "body_raw": "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Erro na Verificação</title></head>\n<body style=\"font-family: -apple-system, sans-serif; background: #0f1117; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;\">\n    <div style=\"text-align: center; max-width: 400px; padding: 40px;\">\n        <div style=\"font-size: 64px; margin-bottom: 16px;\">❌</div>\n        <h1 style=\"color: #ef4444; margin-bottom: 12px;\">Erro na verificação</h1>\n        <p style=\"color: #a0a0a0; line-height: 1.6;\">Token inválido ou já utilizado</p>\n        <p style=\"color: #707070; font-size: 13px; margin-top: 24px;\">Abra o app e solicite um novo email de verificação.</p>\n    </div>\n</body>\n</html>",
+    "body": null
+  }
+}

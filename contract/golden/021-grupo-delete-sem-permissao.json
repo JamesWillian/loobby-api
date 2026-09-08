@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/groups/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"timestamp\":\"2026-09-08T17:50:33.322647565Z\",\"status\":500,\"error\":\"Internal Server Error\",\"message\":\"Unexpected error\",\"path\":\"/groups/0e09a1dd-027f-4063-befb-04115a8e3ec8\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 500,
+      "error": "Internal Server Error",
+      "message": "Unexpected error",
+      "path": "/groups/0e09a1dd-027f-4063-befb-04115a8e3ec8",
+      "fieldErrors": null
+    }
+  }
+}

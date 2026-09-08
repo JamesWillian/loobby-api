@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/actuator/health",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/vnd.spring-boot.actuator.v3+json"
+    },
+    "body_raw": "{\"status\":\"UP\"}",
+    "body": {
+      "status": "UP"
+    }
+  }
+}
