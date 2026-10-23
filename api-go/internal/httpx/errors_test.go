@@ -3,6 +3,7 @@ package httpx
 import (
 	"bytes"
 	"encoding/json"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -88,5 +89,28 @@ func TestInstantGrouping(t *testing.T) {
 		if std := base.Add(time.Duration(c.ns)).Format(time.RFC3339Nano); std != c.want {
 			t.Logf("  (RFC3339Nano daria %s -- por isso o tipo proprio)", std)
 		}
+	}
+}
+
+// Uma mensagem com U+2028 ou caractere de controle tem que sair como o Jackson
+// escreve -- o envelope carrega texto vindo de excecoes e, no futuro, de usuarios.
+func TestMarshalEscapaComoOJackson(t *testing.T) {
+	msg := "linha" + string(rune(0x2028)) + "sep" + string(rune(0x01)) + "ctl & <tag>"
+	out, err := Marshal(map[string]string{"m": msg})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"m":"linha` + string(rune(0x2028)) + `sep\u0001ctl & <tag>"}`
+	if string(out) != want {
+		t.Errorf("\n  got : %q\n  want: %q", out, want)
+	}
+}
+
+// O "path" do envelope e o getRequestURI() do Servlet: cru e sem query.
+func TestPathDoEnvelopeEOCaminhoCru(t *testing.T) {
+	req := httptest.NewRequest("GET", "/games/a%20b?q=1", nil)
+	req.RequestURI = "/games/a%20b?q=1" // como chega do servidor
+	if got := RequestPath(req); got != "/games/a%20b" {
+		t.Errorf("path: %q", got)
 	}
 }

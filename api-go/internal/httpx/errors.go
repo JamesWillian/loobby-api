@@ -2,6 +2,7 @@ package httpx
 
 import (
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -48,7 +49,19 @@ func WriteError(w http.ResponseWriter, r *http.Request, status int, message stri
 	if message != "" {
 		msg = &message
 	}
-	WriteErrorResponse(w, status, NewError(status, msg, r.URL.Path))
+	WriteErrorResponse(w, status, NewError(status, msg, RequestPath(r)))
+}
+
+// RequestPath reproduz o HttpServletRequest.getRequestURI() que o Kotlin poe
+// no campo "path": o caminho como o cliente enviou, SEM decodificar e sem a
+// query string. O r.URL.Path do Go ja vem decodificado -- /games/a%20b sairia
+// "/games/a b".
+func RequestPath(r *http.Request) string {
+	if r.RequestURI == "" { // requisicao montada em teste, sem passar pelo servidor
+		return r.URL.EscapedPath()
+	}
+	path, _, _ := strings.Cut(r.RequestURI, "?")
+	return path
 }
 
 func WriteErrorResponse(w http.ResponseWriter, status int, body ErrorResponse) {

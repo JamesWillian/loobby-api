@@ -3,6 +3,8 @@ package httpx
 import (
 	"bytes"
 	"encoding/json"
+
+	"github.com/JamesWillian/loobby-api/api-go/internal/jackson"
 )
 
 // Marshal serializa como o Jackson: sem quebra de linha no fim e sem escapar
@@ -10,12 +12,13 @@ import (
 //
 //   - json.Encoder.Encode acrescenta "\n" -- todo corpo JSON teria um byte a
 //     mais que o golden ({"status":"UP"} vs {"status":"UP"}\n).
-//   - json.Marshal escapa <, > e & -- "Tom & Jerry" viraria "Tom & Jerry".
+//   - json.Marshal escapa <, > e & -- "Tom & Jerry" viraria "Tom \u0026 Jerry".
 //     JSON equivalente para um parser, mas byte a byte diferente do que o
 //     Jackson emite, e a baseline de contrato compara bytes.
 //
-// Divergencia conhecida e aceita: o Go sempre escapa U+2028 e U+2029, que o
-// Jackson emite crus. So aparece se alguem usar esses separadores num nome.
+// Strings tambem saem com o escape do Jackson (U+2028/U+2029 crus, controles
+// em hexa maiusculo) -- ver jackson.FixEscapes. Antes disso, um displayname
+// com U+2028 sairia diferente do Kotlin.
 func Marshal(v any) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
@@ -23,5 +26,5 @@ func Marshal(v any) ([]byte, error) {
 	if err := enc.Encode(v); err != nil {
 		return nil, err
 	}
-	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), nil
+	return jackson.FixEscapes(bytes.TrimSuffix(buf.Bytes(), []byte("\n"))), nil
 }
