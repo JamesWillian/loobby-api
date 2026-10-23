@@ -78,7 +78,7 @@ done
 FAIL=0
 expect() { # $1=backend esperado, $2..=args do curl; o ultimo e o caminho
   local want="$1"; shift
-  local route="${@: -1}"; set -- "${@:1:$#-1}"
+  local route="${*: -1}"; set -- "${@:1:$#-1}"
   local got; got="$(curl -s -o /dev/null -D - "$@" "http://127.0.0.1:$P_PROXY$route" \
     | tr -d '\r' | awk -F': ' 'tolower($1)=="x-backend"{print $2}')"
   if [[ "$got" == "$want" ]]; then printf '  ok   %-7s %s %s\n' "$got" "$*" "$route"
@@ -99,6 +99,27 @@ expect kotlin -X GET  /legal/privacy/
 expect kotlin -X GET  /legal/privacy-v2
 expect kotlin -X GET  /legal/
 expect kotlin -X GET  /LEGAL/privacy
+# formas nao canonicas: o $uri normalizado casaria; a URI crua, nao
+expect kotlin -X GET  /legal//privacy
+expect kotlin -X GET  /legal/%70rivacy
+
+echo "-- games: vao para o Go --"
+expect go     -X GET  "/games/search?q=zelda&page=1"
+expect go     -I      "/games/search?q=zelda"
+expect go     -X GET  /games/search
+expect go     -X GET  /games/479836
+expect go     -X GET  /games/zelda-2
+expect go     -X GET  "/games/479836?x=1"
+
+echo "-- variacoes de games: ficam no Kotlin --"
+expect kotlin -X POST /games/search
+expect kotlin -X GET  /games/search/
+expect kotlin -X GET  /games/
+expect kotlin -X GET  /games
+expect kotlin -X GET  /games/479836/screenshots
+expect kotlin -X GET  /games/a%2Fb
+expect kotlin -X GET  /games/a.b
+expect kotlin -X GET  --path-as-is /games/..
 
 echo "-- nao migradas e internas: ficam no Kotlin --"
 expect kotlin -X GET  /users/me
@@ -132,6 +153,8 @@ else
   done
   expect kotlin -X GET /legal/privacy
   expect kotlin -X GET /legal/child-safety
+  expect kotlin -X GET "/games/search?q=zelda"
+  expect kotlin -X GET /games/479836
 fi
 
 echo
