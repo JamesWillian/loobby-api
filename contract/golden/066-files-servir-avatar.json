@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/files/avatars/{uuid}/1788889843289.png",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "image/png"
+    },
+    "body_raw": null,
+    "body": null,
+    "body_binary": {
+      "bytes": 69,
+      "sha256": "b1ff9c8ea3a780bad09b346c423d2d0e46815926879b18e841d928376a946640"
+    }
+  }
+}

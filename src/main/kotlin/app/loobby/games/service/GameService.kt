@@ -44,7 +44,19 @@ class GameService(
      */
     @Cacheable("gameSearch", key = "#query.trim().toLowerCase() + ':' + #page")
     fun search(query: String, page: Int): GameSearchResponse {
-        val node = rawgClient.searchGames(query, page)
+        // Diferente de getDetails, a busca não tem cache local para servir de fallback:
+        // se o RAWG está fora (ou o circuit breaker abriu), não há o que devolver.
+        // O cliente precisa saber que é indisponibilidade temporária de terceiro — 503,
+        // não 500. A mensagem técnica fica no log; o cliente recebe texto genérico.
+        val node = try {
+            rawgClient.searchGames(query, page)
+        } catch (e: RawgUnavailableException) {
+            log.warn("RAWG indisponível na busca '{}' (page {}): {}", query, page, e.message)
+            throw ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Catálogo de jogos temporariamente indisponível."
+            )
+        }
         val results = node.path("results").mapNotNull { item ->
             runCatching { upsertFromSearch(item) }
                 .onFailure { log.warn("Falha ao cachear item de busca do RAWG: {}", it.message) }

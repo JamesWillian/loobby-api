@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/users/me/avatar",
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"timestamp\":\"2026-09-08T17:50:44.049358781Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Invalid file type: text/plain\",\"path\":\"/users/me/avatar\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Invalid file type: text/plain",
+      "path": "/users/me/avatar",
+      "fieldErrors": null
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/groups",
+    "body": {
+      "name": "contract-baseline-group"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"id\":\"0e09a1dd-027f-4063-befb-04115a8e3ec8\",\"name\":\"contract-baseline-group\",\"inviteCode\":\"$-70G0HO\",\"imageUrl\":null,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"createdAt\":null}",
+    "body": {
+      "id": "<uuid>",
+      "name": "contract-baseline-group",
+      "inviteCode": "$-70G0HO",
+      "imageUrl": null,
+      "ownerId": "<id:me>",
+      "createdAt": null
+    }
+  }
+}

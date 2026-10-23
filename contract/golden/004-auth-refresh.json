@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/refresh",
+    "body": {
+      "refreshToken": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"accessToken\":\"<redigido>\",\"refreshToken\":\"<redigido>\",\"expiresIn\":900,\"userId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"username\":\"user_demo\",\"roles\":[\"USER\"]}",
+    "body": {
+      "accessToken": "<redigido>",
+      "refreshToken": "<redigido>",
+      "expiresIn": 900,
+      "userId": "<id:me>",
+      "username": "user_demo",
+      "roles": [
+        "USER"
+      ]
+    }
+  }
+}

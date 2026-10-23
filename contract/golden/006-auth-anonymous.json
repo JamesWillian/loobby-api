@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/anonymous",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"accessToken\":\"<redigido>\",\"refreshToken\":\"<redigido>\",\"expiresIn\":900,\"userId\":\"c7db1df9-5631-4d7e-86a8-4ef6da7d9d1d\",\"username\":\"user_5b917a\",\"roles\":[\"ANON\"]}",
+    "body": {
+      "accessToken": "<redigido>",
+      "refreshToken": "<redigido>",
+      "expiresIn": 900,
+      "userId": "<uuid>",
+      "username": "user_5b917a",
+      "roles": [
+        "ANON"
+      ]
+    }
+  }
+}

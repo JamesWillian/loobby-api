@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/groups/{uuid}/members",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "[{\"userId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"username\":\"user_demo\",\"displayname\":\"Contract Baseline\",\"avatarUrl\":null,\"isOwner\":true},{\"userId\":\"61d1ba14-2a43-4e31-a6b8-2ed31cadbcdf\",\"username\":\"user_2e6331\",\"displayname\":\"user_2e6331\",\"avatarUrl\":null,\"isOwner\":false}]",
+    "body": [
+      {
+        "userId": "<id:me>",
+        "username": "user_demo",
+        "displayname": "Contract Baseline",
+        "avatarUrl": null,
+        "isOwner": true
+      },
+      {
+        "userId": "<id:user2>",
+        "username": "user_2e6331",
+        "displayname": "user_2e6331",
+        "avatarUrl": null,
+        "isOwner": false
+      }
+    ]
+  }
+}

@@ -65,3 +65,6 @@ application-prod.properties
 
 ### Uploads locais (em produção usa volume/cloud storage) ###
 uploads/
+
+### Supabase CLI (estado local do link, sem credenciais) ###
+supabase/.temp/

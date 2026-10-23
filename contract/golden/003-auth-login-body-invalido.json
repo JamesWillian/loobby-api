@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/login",
+    "body": {
+      "email": "nao-e-email",
+      "password": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_raw": "{\"timestamp\":\"2026-09-08T17:50:29.349444883Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Invalid credentials\",\"path\":\"/auth/login\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Invalid credentials",
+      "path": "/auth/login",
+      "fieldErrors": null
+    }
+  }
+}
