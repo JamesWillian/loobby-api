@@ -30,6 +30,32 @@ type Config struct {
 	AcceptRefreshTokenAsAccess bool
 
 	BaseURL string
+
+	// TLS mutuo. O Go roda numa maquina separada do nginx (que fica no AWS), e o
+	// trafego entre os dois atravessa a internet levando os tokens de login dos
+	// usuarios. Com os tres arquivos definidos, o servidor so completa o
+	// handshake com quem apresentar um certificado de cliente assinado pela CA
+	// privada -- na pratica, so o nginx. Sem eles, o servidor fala HTTP puro e
+	// escuta APENAS em 127.0.0.1: HTTP sem TLS nunca fica exposto na rede.
+	TLSCertFile     string
+	TLSKeyFile      string
+	TLSClientCAFile string
+
+	// BindHost sobrepoe o host de escuta. Vazio = automatico (ver ListenAddr).
+	BindHost string
+}
+
+// TLSEnabled informa se o servidor deve exigir TLS mutuo.
+func (c Config) TLSEnabled() bool { return c.TLSCertFile != "" }
+
+// ListenAddr: com TLS, todas as interfaces (o nginx vem de outra maquina); sem
+// TLS, so loopback. BIND_HOST sobrepoe os dois casos.
+func (c Config) ListenAddr() string {
+	host := c.BindHost
+	if host == "" && !c.TLSEnabled() {
+		host = "127.0.0.1"
+	}
+	return host + ":" + c.Port
 }
 
 func Load() (Config, error) {
@@ -39,6 +65,10 @@ func Load() (Config, error) {
 		JWTSecret:                  os.Getenv("JWT_SECRET"),
 		AcceptRefreshTokenAsAccess: envBool("ACCEPT_REFRESH_AS_ACCESS", true),
 		BaseURL:                    envOr("APP_BASE_URL", "https://api.loobby.app"),
+		TLSCertFile:                os.Getenv("TLS_CERT_FILE"),
+		TLSKeyFile:                 os.Getenv("TLS_KEY_FILE"),
+		TLSClientCAFile:            os.Getenv("TLS_CLIENT_CA_FILE"),
+		BindHost:                   os.Getenv("BIND_HOST"),
 	}
 
 	var missing []string
@@ -50,6 +80,18 @@ func Load() (Config, error) {
 	}
 	if len(missing) > 0 {
 		return c, fmt.Errorf("variaveis de ambiente obrigatorias ausentes: %s", strings.Join(missing, ", "))
+	}
+
+	// TLS e tudo-ou-nada: com metade dos arquivos, o servidor subiria em HTTP
+	// puro achando que estava protegido.
+	tlsSet := 0
+	for _, v := range []string{c.TLSCertFile, c.TLSKeyFile, c.TLSClientCAFile} {
+		if v != "" {
+			tlsSet++
+		}
+	}
+	if tlsSet != 0 && tlsSet != 3 {
+		return c, fmt.Errorf("TLS incompleto: defina TLS_CERT_FILE, TLS_KEY_FILE e TLS_CLIENT_CA_FILE juntos")
 	}
 	return c, nil
 }

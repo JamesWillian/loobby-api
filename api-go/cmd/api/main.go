@@ -48,7 +48,7 @@ func run() error {
 	defer pool.Close()
 
 	srv := &http.Server{
-		Addr:              ":" + cfg.Port,
+		Addr:              cfg.ListenAddr(),
 		Handler:           logging(server.Handler(server.Deps{Config: cfg, DB: pool})),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
@@ -56,11 +56,25 @@ func run() error {
 		IdleTimeout:       90 * time.Second,
 	}
 
+	if cfg.TLSEnabled() {
+		tlsCfg, err := server.TLSConfig(cfg.TLSCertFile, cfg.TLSKeyFile, cfg.TLSClientCAFile)
+		if err != nil {
+			return err
+		}
+		srv.TLSConfig = tlsCfg
+	}
+
 	errCh := make(chan error, 1)
 	go func() {
-		slog.Info("servidor no ar", "porta", cfg.Port,
+		slog.Info("servidor no ar", "endereco", srv.Addr, "tls_mutuo", cfg.TLSEnabled(),
 			"aceita_refresh_como_access", cfg.AcceptRefreshTokenAsAccess)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		var err error
+		if cfg.TLSEnabled() {
+			err = srv.ListenAndServeTLS("", "") // certificados ja estao no TLSConfig
+		} else {
+			err = srv.ListenAndServe()
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
 	}()
