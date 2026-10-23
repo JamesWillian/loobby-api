@@ -107,9 +107,12 @@ do caminho feliz. Se elas mudarem, a referência vira ficção.
 
 ## legal — `LegalController` (3)
 
+**Go: implementado e igual aos golden** (`api-go/internal/legal`). Aguardando
+cutover no nginx — ver `deploy/nginx/README.md`.
+
 | ✓ | Método | Rota | Auth | Notas |
 |---|---|---|---|---|
-| ☑ | GET | `/legal/privacy` | pub | `text/html` — comparar byte a byte, vira `go:embed` |
+| ☑ | GET | `/legal/privacy` | pub | `text/html;charset=UTF-8`, `max-age=3600, public` |
 | ☑ | GET | `/legal/account-deletion` | pub | idem |
 | ☑ | GET | `/legal/child-safety` | pub | idem |
 

@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "PATCH",
+    "path": "/users/me",
+    "body": {
+      "displayname": "Contract Baseline"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"username\":\"user_demo\",\"displayname\":\"Contract Baseline\",\"avatarUrl\":null,\"createdAt\":\"2026-04-27T18:03:35.736666Z\"}",
+    "body": {
+      "id": "<id:me>",
+      "username": "user_demo",
+      "displayname": "Contract Baseline",
+      "avatarUrl": null,
+      "createdAt": "<timestamp>"
+    }
+  }
+}

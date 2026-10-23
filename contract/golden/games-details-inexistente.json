@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/games/id-que-nao-existe-9999999",
+    "body": null
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"timestamp\":\"2026-10-05T16:00:29.853823193Z\",\"status\":500,\"error\":\"Internal Server Error\",\"message\":\"Unexpected error\",\"path\":\"/games/id-que-nao-existe-9999999\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 500,
+      "error": "Internal Server Error",
+      "message": "Unexpected error",
+      "path": "/games/id-que-nao-existe-9999999",
+      "fieldErrors": null
+    }
+  }
+}
