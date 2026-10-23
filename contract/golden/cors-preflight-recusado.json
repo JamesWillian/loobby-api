@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "OPTIONS",
+    "path": "/legal/privacy",
+    "body": null
+  },
+  "response": {
+    "status": 403,
+    "headers": {
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "Invalid CORS request",
+    "body": null
+  }
+}

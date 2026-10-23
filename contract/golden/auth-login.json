@@ -1,0 +1,34 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/login",
+    "body": {
+      "email": "user@loobby.app",
+      "password": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"accessToken\":\"<redigido>\",\"refreshToken\":\"<redigido>\",\"expiresIn\":900,\"userId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"username\":\"user_demo\",\"roles\":[\"USER\"]}",
+    "body": {
+      "accessToken": "<redigido>",
+      "refreshToken": "<redigido>",
+      "expiresIn": 900,
+      "userId": "<uuid>",
+      "username": "user_demo",
+      "roles": [
+        "USER"
+      ]
+    }
+  }
+}

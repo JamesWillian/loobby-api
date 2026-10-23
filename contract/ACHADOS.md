@@ -317,6 +317,82 @@ viável, mas não feito.
 
 ---
 
+## 16. Headers do Spring Security e do CORS em TODA resposta
+
+A primeira baseline guardava só 4 headers numa whitelist e deixou estes de fora.
+Corrigido em 05/10/2026; todos os golden foram regravados com eles.
+
+```
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0                      <- default do Spring Security 6
+X-Frame-Options: DENY
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+```
+
+Saem **inclusive no 401** que o filtro de autenticação devolve antes de qualquer
+controller, e no 400 do `ApiExceptionHandler`. Os três últimos só aparecem quando
+o handler não definiu cache: `/legal/*` manda `max-age=3600, public` e aí o Spring
+não acrescenta `Pragma` nem `Expires`. Não há HSTS — o TLS termina no nginx.
+
+**Ação para o Go:** um middleware mais externo que todos, inclusive que o de JWT.
+Feito em `api-go/internal/httpx/springheaders.go`.
+
+## 17. Não existe configuração de CORS: todo preflight é recusado
+
+`.cors(withDefaults())` sem nenhum `CorsConfigurationSource`. Medido:
+
+| Requisição | Resposta |
+|---|---|
+| `OPTIONS` com `Origin` + `Access-Control-Request-Method` | **403**, corpo `Invalid CORS request`, sem `Content-Type` |
+| o mesmo, com `Origin: https://api.loobby.app` | **403** |
+| `OPTIONS` sem `Origin` | **401** — cai na autenticação |
+
+**Consequência de produto:** nenhum navegador em outra origem consegue fazer
+requisição não-simples à API (com `Authorization`, ou JSON no corpo). Se existe ou
+vai existir um cliente web servido de outro domínio, ele não funciona hoje.
+
+**Ação para o Go:** durante o strangler, preflight vai para o Kotlin (o nginx só
+encaminha ao Go os métodos que ele implementa). O `SpringHeaders` replica o 403
+para quando o Go atender sozinho — com golden e teste.
+
+## 18. Mais cinco 500 da mesma família do §6 — NÃO corrigidos
+
+Exceções-padrão do Spring MVC também não são `ResponseStatusException`, então o
+catch-all do `ApiExceptionHandler` as engole. Medido com token válido:
+
+| Requisição | Hoje | Deveria |
+|---|---|---|
+| rota inexistente (`NoResourceFoundException`) | 500 | 404 |
+| método errado (`HttpRequestMethodNotSupportedException`) | 500 | 405 |
+| query param obrigatório faltando | 500 | 400 |
+| JSON malformado (`HttpMessageNotReadableException`) | 500 | 400 |
+| path var que não é UUID (`MethodArgumentTypeMismatchException`) | 500 | 400 |
+
+Os três primeiros implementam `ErrorResponse` (Spring 6) e carregam o status
+certo — o catch-all só precisaria respeitar `ErrorResponse.statusCode`. Os dois
+últimos precisam de handler explícito.
+
+**Para o strangler isto não bloqueia nada:** como o nginx roteia por (método,
+caminho) exatos, as requisições malformadas continuam no Kotlin, e a paridade se
+mantém sozinha. Mas são cinco 500 em produção agora, e a correção cabe no PR #1,
+que é exatamente sobre esta família.
+
+## 19. `/actuator/health` não é `application/json`
+
+```
+Content-Type: application/vnd.spring-boot.actuator.v3+json
+```
+
+O primeiro handler Go da Fase 1 respondia `application/json` — teria ido para
+produção assim. Pego ao comparar com o golden.
+
+---
+
 ## Pendente de cobertura
 
 Não entraram na baseline, com o motivo:

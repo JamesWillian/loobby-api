@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/actuator/health",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/vnd.spring-boot.actuator.v3+json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"status\":\"UP\"}",
+    "body": {
+      "status": "UP"
+    }
+  }
+}

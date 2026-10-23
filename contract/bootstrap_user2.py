@@ -48,7 +48,8 @@ def main():
     env = load_env()
     if env.get("LOOBBY_TEST2_EMAIL"):
         sys.exit(f"ja existe LOOBBY_TEST2_EMAIL no {ENV} — nada a fazer.\n"
-                 f"Para recriar, remova as linhas LOOBBY_TEST2_* primeiro.")
+                 f"Refresh expirado NAO pede conta nova: a suite reloga sozinha com a\n"
+                 f"senha guardada. So remova as linhas LOOBBY_TEST2_* se a conta foi apagada.")
 
     base = env["LOOBBY_BASE_URL"].rstrip("/")
     email = os.environ.get("USER2_EMAIL", EMAIL_DEFAULT)

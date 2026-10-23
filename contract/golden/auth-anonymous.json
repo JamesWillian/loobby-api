@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/anonymous",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"accessToken\":\"<redigido>\",\"refreshToken\":\"<redigido>\",\"expiresIn\":900,\"userId\":\"656ff99d-110d-4b19-94a8-5e679be90ed6\",\"username\":\"user_e87c75\",\"roles\":[\"ANON\"]}",
+    "body": {
+      "accessToken": "<redigido>",
+      "refreshToken": "<redigido>",
+      "expiresIn": 900,
+      "userId": "<uuid>",
+      "username": "user_<hex6>",
+      "roles": [
+        "ANON"
+      ]
+    }
+  }
+}

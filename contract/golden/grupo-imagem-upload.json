@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/groups/{uuid}/image",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"68d9ef69-3751-432d-9613-d75d72595703\",\"name\":\"contract-baseline-renomeado\",\"inviteCode\":\"$-ZH4G8S\",\"imageUrl\":\"/files/groups/68d9ef69-3751-432d-9613-d75d72595703/1791216034118.png\",\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"createdAt\":\"2026-10-05T16:00:20.241053Z\"}",
+    "body": {
+      "id": "<id:group>",
+      "name": "contract-baseline-renomeado",
+      "inviteCode": "$-XXXXXX",
+      "imageUrl": "/files/groups/<id:group>/<epoch>.png",
+      "ownerId": "<id:me>",
+      "createdAt": "<timestamp>"
+    }
+  }
+}

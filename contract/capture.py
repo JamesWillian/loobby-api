@@ -30,18 +30,44 @@ from decimal import Decimal
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}")
 JWT_RE = re.compile(r"^ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$")
+UUID_ANYWHERE_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I)
+# Username de anonimo: "user_" + 6 hex (AuthService.generateRandomUsername).
+ANON_USER_RE = re.compile(r"^user_[0-9a-f]{6}$")
+# inviteCode e aleatorio, mas o FORMATO e contrato: grupo e $-XXXXXX, evento e
+# $-XXXX-XXXX. Normaliza o valor e preserva a forma.
+INVITE_RE = re.compile(r"^\$-[A-Z0-9]+(?:-[A-Z0-9]+)*$")
 # /files/<subfolder>/<ownerId>/<epochMillis>.<ext> — o epoch muda a cada upload
 FILE_URL_RE = re.compile(r"^/files/([^/]+)/([0-9a-f-]{36})/(\d+)(\.\w+)$", re.I)
 
 # Headers que fazem parte do contrato. O resto (Date, servidor, trace) e ruido.
-KEPT_HEADERS = ("content-type", "location", "www-authenticate", "allow")
+KEPT_HEADERS = (
+    "content-type", "location", "www-authenticate", "allow",
+    # Escritos pelo Spring Security em TODA resposta, inclusive no 401 que sai do
+    # filtro antes de qualquer controller. Navegador aplica X-Frame-Options e
+    # nosniff; cliente/CDN respeita cache. Sao contrato tanto quanto o corpo.
+    "cache-control", "pragma", "expires",
+    "x-content-type-options", "x-xss-protection", "x-frame-options",
+    "strict-transport-security",
+    # .cors(withDefaults()) emite tres linhas Vary separadas.
+    "vary",
+)
 
 TEXTUAL = ("json", "text/", "xml", "javascript", "x-www-form-urlencoded")
 
 
-def is_textual(content_type):
+def is_textual(content_type, blob=b""):
     ct = (content_type or "").lower()
-    return any(t in ct for t in TEXTUAL)
+    if any(t in ct for t in TEXTUAL):
+        return True
+    if ct:
+        return False
+    # Sem Content-Type (ex.: o 403 "Invalid CORS request" do preflight): e texto
+    # se for UTF-8 valido. Imagem nunca passa nesse teste.
+    try:
+        blob.decode("utf-8")
+        return True
+    except UnicodeDecodeError:
+        return False
 
 # Estes golden vao para o git. Nenhum segredo pode entrar neles: o valor concreto
 # de um token nao e contrato (e aleatorio), so a presenca e o tipo da chave sao.
@@ -59,6 +85,20 @@ def redact_body(v):
     if isinstance(v, list):
         return [redact_body(x) for x in v]
     return v
+
+
+def kept_headers(headers):
+    """Headers do contrato, com multiplos valores juntados na ordem recebida.
+    dict(HTTPMessage) guardaria so o ultimo Vary dos tres que o Spring emite."""
+    if not headers:
+        return {}
+    out = {}
+    for name in KEPT_HEADERS:
+        values = headers.get_all(name) if hasattr(headers, "get_all") else (
+            [headers[name]] if name in headers else None)
+        if values:
+            out[name] = ", ".join(values)
+    return out
 
 
 def load_env(path=".env"):
@@ -114,12 +154,17 @@ class Capture:
             if m:
                 owner = self.ids.get(m.group(2), "<uuid>")
                 return f"/files/{m.group(1)}/{owner}/<epoch>{m.group(4)}"
-            return v
+            if ANON_USER_RE.match(v):
+                return "user_<hex6>"
+            if INVITE_RE.match(v):
+                return re.sub(r"[A-Z0-9]", "X", v)
+            # UUID embutido em string maior (ex.: "path" do envelope de erro)
+            return UUID_ANYWHERE_RE.sub(lambda u: self.ids.get(u.group(0), "<uuid>"), v)
         return v
 
     # ---------- http ----------
 
-    def request(self, method, path, body=None, auth=True, raw_body=None, ctype="application/json", token=None):
+    def request(self, method, path, body=None, auth=True, raw_body=None, ctype="application/json", token=None, extra_headers=None):
         url = self.base + path
         data = None
         if raw_body is not None:
@@ -129,28 +174,30 @@ class Capture:
         req = urllib.request.Request(url, data=data, method=method)
         if data is not None:
             req.add_header("Content-Type", ctype)
+        for k, v in (extra_headers or {}).items():
+            req.add_header(k, v)
         bearer = token or self.token
         if auth and bearer:
             req.add_header("Authorization", "Bearer " + bearer)
         try:
             with urllib.request.urlopen(req, timeout=30) as r:
-                return r.status, dict(r.headers), r.read()
+                return r.status, r.headers, r.read()
         except urllib.error.HTTPError as e:
-            return e.code, dict(e.headers), e.read()
+            return e.code, e.headers, e.read()
         except Exception as e:
-            return 0, {}, f"<erro de transporte: {e}>"
+            return 0, {}, f"<erro de transporte: {e}>".encode()
 
     def record(self, name, method, path, body=None, auth=True, expect=None,
-               raw_body=None, ctype="application/json", token=None):
+               raw_body=None, ctype="application/json", token=None, extra_headers=None):
         """Executa e grava o golden. Devolve o corpo parseado (ou None)."""
         self.n += 1
-        status, headers, blob = self.request(method, path, body, auth, raw_body, ctype, token)
-        content_type = headers.get("Content-Type", headers.get("content-type", ""))
+        status, headers, blob = self.request(method, path, body, auth, raw_body, ctype, token, extra_headers)
+        content_type = headers.get("Content-Type", "") if headers else ""
 
         # Corpo binario (imagem etc.) nao sobrevive a decodificacao UTF-8: guardar
         # a string mutilada nao provaria nada num diff. Guarda tamanho + sha256,
         # que e o que de fato precisa bater entre Kotlin e Go.
-        binary = bool(blob) and not is_textual(content_type)
+        binary = bool(blob) and not is_textual(content_type, blob)
         if binary:
             text = ""
             digest = {"bytes": len(blob), "sha256": hashlib.sha256(blob).hexdigest()}
@@ -173,7 +220,7 @@ class Capture:
             },
             "response": {
                 "status": status,
-                "headers": {k.lower(): v for k, v in headers.items() if k.lower() in KEPT_HEADERS},
+                "headers": kept_headers(headers),
                 "body_raw": redact_raw(text),
                 "body": redact_body(self.normalize(parsed)) if parsed is not None else None,
             },
@@ -184,7 +231,7 @@ class Capture:
         elif not text:
             golden["response"]["body_empty"] = True
 
-        fname = f"{self.n:03d}-{name}.json"
+        fname = f"{name}.json"
         with open(os.path.join(self.out, fname), "w", encoding="utf-8") as f:
             json.dump(golden, f, indent=2, ensure_ascii=False, sort_keys=False)
             f.write("\n")
@@ -252,20 +299,36 @@ def update_env(key, value, path=".env"):
 
 
 def user2_token(c):
-    """Token do 2o usuario via /auth/refresh -- de proposito, nao via /auth/login:
-    enquanto o email nao for verificado, todo login dispara email de verdade
-    (EmailVerificationService.sendVerificationEmail nao tem rate limit).
-    O refresh token e rotacionado a cada uso, entao ele volta pro .env."""
+    """Token do 2o usuario. Tenta /auth/refresh primeiro -- de proposito, porque
+    enquanto o email dele nao for verificado, TODO login dispara um email real
+    (EmailVerificationService.sendVerificationEmail nao tem rate limit). O refresh
+    token e rotacionado a cada uso e volta pro .env.
+
+    O refresh vale 15 dias. Se a suite ficar mais que isso sem rodar, ele expira e
+    o unico caminho e logar com a senha guardada -- o que pode disparar UM email.
+    Verificar o email da conta de teste uma vez elimina esse custo para sempre."""
     rt = os.environ.get("LOOBBY_TEST2_REFRESH")
-    if not rt:
+    if rt:
+        status, _, body = c.request("POST", "/auth/refresh", {"refreshToken": rt}, auth=False)
+        if status == 200:
+            d = json.loads(body)
+            update_env("LOOBBY_TEST2_REFRESH", d["refreshToken"])
+            return d["accessToken"]
+
+    email = os.environ.get("LOOBBY_TEST2_EMAIL")
+    password = os.environ.get("LOOBBY_TEST2_PASSWORD")
+    if not (email and password):
         print("  -- 2o usuario ausente do .env; rode contract/bootstrap_user2.py")
         return None
-    status, _, text = c.request("POST", "/auth/refresh", {"refreshToken": rt}, auth=False)
+
+    print("  !! refresh do 2o usuario ausente ou expirado (vale 15 dias) -- relogando.")
+    print("     Se o email da conta ainda nao foi verificado, isto dispara 1 email de verificacao.")
+    status, _, body = c.request("POST", "/auth/login",
+                                {"email": email, "password": password}, auth=False)
     if status != 200:
-        print(f"  -- refresh do 2o usuario falhou ({status}). Se expirou (15 dias), apague")
-        print("     LOOBBY_TEST2_REFRESH do .env e rode: python3 contract/bootstrap_user2.py")
+        print(f"  -- login do 2o usuario falhou ({status}); cenarios de membership pulados")
         return None
-    d = json.loads(text)
+    d = json.loads(body)
     update_env("LOOBBY_TEST2_REFRESH", d["refreshToken"])
     return d["accessToken"]
 
@@ -448,6 +511,12 @@ def run(c, args):
     for slug in ("privacy", "account-deletion", "child-safety"):
         c.record(f"legal-{slug}", "GET", f"/legal/{slug}", auth=False, expect=200)
     c.record("actuator-health", "GET", "/actuator/health", auth=False, expect=200)
+    # O Kotlin nao configura CORS nenhum: todo preflight e recusado com 403 e o
+    # corpo literal "Invalid CORS request". Browser de outra origem nao consegue
+    # chamar a API com requisicao nao-simples.
+    c.record("cors-preflight-recusado", "OPTIONS", "/legal/privacy", auth=False,
+             extra_headers={"Origin": "https://exemplo.com", "Access-Control-Request-Method": "GET"},
+             expect=403)
 
     # ---------------- gated: efeitos externos ----------------
     # ---------------- caminhos de erro do auth/users ----------------

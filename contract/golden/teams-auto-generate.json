@@ -1,0 +1,42 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/events/{uuid}/teams/auto-generate",
+    "body": {
+      "teamCount": 2,
+      "includeReserves": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "[{\"id\":\"883bd766-ede4-4fae-bcfa-9094021a0b46\",\"eventId\":\"dc281367-dd8d-4740-b752-4e69d979d490\",\"order\":1,\"name\":\"Time 1\",\"color\":\"#F44336\",\"players\":[{\"userId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"role\":null,\"username\":\"user_demo\",\"displayname\":\"Contract Baseline\",\"avatarUrl\":null}]}]",
+    "body": [
+      {
+        "id": "<uuid>",
+        "eventId": "<id:event>",
+        "order": 1,
+        "name": "Time 1",
+        "color": "#F44336",
+        "players": [
+          {
+            "userId": "<id:me>",
+            "role": null,
+            "username": "user_demo",
+            "displayname": "Contract Baseline",
+            "avatarUrl": null
+          }
+        ]
+      }
+    ]
+  }
+}
