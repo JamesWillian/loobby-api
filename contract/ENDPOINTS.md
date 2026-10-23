@@ -93,6 +93,10 @@ do caminho feliz. Se elas mudarem, a referência vira ficção.
 
 ## games — `GameController` (2)
 
+**Go: implementado e igual à produção** (`api-go/internal/games`): a busca e o
+detalhe do cache idênticos aos golden, e o detalhe vindo do RAWG idêntico a
+respostas gravadas da produção. Aguardando cutover.
+
 | ✓ | Método | Rota | Auth | Notas de captura |
 |---|---|---|---|---|
 | ☑ | GET | `/games/search` | jwt | proxy RAWG: gravar hit de cache, miss e circuito aberto |
