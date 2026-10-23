@@ -9,6 +9,7 @@ import (
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/auth"
 	"github.com/JamesWillian/loobby-api/api-go/internal/config"
+	"github.com/JamesWillian/loobby-api/api-go/internal/games"
 	"github.com/JamesWillian/loobby-api/api-go/internal/health"
 	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
 	"github.com/JamesWillian/loobby-api/api-go/internal/legal"
@@ -17,6 +18,7 @@ import (
 type Deps struct {
 	Config config.Config
 	DB     health.Pinger
+	Games  *games.Handler // nil: rotas de jogos nao sao registradas
 }
 
 func Handler(d Deps) http.Handler {
@@ -25,6 +27,9 @@ func Handler(d Deps) http.Handler {
 
 	mux.Handle("GET /actuator/health", health.Handler(d.DB))
 	legal.Register(mux)
+	if d.Games != nil {
+		d.Games.Register(mux, jwt.Require)
+	}
 
 	// Rota temporaria: prova o middleware ponta a ponta contra um token real do
 	// Kotlin. Nao e contrato e o nginx nao a expoe; some quando /users/me migrar.

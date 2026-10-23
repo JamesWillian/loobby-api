@@ -31,6 +31,10 @@ type Config struct {
 
 	BaseURL string
 
+	// RawgAPIKey: a mesma do Kotlin. Obrigatoria, como la -- sem ela, o lateinit
+	// do RawgProperties derruba a aplicacao na partida.
+	RawgAPIKey string
+
 	// TLS mutuo. O Go roda numa maquina separada do nginx (que fica no AWS), e o
 	// trafego entre os dois atravessa a internet levando os tokens de login dos
 	// usuarios. Com os tres arquivos definidos, o servidor so completa o
@@ -65,6 +69,7 @@ func Load() (Config, error) {
 		JWTSecret:                  os.Getenv("JWT_SECRET"),
 		AcceptRefreshTokenAsAccess: envBool("ACCEPT_REFRESH_AS_ACCESS", true),
 		BaseURL:                    envOr("APP_BASE_URL", "https://api.loobby.app"),
+		RawgAPIKey:                 os.Getenv("RAWG_API_KEY"),
 		TLSCertFile:                os.Getenv("TLS_CERT_FILE"),
 		TLSKeyFile:                 os.Getenv("TLS_KEY_FILE"),
 		TLSClientCAFile:            os.Getenv("TLS_CLIENT_CA_FILE"),
@@ -77,6 +82,9 @@ func Load() (Config, error) {
 	}
 	if c.JWTSecret == "" {
 		missing = append(missing, "JWT_SECRET")
+	}
+	if c.RawgAPIKey == "" {
+		missing = append(missing, "RAWG_API_KEY")
 	}
 	if len(missing) > 0 {
 		return c, fmt.Errorf("variaveis de ambiente obrigatorias ausentes: %s", strings.Join(missing, ", "))

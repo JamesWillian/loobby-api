@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,6 +28,7 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	cfg.MaxConnLifetime = 30 * time.Minute
 	cfg.MaxConnIdleTime = 5 * time.Minute
 	cfg.HealthCheckPeriod = time.Minute
+	cfg.AfterConnect = RegisterTypes
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
@@ -39,4 +42,27 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("banco inacessivel: %w", err)
 	}
 	return pool, nil
+}
+
+// RegisterTypes faz o numeric chegar como o TEXTO que o Postgres escreve.
+//
+// Pelo protocolo binario, o pgx perde a escala justamente do zero: numeric(4,2)
+// 0.00 chega como Int=0 Exp=0, e vira "0" -- enquanto 25.50 chega com Exp=-2 e
+// sobrevive (medido). O Kotlin responde "0.00" (rating do cache) e "25.50"
+// (pricePerPlayer); o Go precisa da escala exata, e so o texto do Postgres a
+// preserva em todos os casos.
+//
+// Com o TextCodec, o pgx pede numeric em formato texto e entrega em string; o
+// sqlc.yaml mapeia numeric para string. Parametros string tambem seguem como
+// texto, e o Postgres converte para numeric.
+//
+// Toda conexao precisa disto: um pool aberto sem passar por aqui leria 0.00
+// como "0" sem erro nenhum. Por isso db_test.go trava o comportamento.
+func RegisterTypes(_ context.Context, conn *pgx.Conn) error {
+	conn.TypeMap().RegisterType(&pgtype.Type{
+		Name:  "numeric",
+		OID:   pgtype.NumericOID,
+		Codec: pgtype.TextCodec{},
+	})
+	return nil
 }

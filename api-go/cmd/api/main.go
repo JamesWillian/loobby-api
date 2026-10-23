@@ -19,6 +19,7 @@ import (
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/config"
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
+	"github.com/JamesWillian/loobby-api/api-go/internal/games"
 	"github.com/JamesWillian/loobby-api/api-go/internal/server"
 )
 
@@ -47,9 +48,21 @@ func run() error {
 	}
 	defer pool.Close()
 
+	// Valores do bloco rawg: do application.yaml do Kotlin.
+	rawg := games.NewRawgClient(games.RawgConfig{
+		APIKey:           cfg.RawgAPIKey,
+		BaseURL:          "https://api.rawg.io/api",
+		ConnectTimeout:   3 * time.Second,
+		ReadTimeout:      5 * time.Second,
+		SearchPageSize:   20,
+		FailureThreshold: 5,
+		OpenFor:          2 * time.Minute,
+	})
+	gamesHandler := games.NewHandler(games.NewService(rawg, games.NewStore(pool)))
+
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr(),
-		Handler:           logging(server.Handler(server.Deps{Config: cfg, DB: pool})),
+		Handler:           logging(server.Handler(server.Deps{Config: cfg, DB: pool, Games: gamesHandler})),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

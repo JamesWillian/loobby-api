@@ -6,6 +6,7 @@ func base(t *testing.T) {
 	t.Helper()
 	t.Setenv("DB_URL", "postgres://u:p@h/db")
 	t.Setenv("JWT_SECRET", "s")
+	t.Setenv("RAWG_API_KEY", "k")
 	for _, k := range []string{"TLS_CERT_FILE", "TLS_KEY_FILE", "TLS_CLIENT_CA_FILE", "BIND_HOST", "PORT"} {
 		t.Setenv(k, "")
 	}
