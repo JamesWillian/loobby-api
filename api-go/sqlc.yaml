@@ -1,0 +1,23 @@
+# Gera Go tipado a partir de SQL escrito a mao: `sqlc generate` (daqui).
+# O schema e o dump da producao (contract/schema.sql) -- a fonte de verdade, nao
+# as migrations do Kotlin, que divergiram dela (contract/ACHADOS.md, secao 8).
+version: "2"
+sql:
+  - engine: postgresql
+    schema: ../contract/schema.sql
+    queries: db/queries
+    gen:
+      go:
+        package: sqlc
+        out: internal/db/sqlc
+        sql_package: pgx/v5
+        emit_pointers_for_null_types: true
+        # numeric chega como texto (ver db.RegisterTypes): "0.00", nao "0".
+        overrides:
+          - db_type: "pg_catalog.numeric"
+            go_type: "string"
+          - db_type: "pg_catalog.numeric"
+            nullable: true
+            go_type:
+              type: "string"
+              pointer: true

@@ -1,0 +1,51 @@
+# /etc/systemd/system/loobby-api.service -- o Go da Loobby API na maquina nova.
+#
+# Sem Docker de proposito: o binario e estatico e ja carrega tudo que precisa;
+# numa maquina de 1 GB os servicos do Docker ocupariam tanto quanto o programa.
+
+[Unit]
+Description=Loobby API (Go)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=loobby
+Group=loobby
+EnvironmentFile=/etc/loobby/api.env
+ExecStart=/opt/loobby/api
+Restart=on-failure
+RestartSec=2s
+# o Go drena as requisicoes em voo por ate 10s ao receber SIGTERM
+TimeoutStopSec=15s
+
+# Teto de memoria. O GOMEMLIMIT do api.env faz o coletor do Go trabalhar antes
+# de chegar aqui; este limite e a rede de seguranca do sistema.
+MemoryMax=256M
+
+# Endurecimento: o processo so precisa de rede e de ler os proprios arquivos.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+# Quando o modulo de arquivos migrar, o diretorio de uploads entra aqui:
+# ReadWritePaths=/var/lib/loobby/uploads
+
+[Install]
+WantedBy=multi-user.target

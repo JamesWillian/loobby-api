@@ -38,20 +38,30 @@ Enviado `"25.50"`, devolvido **`25.50`** — com o zero à direita.
 `float64` no Go emite `25.5`. **Ação:** `shopspring/decimal`, e serializar como
 número JSON (não string) preservando a escala.
 
-## 3. `rating` sai com escalas diferentes conforme o endpoint
+## 3. `rating` muda de escala conforme a ORIGEM do dado, não o endpoint
 
-| Endpoint | Valor |
-|---|---|
-| `GET /games/search` | `0.0` |
-| `GET /games/{id}` | `0.00` |
+> **Corrigido em 23/10/2026.** A versão anterior desta seção dizia que a escala
+> dependia do endpoint (`0.0` na busca, `0.00` no detalhe). Errado: o próprio
+> `GET /games/{id}` devolve as duas.
 
-**Não é inconsistência aleatória — é o caminho dos dados.** O `search` monta a
-resposta a partir da `GameEntity` recém-upsertada em memória, cujo `rating` veio de
-`node.path("rating").decimalValue()` — a escala literal do RAWG. O `getDetails` lê
-da coluna `rating numeric(4, 2)` (`V2__games_cache.sql:24`), que força escala 2.
+Medido em produção, pedindo o detalhe do mesmo jogo duas vezes seguidas, para três
+jogos que ninguém tinha aberto ainda (257, 64911, 21482):
 
-**Ação:** replicar os dois caminhos separadamente. Um Go que normalize tudo pela
-mesma origem acerta um endpoint e quebra o outro.
+| Chamada | Origem no Kotlin | `rating` |
+|---|---|---|
+| 1ª | RAWG, na hora (o jogo não tinha descrição no cache) | `0.0` |
+| 2ª | tabela `games` do Postgres | `0.00` |
+
+Byte a byte, é a **única** diferença entre as duas respostas.
+
+O mecanismo: do RAWG, o valor passa por `JsonNode.decimalValue()` — um double
+convertido para BigDecimal, que sai como o `Double.toString` (`0.0`, `4.5`, `4.38`).
+Do cache, vem da coluna `rating numeric(4,2)`, que fixa duas casas (`0.00`, `4.50`).
+A busca sempre responde pelo primeiro caminho.
+
+**Ação para o Go:** montar a resposta fresca com o que veio do RAWG, sem reler do
+banco, e a do cache com o texto da coluna. Feito em `api-go/internal/games`, e
+travado num teste que reproduz as duas chamadas de produção, na ordem.
 
 ## 4. Arrays vazios e nulos seguem duas convenções opostas
 
@@ -314,6 +324,117 @@ aqui o valor null é o contrato inteiro.
 de `GoogleAuthService:81` só é alcançado por um JWT **bem-formado** que o verificador
 rejeite. Exigiria forjar um JWT com estrutura válida e assinatura/audience inválidas —
 viável, mas não feito.
+
+---
+
+## 16. Headers do Spring Security e do CORS em TODA resposta
+
+A primeira baseline guardava só 4 headers numa whitelist e deixou estes de fora.
+Corrigido em 05/10/2026; todos os golden foram regravados com eles.
+
+```
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0                      <- default do Spring Security 6
+X-Frame-Options: DENY
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+```
+
+Saem **inclusive no 401** que o filtro de autenticação devolve antes de qualquer
+controller, e no 400 do `ApiExceptionHandler`. Os três últimos só aparecem quando
+o handler não definiu cache: `/legal/*` manda `max-age=3600, public` e aí o Spring
+não acrescenta `Pragma` nem `Expires`. Não há HSTS — o TLS termina no nginx.
+
+**Ação para o Go:** um middleware mais externo que todos, inclusive que o de JWT.
+Feito em `api-go/internal/httpx/springheaders.go`.
+
+## 17. Não existe configuração de CORS: todo preflight é recusado
+
+`.cors(withDefaults())` sem nenhum `CorsConfigurationSource`. Medido:
+
+| Requisição | Resposta |
+|---|---|
+| `OPTIONS` com `Origin` + `Access-Control-Request-Method` | **403**, corpo `Invalid CORS request`, sem `Content-Type` |
+| o mesmo, com `Origin: https://api.loobby.app` | **403** |
+| `OPTIONS` sem `Origin` | **401** — cai na autenticação |
+
+**Consequência de produto:** nenhum navegador em outra origem consegue fazer
+requisição não-simples à API (com `Authorization`, ou JSON no corpo). Se existe ou
+vai existir um cliente web servido de outro domínio, ele não funciona hoje.
+
+**Ação para o Go:** durante o strangler, preflight vai para o Kotlin (o nginx só
+encaminha ao Go os métodos que ele implementa). O `SpringHeaders` replica o 403
+para quando o Go atender sozinho — com golden e teste.
+
+## 18. Mais cinco 500 da mesma família do §6 — NÃO corrigidos
+
+Exceções-padrão do Spring MVC também não são `ResponseStatusException`, então o
+catch-all do `ApiExceptionHandler` as engole. Medido com token válido:
+
+| Requisição | Hoje | Deveria |
+|---|---|---|
+| rota inexistente (`NoResourceFoundException`) | 500 | 404 |
+| método errado (`HttpRequestMethodNotSupportedException`) | 500 | 405 |
+| query param obrigatório faltando | 500 | 400 |
+| JSON malformado (`HttpMessageNotReadableException`) | 500 | 400 |
+| path var que não é UUID (`MethodArgumentTypeMismatchException`) | 500 | 400 |
+
+Os três primeiros implementam `ErrorResponse` (Spring 6) e carregam o status
+certo — o catch-all só precisaria respeitar `ErrorResponse.statusCode`. Os dois
+últimos precisam de handler explícito.
+
+**Para o strangler isto não bloqueia nada:** como o nginx roteia por (método,
+caminho) exatos, as requisições malformadas continuam no Kotlin, e a paridade se
+mantém sozinha. Mas são cinco 500 em produção agora, e a correção cabe no PR #1,
+que é exatamente sobre esta família.
+
+## 19. `/actuator/health` não é `application/json`
+
+```
+Content-Type: application/vnd.spring-boot.actuator.v3+json
+```
+
+O primeiro handler Go da Fase 1 respondia `application/json` — teria ido para
+produção assim. Pego ao comparar com o golden.
+
+---
+
+## 20. O banco depende da extensão `pg_trgm`, que o dump não registra
+
+O índice `games_name_trgm_idx` usa `gin_trgm_ops`, da extensão `pg_trgm`. O dump
+do schema (`--schema=public`) não inclui o `CREATE EXTENSION`, então aplicar
+`contract/schema.sql` num Postgres limpo falha na linha do índice.
+
+**Ação:** `CREATE EXTENSION pg_trgm SCHEMA public` antes do schema — o
+`api-go/README.md` traz o passo a passo do banco local de testes.
+
+## 21. A busca de jogos trata parâmetros de jeitos que só medindo
+
+Medido em produção em 23/10/2026. Pelo nginx, toda `GET /games/search` vai para
+o Go, com qualquer query string — então tudo isto é contrato:
+
+| Requisição | Kotlin |
+|---|---|
+| `q` ausente, `q=` ou `q=%20` | **500** "Unexpected error" (ver §18) |
+| `q=%C2%A0` (espaço não-separável) | 200 — o `@NotBlank` usa o `trim()` do Java, que não remove U+00A0 |
+| `q=mario&q=kart` | 200 — busca `"mario,kart"` |
+| `page=abc` | **500** |
+| `page=` | 200, página 1 (o vazio cai no default) |
+| `page=0x2` | 200, **página 2** — o Spring lê `0x`/`#` como hexadecimal |
+| `page=%202%20` | 200, página 2 — espaços são removidos |
+| `page=2&page=3` | 200, página 2 — vale o primeiro |
+| `page=&page=2` | **500** — o primeiro vazio vira null num `Int` |
+| `page=999999` | **500** (503 depois do PR #1) |
+
+O último tem um efeito colateral, este **deduzido do código**: o 404 que o RAWG
+devolve para página além do fim conta como falha no circuit breaker da busca
+(`searchGames` trata qualquer `RestClientException` como falha). Cinco clientes
+paginando além do fim abrem o circuito por 2 minutos — e a busca fica fora para
+todo mundo. O Go reproduz o comportamento; corrigir é decisão para os dois lados.
 
 ---
 

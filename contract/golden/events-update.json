@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/events/{uuid}",
+    "body": {
+      "name": "contract-baseline-sport-v2"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"dc281367-dd8d-4740-b752-4e69d979d490\",\"eventType\":\"SPORT\",\"groupId\":\"68d9ef69-3751-432d-9613-d75d72595703\",\"isInstant\":false,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"scheduledDatetime\":\"2026-10-12T16:00:23Z\",\"name\":\"contract-baseline-sport-v2\",\"description\":null,\"inviteCode\":\"$-ZGEF-MJS8\",\"createdAt\":\"2026-10-05T16:00:23.479878Z\",\"rsvpStatus\":null,\"confirmedCount\":0,\"confirmedAvatars\":null,\"gameplay\":null,\"sport\":{\"durationMinutes\":90,\"arena\":\"Quadra Contract\",\"pricePerPlayer\":25.50,\"maxPlayers\":10,\"acceptReserve\":true}}",
+    "body": {
+      "id": "<id:event>",
+      "eventType": "SPORT",
+      "groupId": "<id:group>",
+      "isInstant": false,
+      "ownerId": "<id:me>",
+      "scheduledDatetime": "<timestamp>",
+      "name": "contract-baseline-sport-v2",
+      "description": null,
+      "inviteCode": "$-XXXX-XXXX",
+      "createdAt": "<timestamp>",
+      "rsvpStatus": null,
+      "confirmedCount": 0,
+      "confirmedAvatars": null,
+      "gameplay": null,
+      "sport": {
+        "durationMinutes": 90,
+        "arena": "Quadra Contract",
+        "pricePerPlayer": {
+          "$num": "25.50"
+        },
+        "maxPlayers": 10,
+        "acceptReserve": true
+      }
+    }
+  }
+}

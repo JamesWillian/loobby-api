@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/groups",
+    "body": {
+      "name": "contract-baseline-group"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"68d9ef69-3751-432d-9613-d75d72595703\",\"name\":\"contract-baseline-group\",\"inviteCode\":\"$-ZH4G8S\",\"imageUrl\":null,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"createdAt\":null}",
+    "body": {
+      "id": "<uuid>",
+      "name": "contract-baseline-group",
+      "inviteCode": "$-XXXXXX",
+      "imageUrl": null,
+      "ownerId": "<id:me>",
+      "createdAt": null
+    }
+  }
+}

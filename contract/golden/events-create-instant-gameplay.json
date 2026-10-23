@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/events/instant",
+    "body": {
+      "eventType": "GAMEPLAY",
+      "name": "contract-baseline-gameplay",
+      "scheduledDatetime": "<timestamp>",
+      "gameplay": {
+        "gameName": "Contract Test Game"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"da4875da-520c-4d8f-a076-a5229aea38dc\",\"eventType\":\"GAMEPLAY\",\"groupId\":null,\"isInstant\":true,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"scheduledDatetime\":\"2026-10-06T16:00:23Z\",\"name\":\"contract-baseline-gameplay\",\"description\":null,\"inviteCode\":\"$-96VK-S1QF\",\"createdAt\":null,\"rsvpStatus\":null,\"confirmedCount\":0,\"confirmedAvatars\":null,\"gameplay\":{\"gameId\":null,\"gameName\":\"Contract Test Game\"},\"sport\":null}",
+    "body": {
+      "id": "<uuid>",
+      "eventType": "GAMEPLAY",
+      "groupId": null,
+      "isInstant": true,
+      "ownerId": "<id:me>",
+      "scheduledDatetime": "<timestamp>",
+      "name": "contract-baseline-gameplay",
+      "description": null,
+      "inviteCode": "$-XXXX-XXXX",
+      "createdAt": null,
+      "rsvpStatus": null,
+      "confirmedCount": 0,
+      "confirmedAvatars": null,
+      "gameplay": {
+        "gameId": null,
+        "gameName": "Contract Test Game"
+      },
+      "sport": null
+    }
+  }
+}

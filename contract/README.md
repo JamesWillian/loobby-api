@@ -10,7 +10,9 @@ esta suíte é a rede de segurança.
 |---|---|
 | `ENDPOINTS.md` | inventário dos 53 endpoints + auth por rota |
 | `capture.py` | executa a suíte e grava os golden |
+| `compare.py` | compara duas capturas — **o critério de aceite** |
 | `golden/` | baseline capturada da API Kotlin |
+| `bootstrap_user2.py` | cria, uma vez, a 2ª conta de teste |
 | `ACHADOS.md` | **leia isto** — as divergências que quebrariam os apps |
 
 ## Uso
@@ -24,10 +26,40 @@ LOOBBY_TEST_PASSWORD=...
 ```
 
 ```bash
-python3 contract/capture.py                                    # baseline (Kotlin)
-python3 contract/capture.py --base-url http://localhost:8081 --out contract/go
-diff -ru contract/golden contract/go                           # critério de aceite
+python3 contract/capture.py --include-uploads                        # baseline
+python3 contract/capture.py --include-uploads --out contract/depois  # depois de uma mudança
+python3 contract/compare.py contract/golden contract/depois          # 0 diferenças = paridade
 ```
+
+### Durante o strangler, a suíte roda contra o proxy
+
+Não contra o Go direto. A suíte começa com `/auth/login`, e `auth` é o **último**
+módulo a migrar — o Go sozinho não consegue nem autenticar. Rodando contra
+produção (o nginx), cada requisição vai para o lado que o `deploy/nginx/loobby-routes.conf`
+manda, e a invariante do strangler vira um comando:
+
+> **mover uma rota do Kotlin para o Go não pode mudar a baseline.**
+
+Antes do cutover, os testes Go (`api-go/internal/server`) já comparam o módulo
+contra os golden sem precisar de servidor nem banco.
+
+### Por que não `diff -ru`
+
+Duas capturas do **mesmo** Kotlin diferem em dezenas de arquivos — medido: 42 de
+73 —, porque o `body_raw` carrega UUIDs, timestamps e códigos de convite reais.
+O `compare.py` compara status, headers de contrato e a visão normalizada do
+corpo, e foi validado nos dois sentidos: duas capturas do Kotlin dão **zero**
+diferenças, e mutações como `25.50`→`25.5`, `null`→chave ausente, `[null]`→`[]` ou
+um byte no HTML legal são todas pegas.
+
+Goldens de `games-*` dependem do conteúdo do RAWG, que muda com o tempo; para eles
+a comparação é estrutural — chaves, tipos e o **formato** dos números (`#.##` vs
+`#.#`), não os valores. Pega o `0.0` vs `0.00` sem alarme falso quando o RAWG
+atualiza uma nota.
+
+A precisão da fração dos timestamps (0/3/6/9 dígitos) **não** é comparada aqui —
+varia por valor até dentro do Kotlin. Quem trava isso é o
+`httpx.TestInstantGrouping`, do lado Go.
 
 Flags, todas fora do default porque deixam rastro na produção:
 
@@ -37,8 +69,8 @@ Flags, todas fora do default porque deixam rastro na produção:
 | `--include-email` | `forgot-password` e `resend-verification` — mandam e-mail de verdade |
 | `--keep` | não apaga os recursos criados |
 
-**Use as mesmas flags nos dois lados** ao comparar Kotlin e Go, senão o `diff`
-acusa arquivos ausentes em vez de diferenças de comportamento.
+**Use as mesmas flags nas duas capturas**, senão o `compare` acusa golden ausente
+em vez de diferença de comportamento.
 
 `--include-uploads` está atrás de flag porque o `FileStorageService.store()` nomeia
 o arquivo como `<epochMillis>.<ext>` e **nunca apaga o anterior**: cada execução
@@ -64,6 +96,10 @@ recebeu. As expectativas já apontam para o comportamento pós-deploy.
 (`rm contract/golden/*.json && python3 contract/capture.py --include-uploads`) —
 e a partir daí qualquer divergência nova é regressão de verdade.
 
+**Uma mudança por vez entre baselines.** Se o deploy destas correções e o cutover
+de uma rota para o Go caírem no mesmo intervalo, o `compare` mistura as duas
+causas e não dá para saber qual mexeu no quê.
+
 ## Como a suíte se comporta
 
 Roda **contra produção**, por decisão explícita. Para isso:
@@ -77,6 +113,9 @@ Roda **contra produção**, por decisão explícita. Para isso:
 Respostas binárias (imagens de `/files/**`) não vão para `body_raw` — bytes
 não-UTF-8 viram `\ufffd` na decodificação, e comparar a string mutilada não provaria
 nada. Elas viram `body_binary: {bytes, sha256}`, que é o que precisa bater.
+
+Os nomes dos golden são estáveis (`legal-privacy.json`, não `052-legal-privacy.json`):
+com numeração sequencial, uma seção pulada desalinhava todos os arquivos seguintes.
 
 O corpo cru de cada resposta textual é gravado **literalmente** em `body_raw`. Isso não é
 redundância: `0.00` vira `0` num Go com `float64`, e só o texto cru denuncia. Ao

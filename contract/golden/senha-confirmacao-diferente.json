@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/users/me/password",
+    "body": {
+      "currentPassword": "<redigido>",
+      "newPassword": "<redigido>",
+      "confirmPassword": "outraSenhaBoa2"
+    }
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"timestamp\":\"2026-10-05T16:00:32.688809504Z\",\"status\":500,\"error\":\"Internal Server Error\",\"message\":\"Unexpected error\",\"path\":\"/users/me/password\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 500,
+      "error": "Internal Server Error",
+      "message": "Unexpected error",
+      "path": "/users/me/password",
+      "fieldErrors": null
+    }
+  }
+}

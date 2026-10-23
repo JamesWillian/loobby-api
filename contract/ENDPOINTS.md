@@ -93,6 +93,10 @@ do caminho feliz. Se elas mudarem, a referência vira ficção.
 
 ## games — `GameController` (2)
 
+**Go: implementado e igual à produção** (`api-go/internal/games`): a busca e o
+detalhe do cache idênticos aos golden, e o detalhe vindo do RAWG idêntico a
+respostas gravadas da produção. Aguardando cutover.
+
 | ✓ | Método | Rota | Auth | Notas de captura |
 |---|---|---|---|---|
 | ☑ | GET | `/games/search` | jwt | proxy RAWG: gravar hit de cache, miss e circuito aberto |
@@ -107,9 +111,12 @@ do caminho feliz. Se elas mudarem, a referência vira ficção.
 
 ## legal — `LegalController` (3)
 
+**Go: implementado e igual aos golden** (`api-go/internal/legal`). Aguardando
+cutover no nginx — ver `deploy/nginx/README.md`.
+
 | ✓ | Método | Rota | Auth | Notas |
 |---|---|---|---|---|
-| ☑ | GET | `/legal/privacy` | pub | `text/html` — comparar byte a byte, vira `go:embed` |
+| ☑ | GET | `/legal/privacy` | pub | `text/html;charset=UTF-8`, `max-age=3600, public` |
 | ☑ | GET | `/legal/account-deletion` | pub | idem |
 | ☑ | GET | `/legal/child-safety` | pub | idem |
 

@@ -1,0 +1,4 @@
+# binários compilados
+/api
+/loobby-api
+*.exe

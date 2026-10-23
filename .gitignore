@@ -68,3 +68,6 @@ uploads/
 
 ### Supabase CLI (estado local do link, sem credenciais) ###
 supabase/.temp/
+
+### Deploy do Go: variaveis com segredos (o modelo .example vai para o git) ###
+api.env
