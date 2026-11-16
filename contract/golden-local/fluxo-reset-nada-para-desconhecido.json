@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "MAILBOX",
+    "path": "/emails?to=ninguem@teste.local",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {},
+    "body_raw": null,
+    "body": {
+      "count": 0
+    }
+  }
+}

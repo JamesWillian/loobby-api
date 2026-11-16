@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/reset-password",
+    "body": {
+      "token": "<uuid>",
+      "password": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/html",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "<!DOCTYPE html>\n<html>\n<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Senha Redefinida — Loobby</title></head>\n<body style=\"font-family: -apple-system, sans-serif; background: #0f1117; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;\">\n    <div style=\"text-align: center; max-width: 400px; padding: 40px;\">\n        <div style=\"font-size: 64px; margin-bottom: 16px;\">✅</div>\n        <h1 style=\"color: #4ade80; margin-bottom: 12px;\">Senha redefinida!</h1>\n        <p style=\"color: #a0a0a0; line-height: 1.6;\">Sua senha foi alterada com sucesso. Você já pode voltar ao app e fazer login com a nova senha.</p>\n    </div>\n</body>\n</html>",
+    "body": null
+  }
+}

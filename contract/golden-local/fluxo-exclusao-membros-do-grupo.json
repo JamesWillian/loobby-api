@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/groups/{uuid}/members",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "[{\"userId\":\"a5c7ca87-206e-4bce-9e0d-4af57d1913d2\",\"username\":\"\",\"displayname\":\"[deleted]\",\"avatarUrl\":null,\"isOwner\":false},{\"userId\":\"de1e89d0-329c-4353-9a7e-956399d0b20b\",\"username\":\"user_d40f84\",\"displayname\":\"user_d40f84\",\"avatarUrl\":null,\"isOwner\":true}]",
+    "body": [
+      {
+        "userId": "<id:a>",
+        "username": "",
+        "displayname": "[deleted]",
+        "avatarUrl": null,
+        "isOwner": false
+      },
+      {
+        "userId": "<id:b>",
+        "username": "user_<hex6>",
+        "displayname": "user_<hex6>",
+        "avatarUrl": null,
+        "isOwner": true
+      }
+    ]
+  }
+}

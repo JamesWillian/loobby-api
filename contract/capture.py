@@ -101,7 +101,11 @@ def kept_headers(headers):
     return out
 
 
-def load_env(path=".env"):
+ENV_FILE = ".env"
+
+
+def load_env(path=None):
+    path = path or ENV_FILE
     if not os.path.exists(path):
         sys.exit(f"faltando {path} — veja contract/README.md")
     for line in open(path, encoding="utf-8"):
@@ -283,8 +287,9 @@ def multipart(field, filename, content_type, payload):
     return f"multipart/form-data; boundary={boundary}", body
 
 
-def update_env(key, value, path=".env"):
+def update_env(key, value, path=None):
     """Rotaciona uma linha do .env preservando o resto do arquivo."""
+    path = path or ENV_FILE
     lines = open(path, encoding="utf-8").read().splitlines()
     out, done = [], False
     for line in lines:
@@ -607,8 +612,13 @@ def main():
     p.add_argument("--include-uploads", action="store_true",
                    help="inclui os multipart; deixa arquivo permanente no disco do servidor")
     p.add_argument("--keep", action="store_true", help="nao apaga os recursos criados")
+    p.add_argument("--env-file", default=".env",
+                   help="arquivo de credenciais (default .env). Use um proprio ao capturar de um "
+                        "servidor local, para nao rotacionar o refresh token do .env de producao")
     args = p.parse_args()
 
+    global ENV_FILE
+    ENV_FILE = args.env_file
     load_env()
     base = args.base_url or os.environ.get("LOOBBY_BASE_URL")
     c = Capture(base, args.out)

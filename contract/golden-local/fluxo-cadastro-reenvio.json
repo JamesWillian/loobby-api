@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/resend-verification",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"message\":\"Email de verificação reenviado\"}",
+    "body": {
+      "message": "Email de verificação reenviado"
+    }
+  }
+}

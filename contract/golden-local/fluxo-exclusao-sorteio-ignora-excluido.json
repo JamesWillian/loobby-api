@@ -1,0 +1,42 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/events/{uuid}/teams/auto-generate",
+    "body": {
+      "teamCount": 2,
+      "includeReserves": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "[{\"id\":\"2e278e7e-2027-468c-ab94-1686e5492dab\",\"eventId\":\"6d8a8b15-45bb-4ad2-81a1-670165c55bf0\",\"order\":1,\"name\":\"Time 1\",\"color\":\"#F44336\",\"players\":[{\"userId\":\"de1e89d0-329c-4353-9a7e-956399d0b20b\",\"role\":null,\"username\":\"user_d40f84\",\"displayname\":\"user_d40f84\",\"avatarUrl\":null}]}]",
+    "body": [
+      {
+        "id": "<uuid>",
+        "eventId": "<id:evento-do-b>",
+        "order": 1,
+        "name": "Time 1",
+        "color": "#F44336",
+        "players": [
+          {
+            "userId": "<id:b>",
+            "role": null,
+            "username": "user_<hex6>",
+            "displayname": "user_<hex6>",
+            "avatarUrl": null
+          }
+        ]
+      }
+    ]
+  }
+}

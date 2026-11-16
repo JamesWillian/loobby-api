@@ -8,12 +8,15 @@ esta suíte é a rede de segurança.
 
 | Arquivo | O quê |
 |---|---|
-| `ENDPOINTS.md` | inventário dos 53 endpoints + auth por rota |
+| `ENDPOINTS.md` | inventário dos 53 endpoints, auth por rota e onde cada um foi medido |
 | `capture.py` | executa a suíte e grava os golden |
 | `compare.py` | compara duas capturas — **o critério de aceite** |
 | `golden/` | baseline capturada da API Kotlin |
 | `bootstrap_user2.py` | cria, uma vez, a 2ª conta de teste |
-| `ACHADOS.md` | **leia isto** — as divergências que quebrariam os apps |
+| `ACHADOS.md` | **leia isto** — as divergências que quebrariam os apps, e os defeitos do Kotlin |
+| `flows.py` | os fluxos felizes que a produção não tem como gravar — **só roda local** |
+| `golden-local/` | a suíte inteira (73 + 93 fluxos) gravada do Kotlin rodando localmente |
+| `local/` | o ambiente local: Kotlin e Go lado a lado, com serviços externos falsos |
 
 ## Uso
 
@@ -42,6 +45,24 @@ manda, e a invariante do strangler vira um comando:
 
 Antes do cutover, os testes Go (`api-go/internal/server`) já comparam o módulo
 contra os golden sem precisar de servidor nem banco.
+
+### Duas referências, dois papéis
+
+| | `golden/` | `golden-local/` |
+|---|---|---|
+| Gravado de | produção, pelo nginx | Kotlin local (`local/oracle.sh`), serviços externos falsos |
+| Cenários | 73 | 166 — os mesmos 73 e mais 93 dos fluxos de cadastro, e-mail, senha, exclusão e Google |
+| Serve para | o **cutover**: mover uma rota não pode mudar a captura | o **`go test`**: o Go inteiro contra o Kotlin, sem servidor nenhum no ar |
+| Regravar | depois de um deploy do Kotlin | `contract/local/oracle.sh record` — só regrava se Kotlin e Go concordarem |
+
+```bash
+contract/local/oracle.sh compare    # sobe os dois lados, captura e compara: 0 diferenças
+```
+
+Os dois lados locais diferem da produção em dois pontos esperados: os sete 500 da
+tabela abaixo (a produção ainda roda o código antigo) e o `rating` de
+`games-details`, que em produção veio do cache (`#.##`) e localmente vem do RAWG
+falso na primeira chamada (`#.#`) — o próprio §3 do `ACHADOS.md`.
 
 ### Por que não `diff -ru`
 

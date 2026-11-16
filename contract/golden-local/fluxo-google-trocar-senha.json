@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/users/me/password",
+    "body": {
+      "currentPassword": "<redigido>",
+      "newPassword": "<redigido>",
+      "confirmPassword": "senha-do-fluxo-1"
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:15.932865Z\",\"status\":404,\"error\":\"Not Found\",\"message\":\"Usuário não encontrado.\",\"path\":\"/users/me/password\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 404,
+      "error": "Not Found",
+      "message": "Usuário não encontrado.",
+      "path": "/users/me/password",
+      "fieldErrors": null
+    }
+  }
+}

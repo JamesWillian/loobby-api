@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/google",
+    "body": {
+      "idToken": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"accessToken\":\"<redigido>\",\"refreshToken\":\"<redigido>\",\"expiresIn\":900,\"userId\":\"8090250f-1cc7-412b-a9dd-f294be69d1b2\",\"username\":\"fulana_da_si_85d4\",\"roles\":[\"USER\"]}",
+    "body": {
+      "accessToken": "<redigido>",
+      "refreshToken": "<redigido>",
+      "expiresIn": 900,
+      "userId": "<uuid>",
+      "username": "fulana_da_si_<hex4>",
+      "roles": [
+        "USER"
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/users/me",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"a5c7ca87-206e-4bce-9e0d-4af57d1913d2\",\"username\":\"\",\"displayname\":\"[deleted]\",\"avatarUrl\":null,\"isAnonymous\":false,\"roles\":[\"USER\"],\"email\":null,\"emailVerified\":true,\"createdAt\":\"2026-11-16T04:34:14.589868Z\"}",
+    "body": {
+      "id": "<id:a>",
+      "username": "",
+      "displayname": "[deleted]",
+      "avatarUrl": null,
+      "isAnonymous": false,
+      "roles": [
+        "USER"
+      ],
+      "email": null,
+      "emailVerified": true,
+      "createdAt": "<timestamp>"
+    }
+  }
+}
