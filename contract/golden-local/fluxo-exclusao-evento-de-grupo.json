@@ -1,0 +1,48 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/events/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"1aec155c-5c3d-453a-9a9d-588fbb4c6466\",\"eventType\":\"SPORT\",\"groupId\":\"e91c1b37-2907-4c47-a6e7-be3856943f27\",\"isInstant\":false,\"ownerId\":\"a5c7ca87-206e-4bce-9e0d-4af57d1913d2\",\"scheduledDatetime\":\"2026-11-19T04:34:16Z\",\"name\":\"fluxo-evento-de-grupo\",\"description\":null,\"inviteCode\":\"$-A07X-CYOJ\",\"createdAt\":\"2026-11-16T04:34:16.137117Z\",\"rsvpStatus\":null,\"confirmedCount\":1,\"confirmedAvatars\":[null],\"gameplay\":null,\"sport\":{\"durationMinutes\":60,\"arena\":\"Quadra\",\"pricePerPlayer\":10.00,\"maxPlayers\":10,\"acceptReserve\":false}}",
+    "body": {
+      "id": "<id:evento-de-grupo>",
+      "eventType": "SPORT",
+      "groupId": "<id:grupo-transferido>",
+      "isInstant": false,
+      "ownerId": "<id:a>",
+      "scheduledDatetime": "<timestamp>",
+      "name": "fluxo-evento-de-grupo",
+      "description": null,
+      "inviteCode": "$-XXXX-XXXX",
+      "createdAt": "<timestamp>",
+      "rsvpStatus": null,
+      "confirmedCount": 1,
+      "confirmedAvatars": [
+        null
+      ],
+      "gameplay": null,
+      "sport": {
+        "durationMinutes": 60,
+        "arena": "Quadra",
+        "pricePerPlayer": {
+          "$num": "10.00"
+        },
+        "maxPlayers": 10,
+        "acceptReserve": false
+      }
+    }
+  }
+}

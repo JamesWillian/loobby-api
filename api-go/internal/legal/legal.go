@@ -26,7 +26,9 @@ func Register(mux *http.ServeMux) {
 			// inalcancavel: o go:embed falha a compilacao se o arquivo faltar
 			panic("legal: " + err.Error())
 		}
-		// O padrao "GET" do ServeMux tambem atende HEAD, como o Spring.
+		// O padrao "GET" do ServeMux tambem atende HEAD, como o Spring -- mas
+		// so o GET e publico: HEAD sem token e barrado antes, pelo auth.Filter
+		// (medido no Kotlin: HEAD /legal/privacy sem token da 401).
 		mux.HandleFunc("GET /legal/"+slug, serve(body))
 	}
 }

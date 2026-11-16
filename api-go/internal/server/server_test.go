@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/JamesWillian/loobby-api/api-go/internal/auth"
 	"github.com/JamesWillian/loobby-api/api-go/internal/config"
 	"github.com/JamesWillian/loobby-api/api-go/internal/contracttest"
 )
@@ -50,11 +51,10 @@ func TestHealthIdenticoAoKotlin(t *testing.T) {
 
 // O 401 sai do filtro do Spring Security antes de qualquer controller, entao a
 // forma da resposta -- status, headers, corpo vazio -- e a mesma em qualquer rota
-// protegida. O golden foi gravado em /users/me, que o Go ainda nao serve; por
-// isso a comparacao e feita na rota protegida que existe.
+// protegida. Mesmo sem o modulo users montado, o filtro responde antes do roteador.
 func Test401SemTokenIdenticoAoKotlin(t *testing.T) {
 	g := contracttest.Load(t, "erro-401-sem-token")
-	contracttest.AssertMatches(t, g, do(handler(fakeDB{}), "GET", "/internal/whoami", nil))
+	contracttest.AssertMatches(t, g, do(handler(fakeDB{}), "GET", "/users/me", nil))
 }
 
 func TestPreflightCORSIdenticoAoKotlin(t *testing.T) {
@@ -74,12 +74,16 @@ func TestHealthDownQuandoOBancoCai(t *testing.T) {
 	}
 }
 
-// O padrao "GET" do ServeMux tambem atende HEAD, como o Spring: mesmos headers,
-// sem corpo.
+// No Kotlin as rotas publicas casam por metodo exato: HEAD /legal/privacy sem
+// token e 401 (medido). Com token valido, o HEAD e atendido como o GET, sem corpo.
 func TestHeadEmLegal(t *testing.T) {
-	rec := do(handler(fakeDB{}), "HEAD", "/legal/privacy", nil)
+	if rec := do(handler(fakeDB{}), "HEAD", "/legal/privacy", nil); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("HEAD sem token esperava 401, veio %d", rec.Code)
+	}
+	tok := auth.NewTokens("segredo-de-teste").Access("54f29b67-cb8b-4435-8b72-43c17f2f4b8f", "u", []string{"USER"})
+	rec := do(handler(fakeDB{}), "HEAD", "/legal/privacy", map[string]string{"Authorization": "Bearer " + tok})
 	if rec.Code != http.StatusOK {
-		t.Fatalf("HEAD esperava 200, veio %d", rec.Code)
+		t.Fatalf("HEAD com token esperava 200, veio %d", rec.Code)
 	}
 	if ct := rec.Header().Get("Content-Type"); ct != "text/html;charset=UTF-8" {
 		t.Errorf("content-type no HEAD: %q", ct)

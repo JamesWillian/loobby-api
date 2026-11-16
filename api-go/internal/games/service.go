@@ -171,6 +171,37 @@ func (s *Service) refresh(ctx context.Context, id string) (Details, bool, error)
 // vaga, desiste -- a proxima leitura vencida tenta de novo. (O executor do
 // Kotlin enfileira sem limite; aqui a maquina tem 1 GB.)
 func (s *Service) refreshInBackground(id string) {
+	s.background(id, func(ctx context.Context) {
+		if _, _, err := s.refresh(ctx, id); err != nil {
+			slog.Warn("refresh em segundo plano falhou", "id", id, "err", err)
+		}
+	})
+}
+
+// EnsureCached garante, em segundo plano, que o jogo esta no cache local. E
+// chamado quando um evento de gameplay e criado ou alterado, para que a tela de
+// detalhe do jogo ja o encontre. Melhor esforco: nunca bloqueia nem falha a
+// criacao do evento. So busca no RAWG se o jogo nao esta no cache ou esta
+// vencido alem do TTL rigido.
+func (s *Service) EnsureCached(id string) {
+	s.background(id, func(ctx context.Context) {
+		c, found, err := s.store.Find(ctx, id)
+		if err != nil {
+			slog.Warn("ensureCached falhou", "id", id, "err", err)
+			return
+		}
+		if found && s.now().Sub(c.RefreshedAt) <= s.hardTTL {
+			return
+		}
+		if _, _, err := s.refresh(ctx, id); err != nil {
+			slog.Warn("ensureCached falhou", "id", id, "err", err)
+		}
+	})
+}
+
+// background roda fn fora da requisicao, respeitando os limites de
+// refreshInBackground.
+func (s *Service) background(id string, fn func(ctx context.Context)) {
 	s.mu.Lock()
 	if s.inflight[id] {
 		s.mu.Unlock()
@@ -196,9 +227,7 @@ func (s *Service) refreshInBackground(id string) {
 		}()
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		if _, _, err := s.refresh(ctx, id); err != nil {
-			slog.Warn("refresh em segundo plano falhou", "id", id, "err", err)
-		}
+		fn(ctx)
 	}()
 }
 

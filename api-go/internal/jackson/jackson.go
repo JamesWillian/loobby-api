@@ -109,6 +109,28 @@ func DecimalFromLiteral(lit string) (string, error) {
 	return bigDecimalString(FormatDouble(f)), nil
 }
 
+// BigDecimalString devolve o BigDecimal.toString() de um literal decimal -- o
+// texto que o Jackson escreve para um campo BigDecimal. Ao contrario de
+// DecimalFromLiteral, o valor NAO passa por double: a escala do literal e
+// preservada ("25.50" continua "25.50"), e so a notacao muda quando o Java a
+// muda ("1e2" vira "1E+2", "+5" vira "5", ".5" vira "0.5").
+//
+// lit precisa estar na gramatica do construtor do BigDecimal: sinal opcional,
+// digitos com ponto opcional, expoente opcional.
+func BigDecimalString(lit string) string {
+	s := strings.TrimPrefix(lit, "+")
+	mant, exp, hasExp := strings.Cut(strings.ReplaceAll(s, "e", "E"), "E")
+	if strings.HasPrefix(mant, ".") {
+		mant = "0" + mant
+	} else if strings.HasPrefix(mant, "-.") {
+		mant = "-0" + mant[1:]
+	}
+	if hasExp {
+		return bigDecimalString(mant + "E" + exp)
+	}
+	return bigDecimalString(mant)
+}
+
 // bigDecimalString aplica BigDecimal.toString() ao texto de Double.toString.
 // Iguais na faixa plana; fora dela o BigDecimal tem regras proprias
 // ("1.0E7" -> "1.0E+7", "1.234E-5" -> "0.00001234").

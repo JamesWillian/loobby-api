@@ -45,9 +45,21 @@ ssh NOVA 'sudo install -m 0644 -o root -g loobby /tmp/ca.crt /tmp/go-server.crt 
 ```
 
 **4. Variáveis.** Copie `deploy/go/api.env.example` para `/etc/loobby/api.env` na
-máquina nova (dono `root:loobby`, modo `0640`) e preencha. Banco e `JWT_SECRET`
-são **os mesmos do Kotlin** — com outro segredo, todo usuário numa rota migrada
-leva 401.
+máquina nova (dono `root:loobby`, modo `0640`) e preencha. São **as mesmas
+variáveis do Kotlin, com os mesmos valores** — banco, `JWT_SECRET`, RAWG, Resend e
+os três client ids do Google. Com outro `JWT_SECRET`, todo usuário numa rota
+migrada leva 401.
+
+**4b. Credenciais do Firebase.** O mesmo `loobby-fcm.json` do Kotlin:
+
+```bash
+scp secrets/loobby-fcm.json NOVA:/tmp/
+ssh NOVA 'sudo install -m 0640 -o root -g loobby /tmp/loobby-fcm.json /etc/loobby/ && rm -f /tmp/loobby-fcm.json'
+```
+
+Sem ele (e com `NOTIFICATIONS_ENABLED=true`) o serviço **não sobe**. A máquina nova
+também precisa sair para a internet por HTTPS: Supabase, `api.resend.com`,
+`www.googleapis.com`, `oauth2.googleapis.com`, `fcm.googleapis.com` e `api.rawg.io`.
 
 **5. Firewall, nas duas camadas.**
 
@@ -99,6 +111,21 @@ milissegundos. Se passar de ~20 ms, a máquina nova está longe — e na Oracle,
 região de uma conta Always Free não muda depois de criada. Melhor descobrir agora
 do que depois da primeira rota migrada.
 
+## Antes do cutover de `files`: copiar os uploads
+
+Avatares e imagens de grupo ficam no disco de quem recebeu o upload. No momento
+em que o módulo `files` for ligado no painel do nginx, uploads **e** leitura passam
+para a máquina nova — então os arquivos que já existem no Kotlin precisam estar lá:
+
+```bash
+# no AWS: a pasta ./uploads do contêiner do Kotlin (ajuste o caminho do volume)
+rsync -a /caminho/do/volume/uploads/ NOVA:/tmp/uploads/
+ssh NOVA 'sudo rsync -a --chown=loobby:loobby /tmp/uploads/ /var/lib/loobby/uploads/ && rm -rf /tmp/uploads'
+```
+
+Rode o `rsync` de novo **logo antes** de ligar o módulo, para levar o que entrou
+nesse meio-tempo. Arquivo que não foi copiado responde 500 no Go.
+
 ## Publicar uma versão nova
 
 ```bash
@@ -118,6 +145,11 @@ puro; Go fora do ar faz GET/HEAD caírem no Kotlin e devolve 502 para POST; o ki
 switch troca também o esquema. Cada uma dessas verificações foi quebrada de
 propósito para confirmar que o teste falha.
 
-**Não testado:** o `loobby-api.service` e o `deploy.sh` não rodaram num Linux (esta
+**Testado localmente, Go inteiro contra o Kotlin** (`contract/local/oracle.sh
+compare` e `go test ./...`): os 53 endpoints, em 166 cenários, respondem igual.
+
+**Não testado:** nenhum módulo além de `legal` passou pelo nginx com TLS mútuo de
+verdade; o envio real de push (FCM) e de e-mail (Resend) só rodou contra
+servidores falsos; o `loobby-api.service` e o `deploy.sh` não rodaram num Linux (esta
 máquina é macOS; o `deploy.sh` passou no `shellcheck`). Os comandos de firewall
 também não foram executados.

@@ -1,0 +1,44 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/events/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"8d2b473b-0303-4cc6-a126-cca799fa093f\",\"eventType\":\"GAMEPLAY\",\"groupId\":null,\"isInstant\":true,\"ownerId\":\"de1e89d0-329c-4353-9a7e-956399d0b20b\",\"scheduledDatetime\":\"2026-11-19T04:34:16Z\",\"name\":\"fluxo-evento-com-outro-confirmado\",\"description\":null,\"inviteCode\":\"$-9AUT-D44W\",\"createdAt\":\"2026-11-16T04:34:16.117378Z\",\"rsvpStatus\":\"YES\",\"confirmedCount\":2,\"confirmedAvatars\":[null,null],\"gameplay\":{\"gameId\":null,\"gameName\":\"Jogo do Fluxo\"},\"sport\":null}",
+    "body": {
+      "id": "<id:evento-transferido>",
+      "eventType": "GAMEPLAY",
+      "groupId": null,
+      "isInstant": true,
+      "ownerId": "<id:b>",
+      "scheduledDatetime": "<timestamp>",
+      "name": "fluxo-evento-com-outro-confirmado",
+      "description": null,
+      "inviteCode": "$-XXXX-XXXX",
+      "createdAt": "<timestamp>",
+      "rsvpStatus": "YES",
+      "confirmedCount": 2,
+      "confirmedAvatars": [
+        null,
+        null
+      ],
+      "gameplay": {
+        "gameId": null,
+        "gameName": "Jogo do Fluxo"
+      },
+      "sport": null
+    }
+  }
+}

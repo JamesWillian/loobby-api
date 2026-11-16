@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/register",
+    "body": {
+      "email": "nao-e-email",
+      "password": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:14.603804Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Validation failed\",\"path\":\"/auth/register\",\"fieldErrors\":[{\"field\":\"email\",\"message\":\"must be a well-formed email address\"}]}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Validation failed",
+      "path": "/auth/register",
+      "fieldErrors": [
+        {
+          "field": "email",
+          "message": "must be a well-formed email address"
+        }
+      ]
+    }
+  }
+}

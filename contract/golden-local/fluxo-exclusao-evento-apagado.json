@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/events/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:16.359441Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Event not found\",\"path\":\"/events/7a18039e-0bf7-4100-a67e-988a1391f9cb\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Event not found",
+      "path": "/events/<id:evento-apagado>",
+      "fieldErrors": null
+    }
+  }
+}

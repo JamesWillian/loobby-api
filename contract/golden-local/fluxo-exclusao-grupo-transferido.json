@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/groups/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"e91c1b37-2907-4c47-a6e7-be3856943f27\",\"name\":\"fluxo-grupo-com-outro-membro\",\"inviteCode\":\"$-177D9J\",\"imageUrl\":null,\"ownerId\":\"de1e89d0-329c-4353-9a7e-956399d0b20b\",\"createdAt\":\"2026-11-16T04:34:16.109410Z\"}",
+    "body": {
+      "id": "<id:grupo-transferido>",
+      "name": "fluxo-grupo-com-outro-membro",
+      "inviteCode": "$-XXXXXX",
+      "imageUrl": null,
+      "ownerId": "<id:b>",
+      "createdAt": "<timestamp>"
+    }
+  }
+}

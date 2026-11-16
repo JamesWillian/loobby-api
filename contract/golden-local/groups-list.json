@@ -1,0 +1,39 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/groups",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "[{\"id\":\"11111111-2222-4333-8444-555555555555\",\"name\":\"My First Group\",\"inviteCode\":\"$-2ISBVV\",\"imageUrl\":null,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"createdAt\":\"2026-04-27T18:10:00Z\"},{\"id\":\"f0e68c42-8ae7-4399-bb1f-3f135b2f7ee9\",\"name\":\"contract-baseline-group\",\"inviteCode\":\"$-LXU0EL\",\"imageUrl\":null,\"ownerId\":\"54f29b67-cb8b-4435-8b72-43c17f2f4b8f\",\"createdAt\":\"2026-11-16T04:34:13.741673Z\"}]",
+    "body": [
+      {
+        "id": "<uuid>",
+        "name": "My First Group",
+        "inviteCode": "$-XXXXXX",
+        "imageUrl": null,
+        "ownerId": "<id:me>",
+        "createdAt": "<timestamp>"
+      },
+      {
+        "id": "<id:group>",
+        "name": "contract-baseline-group",
+        "inviteCode": "$-XXXXXX",
+        "imageUrl": null,
+        "ownerId": "<id:me>",
+        "createdAt": "<timestamp>"
+      }
+    ]
+  }
+}

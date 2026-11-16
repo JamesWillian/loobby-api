@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/auth/google",
+    "body": {
+      "idToken": "<redigido>"
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:15.991347Z\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Token do Google inválido\",\"path\":\"/auth/google\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 401,
+      "error": "Unauthorized",
+      "message": "Token do Google inválido",
+      "path": "/auth/google",
+      "fieldErrors": null
+    }
+  }
+}

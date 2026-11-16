@@ -53,7 +53,9 @@ http.server.ThreadingHTTPServer(("127.0.0.1", int(sys.argv[1])), H).serve_foreve
 PY
 python3 "$WORK/kotlin.py" "$P_KOTLIN" & PID_KOTLIN=$!; PIDS+=("$PID_KOTLIN"); disown
 
-DB_URL="$TEST_DATABASE_URL" JWT_SECRET=segredo-de-teste RAWG_API_KEY=chave-de-teste PORT="$P_GO" BIND_HOST=127.0.0.1 \
+DB_URL="$TEST_DATABASE_URL" JWT_SECRET=segredo-de-teste-com-mais-de-32-bytes-0123456789 RAWG_API_KEY=chave-de-teste \
+RESEND_API_KEY=chave-de-teste GOOGLE_WEB_CLIENT_ID=web GOOGLE_IOS_CLIENT_ID=ios GOOGLE_ANDROID_CLIENT_ID=android \
+NOTIFICATIONS_ENABLED=false FILE_STORAGE_LOCATION="$WORK/uploads" PORT="$P_GO" BIND_HOST=127.0.0.1 \
 TLS_CERT_FILE="$C/go-server.crt" TLS_KEY_FILE="$C/go-server.key" TLS_CLIENT_CA_FILE="$C/ca.crt" \
   "$WORK/api" > "$WORK/go.log" 2>&1 & PID_GO=$!; PIDS+=("$PID_GO"); disown
 
@@ -142,7 +144,7 @@ kill "$PID_GO"; sleep 0.3
 [[ "$(backend "http://127.0.0.1:$P_PROXY/legal/privacy")" == kotlin ]] && ok "GET cai no Kotlin automaticamente" || fail "GET sem fallback"
 [[ "$(backend -I "http://127.0.0.1:$P_PROXY/legal/privacy")" == kotlin ]] && ok "HEAD cai no Kotlin automaticamente" || fail "HEAD sem fallback"
 # rota de escrita fingindo estar migrada: NAO pode ser repetida no Kotlin
-sed -i.bak 's#^    default  kotlin;#    default  kotlin;\n    "~^POST /legal/privacy$"  go;#' "$WORK/routes.conf"; reload
+sed -i.bak 's#^    default  kotlin;#    default  kotlin;\n    "~^POST /legal/privacy$"  legal;#' "$WORK/routes.conf"; reload
 [[ "$(backend -X POST "http://127.0.0.1:$P_PROXY/legal/privacy")" == go:502 ]] \
   && ok "POST com o Go fora: 502, sem repetir no Kotlin" || fail "POST foi repetido no Kotlin"
 mv "$WORK/routes.conf.bak" "$WORK/routes.conf"; reload

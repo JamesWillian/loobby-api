@@ -18,9 +18,10 @@ type Handler struct{ svc *Service }
 
 func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
 
-func (h *Handler) Register(mux *http.ServeMux, requireAuth func(http.Handler) http.Handler) {
-	mux.Handle("GET /games/search", requireAuth(http.HandlerFunc(h.search)))
-	mux.Handle("GET /games/{id}", requireAuth(http.HandlerFunc(h.details)))
+// Register: as duas rotas exigem token (o auth.Filter cuida disso).
+func (h *Handler) Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /games/search", h.search)
+	mux.HandleFunc("GET /games/{id}", h.details)
 }
 
 func (h *Handler) search(w http.ResponseWriter, r *http.Request) {

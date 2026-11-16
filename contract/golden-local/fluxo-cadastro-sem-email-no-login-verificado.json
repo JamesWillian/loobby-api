@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "MAILBOX",
+    "path": "/emails?to=fluxo-a@teste.local",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {},
+    "body_raw": null,
+    "body": {
+      "count": 3,
+      "from": "Loobby <noreply@mail.loobby.app>",
+      "to": [
+        "fluxo-a@teste.local"
+      ],
+      "subject": "Confirme seu email no Loobby",
+      "auth": "Bearer fake-resend-key",
+      "html": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f1117; color: #e0e0e0; padding: 40px 20px; margin: 0;\">\n    <div style=\"max-width: 480px; margin: 0 auto; background-color: #1a1d27; border-radius: 16px; padding: 40px; text-align: center;\">\n        <h1 style=\"color: #4ade80; font-size: 28px; margin-bottom: 8px;\">Loobby</h1>\n        <p style=\"color: #a0a0a0; font-size: 14px; margin-bottom: 32px;\">Organização de eventos entre amigos</p>\n        \n        <h2 style=\"color: #ffffff; font-size: 20px; margin-bottom: 16px;\">Confirme seu email</h2>\n        <p style=\"color: #c0c0c0; font-size: 15px; line-height: 1.6; margin-bottom: 32px;\">\n            Clique no botão abaixo para verificar seu endereço de email e desbloquear todos os recursos do Loobby.\n        </p>\n        \n        <a href=\"<base-url>/auth/verify-email?token=<uuid>\" \n           style=\"display: inline-block; background-color: #4ade80; color: #0f1117; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;\">\n            Confirmar email\n        </a>\n        \n        <p style=\"color: #707070; font-size: 12px; margin-top: 32px; line-height: 1.5;\">\n            Este link expira em 24 horas.<br>\n            Se você não criou uma conta no Loobby, ignore este email.\n        </p>\n    </div>\n</body>\n</html>"
+    }
+  }
+}

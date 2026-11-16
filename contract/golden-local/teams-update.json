@@ -1,0 +1,32 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/events/{uuid}/teams/{uuid}",
+    "body": {
+      "name": "Time A prime",
+      "color": "#00FF00"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"id\":\"3a764f35-3a62-4697-ae26-49c4118ffa71\",\"eventId\":\"88090053-4024-473a-b4aa-31e89d1c4db7\",\"order\":1,\"name\":\"Time A prime\",\"color\":\"#00FF00\",\"players\":[]}",
+    "body": {
+      "id": "<id:team>",
+      "eventId": "<id:event>",
+      "order": 1,
+      "name": "Time A prime",
+      "color": "#00FF00",
+      "players": []
+    }
+  }
+}

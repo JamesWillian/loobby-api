@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "MAILBOX",
+    "path": "/emails?to=fluxo-a@teste.local",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {},
+    "body_raw": null,
+    "body": {
+      "count": 5,
+      "from": "Loobby <noreply@mail.loobby.app>",
+      "to": [
+        "fluxo-a@teste.local"
+      ],
+      "subject": "Redefinir senha — Loobby",
+      "auth": "Bearer fake-resend-key",
+      "html": "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f1117; color: #e0e0e0; padding: 40px 20px; margin: 0;\">\n    <div style=\"max-width: 480px; margin: 0 auto; background-color: #1a1d27; border-radius: 16px; padding: 40px; text-align: center;\">\n        <h1 style=\"color: #4ade80; font-size: 28px; margin-bottom: 8px;\">Loobby</h1>\n        <p style=\"color: #a0a0a0; font-size: 14px; margin-bottom: 32px;\">Organização de eventos entre amigos</p>\n        \n        <h2 style=\"color: #ffffff; font-size: 20px; margin-bottom: 16px;\">Redefinir senha</h2>\n        <p style=\"color: #c0c0c0; font-size: 15px; line-height: 1.6; margin-bottom: 32px;\">\n            Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha.\n        </p>\n        \n        <a href=\"<base-url>/auth/reset-password?token=<uuid>\" \n           style=\"display: inline-block; background-color: #4ade80; color: #0f1117; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;\">\n            Redefinir senha\n        </a>\n        \n        <p style=\"color: #707070; font-size: 12px; margin-top: 32px; line-height: 1.5;\">\n            Este link expira em 1 hora.<br>\n            Se você não solicitou a redefinição de senha, ignore este email.\n        </p>\n    </div>\n</body>\n</html>"
+    }
+  }
+}

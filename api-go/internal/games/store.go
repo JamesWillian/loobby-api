@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/db/sqlc"
 )
@@ -50,12 +49,9 @@ func (s pgStore) Find(ctx context.Context, id string) (cached, bool, error) {
 	}
 	c := cached{
 		ID: row.ID, Slug: row.Slug, Name: row.Name, BackgroundImage: row.BackgroundImage,
-		Rating: row.Rating, Metacritic: row.Metacritic, DescriptionRaw: row.DescriptionRaw,
-		Genres: row.Genres, Platforms: row.Platforms, RefreshedAt: row.RefreshedAt.Time,
-	}
-	if row.Released.Valid {
-		t := row.Released.Time
-		c.Released = &t
+		Released: row.Released, Rating: row.Rating, Metacritic: row.Metacritic,
+		DescriptionRaw: row.DescriptionRaw, Genres: row.Genres, Platforms: row.Platforms,
+		RefreshedAt: row.RefreshedAt,
 	}
 	return c, true, nil
 }
@@ -64,8 +60,8 @@ func (s pgStore) UpsertFromSearch(ctx context.Context, g game, now time.Time) (s
 	raw := g.RawPayload
 	return s.q.UpsertGameFromSearch(ctx, sqlc.UpsertGameFromSearchParams{
 		ID: g.ID, Slug: g.Slug, Name: g.Name, BackgroundImage: g.BackgroundImage,
-		Released: date(g.Released), Rating: g.Rating, Metacritic: g.Metacritic,
-		Genres: g.Genres, Platforms: g.Platforms, RawPayload: &raw, Now: ts(now),
+		Released: g.Released, Rating: g.Rating, Metacritic: g.Metacritic,
+		Genres: g.Genres, Platforms: g.Platforms, RawPayload: &raw, Now: now,
 	})
 }
 
@@ -73,17 +69,8 @@ func (s pgStore) UpsertFromDetail(ctx context.Context, g game, description *stri
 	raw := g.RawPayload
 	return s.q.UpsertGameFromDetail(ctx, sqlc.UpsertGameFromDetailParams{
 		ID: g.ID, Slug: g.Slug, Name: g.Name, BackgroundImage: g.BackgroundImage,
-		Released: date(g.Released), Rating: g.Rating, Metacritic: g.Metacritic,
+		Released: g.Released, Rating: g.Rating, Metacritic: g.Metacritic,
 		DescriptionRaw: description, Genres: g.Genres, Platforms: g.Platforms,
-		RawPayload: &raw, Now: ts(now),
+		RawPayload: &raw, Now: now,
 	})
 }
-
-func date(t *time.Time) pgtype.Date {
-	if t == nil {
-		return pgtype.Date{}
-	}
-	return pgtype.Date{Time: *t, Valid: true}
-}
-
-func ts(t time.Time) pgtype.Timestamptz { return pgtype.Timestamptz{Time: t, Valid: true} }

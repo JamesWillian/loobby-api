@@ -1,0 +1,63 @@
+diff --git a/src/main/kotlin/app/loobby/auth/service/GoogleAuthService.kt b/src/main/kotlin/app/loobby/auth/service/GoogleAuthService.kt
+index 795c6f6..a043bfb 100644
+--- a/src/main/kotlin/app/loobby/auth/service/GoogleAuthService.kt
++++ b/src/main/kotlin/app/loobby/auth/service/GoogleAuthService.kt
+@@ -7,6 +7,7 @@ import app.loobby.users.repo.UserGoogleCredentialsRepository
+ import app.loobby.users.repo.UsersRepository
+ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
+ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
++import com.google.api.client.googleapis.auth.oauth2.GooglePublicKeysManager
+ import com.google.api.client.http.javanet.NetHttpTransport
+ import com.google.api.client.json.gson.GsonFactory
+ import org.springframework.beans.factory.annotation.Value
+@@ -20,7 +21,8 @@ class GoogleAuthService(
+     private val authService: AuthService,
+     private val usersRepository: UsersRepository,
+     private val googleCredentialsRepository: UserGoogleCredentialsRepository,
+-    @Value("\${google.client-ids}") private val googleClientIds: List<String>
++    @Value("\${google.client-ids}") private val googleClientIds: List<String>,
++    @Value("\${google.certs-url:}") private val googleCertsUrl: String
+ ) {
+ 
+     fun loginOrRegister(idToken: String): AuthResponse {
+@@ -73,7 +75,16 @@ class GoogleAuthService(
+     }
+ 
+     private fun verifyToken(idToken: String): GoogleIdToken.Payload {
+-        val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory())
++        val builder = if (googleCertsUrl.isBlank()) {
++            GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory())
++        } else {
++            GoogleIdTokenVerifier.Builder(
++                GooglePublicKeysManager.Builder(NetHttpTransport(), GsonFactory())
++                    .setPublicCertsEncodedUrl(googleCertsUrl)
++                    .build()
++            )
++        }
++        val verifier = builder
+             .setAudience(googleClientIds)
+             .build()
+ 
+diff --git a/src/main/kotlin/app/loobby/common/email/EmailService.kt b/src/main/kotlin/app/loobby/common/email/EmailService.kt
+index a742194..f66c64d 100644
+--- a/src/main/kotlin/app/loobby/common/email/EmailService.kt
++++ b/src/main/kotlin/app/loobby/common/email/EmailService.kt
+@@ -10,7 +10,8 @@ import java.net.http.HttpResponse
+ @Service
+ class EmailService(
+     @Value("\${resend.api-key}") private val apiKey: String,
+-    @Value("\${resend.from-email}") private val fromEmail: String
++    @Value("\${resend.from-email}") private val fromEmail: String,
++    @Value("\${resend.base-url:https://api.resend.com}") private val resendBaseUrl: String
+ ) {
+     private val client = HttpClient.newHttpClient()
+ 
+@@ -32,7 +33,7 @@ class EmailService(
+         """.trimIndent()
+ 
+         val request = HttpRequest.newBuilder()
+-            .uri(URI.create("https://api.resend.com/emails"))
++            .uri(URI.create("$resendBaseUrl/emails"))
+             .header("Authorization", "Bearer $apiKey")
+             .header("Content-Type", "application/json")
+             .POST(HttpRequest.BodyPublishers.ofString(body))

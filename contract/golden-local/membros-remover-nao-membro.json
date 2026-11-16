@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "DELETE",
+    "path": "/groups/{uuid}/members/{uuid}",
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:13.900217Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"User is not a member of this group\",\"path\":\"/groups/f0e68c42-8ae7-4399-bb1f-3f135b2f7ee9/members/61d1ba14-2a43-4e31-a6b8-2ed31cadbcdf\",\"fieldErrors\":null}",
+    "body": {
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "User is not a member of this group",
+      "path": "/groups/<id:group>/members/<id:user2>",
+      "fieldErrors": null
+    }
+  }
+}

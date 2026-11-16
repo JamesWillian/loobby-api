@@ -12,12 +12,27 @@ sql:
         out: internal/db/sqlc
         sql_package: pgx/v5
         emit_pointers_for_null_types: true
-        # numeric chega como texto (ver db.RegisterTypes): "0.00", nao "0".
         overrides:
+          # numeric chega como texto (ver db.RegisterTypes): "0.00", nao "0".
           - db_type: "pg_catalog.numeric"
             go_type: "string"
           - db_type: "pg_catalog.numeric"
             nullable: true
-            go_type:
-              type: "string"
-              pointer: true
+            go_type: { type: "string", pointer: true }
+          # uuid como string: o pgx converte nos dois sentidos, e e assim que o
+          # JSON sai (minusculas com hifens, como o UUID.toString() do Java).
+          - db_type: "uuid"
+            go_type: "string"
+          - db_type: "uuid"
+            nullable: true
+            go_type: { type: "string", pointer: true }
+          - db_type: "pg_catalog.timestamptz"
+            go_type: "time.Time"
+          - db_type: "pg_catalog.timestamptz"
+            nullable: true
+            go_type: { import: "time", type: "Time", pointer: true }
+          - db_type: "date"
+            go_type: "time.Time"
+          - db_type: "date"
+            nullable: true
+            go_type: { import: "time", type: "Time", pointer: true }

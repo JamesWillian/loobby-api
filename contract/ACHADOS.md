@@ -1,7 +1,14 @@
 # Achados da baseline de contrato
 
-Extraídos dos 47 golden em `contract/golden/`, capturados de `https://api.loobby.app`
-em 08/09/2026 (commit `81c068f`). Tudo aqui é **medido**, não inferido do código.
+Os itens 1 a 21 saíram dos golden de `contract/golden/`, capturados de
+`https://api.loobby.app` a partir de 08/09/2026. Os itens 22 em diante saíram da
+porta dos módulos restantes para Go (novembro de 2026), medidos contra o Kotlin
+rodando localmente (`contract/local/`). Tudo aqui é **medido**, não inferido do
+código — exceto os §28, §29 e §32, que vêm da leitura do código Kotlin e estão
+marcados assim.
+
+**Leia primeiro: §22 (falha de segurança em produção), §23 e §24 (exclusão de
+conta não funciona).**
 
 Cada item é uma forma concreta do Go quebrar os apps em silêncio.
 
@@ -438,20 +445,167 @@ todo mundo. O Go reproduz o comportamento; corrigir é decisão para os dois lad
 
 ---
 
-## Pendente de cobertura
+## 22. FALHA DE SEGURANÇA: `/auth/refresh` renova anônimo sem conferir a assinatura
 
-Não entraram na baseline, com o motivo:
+Medido no Kotlin local em 15/11/2026. Quando o refresh token é recusado (vencido
+**ou inválido**), o `refreshExpiredAnonymousOrThrow` lê o token com
+`SignedJWT.parse`, que **não confere assinatura**, e, se o `sub` for de um usuário
+anônimo, devolve tokens novos e válidos.
 
-| Endpoint | Motivo |
+Basta saber o id de um usuário anônimo — e o id aparece para qualquer membro do
+mesmo grupo, em `/groups/{id}/members` — para fabricar um "refresh token"
+assinado com qualquer segredo e **entrar na conta dele**.
+
+**No Go está corrigido, e é a única diferença deliberada de comportamento:** a
+renovação de anônimo só vale para token assinado por este servidor; só a validade
+é relevada (`TestRefreshForjadoDeAnonimoERecusado`). O caso legítimo — anônimo há
+mais de 15 dias sem abrir o app — continua funcionando, e é idêntico nos dois
+lados (`fluxo-refresh-vencido-anonimo`). `ALLOW_UNSIGNED_ANON_REFRESH=true`
+restaura o comportamento do Kotlin; só faz sentido se o `JWT_SECRET` for trocado
+e houver anônimos com token antigo a preservar.
+
+**A produção continua vulnerável até o cutover de `auth`** (ou até corrigir o
+Kotlin: conferir a assinatura antes de ler o `sub`).
+
+## 23. Só UMA conta consegue ser excluída
+
+`DELETE /users/me` grava `username = ""` no usuário excluído, e `users.username`
+tem restrição `UNIQUE`. A primeira exclusão funciona; **da segunda em diante, 500**
+— a transação é desfeita e a conta continua existindo, com login e tudo. Medido
+nos dois lados (`fluxo-exclusao-2a-conta`).
+
+Se alguém já excluiu a conta em produção, ninguém mais consegue. É exigência das
+lojas (a página `/legal/account-deletion` promete a exclusão).
+
+O Go reproduz o 500, de propósito: consertar exige decidir o que gravar no lugar
+(`NULL` com a coluna anulável, ou um nome único por conta excluída) e os times e
+sorteios hoje reconhecem excluído por `username` vazio. **Decisão sua**, para os
+dois lados ou logo depois do cutover de `users`.
+
+## 24. Conta Google não consegue se excluir nem trocar senha
+
+`DELETE /users/me` e `PUT /users/me/password` procuram a linha de
+`user_credentials`, que conta Google não tem: **404 "Usuário não encontrado."**
+(`fluxo-google-excluir-conta`). Mesmo sem o §23, quem entrou com Google não tem
+como excluir a própria conta pela API.
+
+## 25. Conta excluída continua "viva"
+
+Medido depois da exclusão (`fluxo-exclusao-*`), igual nos dois lados:
+
+- o access token antigo continua valendo, e `GET /users/me` responde 200 com
+  `username: ""`, `displayname: "[deleted]"`, `emailVerified: true`;
+- **o refresh token antigo ainda emite tokens novos** — nada é revogado;
+- o usuário segue como membro dos grupos e nos RSVPs, como `[deleted]`;
+- grupo com outro membro passa para ele; sem outro membro, some. Evento
+  instantâneo passa para o confirmado mais antigo, ou some. Mas **evento de grupo
+  fica com `ownerId` do excluído**;
+- o e-mail fica livre para um cadastro novo.
+
+## 26. E-mail: gravado como digitado, procurado de três jeitos
+
+- **Cadastro com e-mail já usado: 500**, não um erro de negócio — quem responde é
+  a restrição única do banco (`fluxo-cadastro-email-ja-usado`).
+- O cadastro grava o e-mail **como digitado**; o login compara exato; e o
+  `forgot-password` procura em **minúsculas**. Quem se cadastrou como
+  `Fulano@Gmail.com` loga só com essa grafia e **nunca recebe o link de reset**
+  (`fluxo-reset-maiuscula-nao-recebe`).
+- Entrar com Google usando o e-mail de uma conta com senha cria **outra conta**,
+  sem ligação com a primeira.
+
+## 27. Cada login de conta não verificada manda um e-mail — e depende do Resend
+
+`POST /auth/login` de conta não verificada gera um token novo e manda outro e-mail
+**a cada login** (sem espera), e o link anterior deixa de valer. Se o Resend
+falhar, o login responde **500**, embora a senha esteja certa. No cadastro é
+igual: a conta é criada, mas a resposta é 500.
+
+O reenvio manual tem espera de 3 minutos (429). O horário do último envio não é
+gravado: é deduzido de `validade − 24 h`.
+
+## 28. Três consertos no Go que o cliente não percebe
+
+*Lido no código Kotlin, não medido.*
+
+Onde o Kotlin tem um defeito cujo conserto não muda nenhuma resposta bem-sucedida:
+
+- **Criação de evento numa transação.** No Kotlin o evento é gravado antes de os
+  detalhes (`sport`/`gameplay`) serem validados; um detalhe inválido responde 400
+  e deixa um evento órfão no banco. No Go, valida antes e grava junto.
+- **Código de convite.** A checagem de unicidade do Kotlin compara o código sem o
+  prefixo `$-` com a coluna que o guarda com prefixo — nunca encontra nada. No Go
+  compara o código inteiro.
+- **Username de anônimo repetido.** `user_` + 6 hexadecimais pode colidir; o
+  Kotlin responde 500, o Go sorteia outro.
+
+O `EmailService` do Kotlin também monta o JSON do Resend por concatenação (aspas
+no assunto ou no destinatário quebrariam o envio); o Go usa um codificador.
+
+## 29. Rotas sem checagem de dono
+
+*Lido no código Kotlin, não medido.*
+
+Paridade mantida, mas vale saber: **todas as rotas de times** (`/events/{id}/teams/**`)
+e `DELETE /devices/{token}` aceitam qualquer usuário autenticado. Quem conhece o
+id de um evento apaga os times dele; quem conhece um token de push o desregistra.
+
+## 30. `displayname` em branco no `PATCH /users/me` dá 500
+
+O código trata `""` como "limpar" e grava `null`, mas a coluna é `NOT NULL`. Para
+`avatarUrl` o mesmo caminho funciona (§13).
+
+## 31. O que o Spring faz com requisição malformada — tudo medido, tudo reproduzido
+
+Da família do §18. O Go responde igual; os testes citados travam cada item.
+
+| Requisição | Resposta |
 |---|---|
-| `POST /auth/register` | precisa do fluxo com token anônimo |
-| `POST /auth/google` | precisa de `idToken` real do Google |
-| `GET /auth/verify-email`, `GET`/`POST /auth/reset-password` | HTML + token de e-mail |
-| `POST /auth/forgot-password`, `/auth/resend-verification` | disparam e-mail — atrás de `--include-email` |
-| `POST /users/me/avatar`, `POST /groups/{id}/image` | multipart |
-| `GET /files/**` | depende de upload |
-| `DELETE /users/me` | destrói a conta de teste |
-| `POST /groups/{id}/members`, `DELETE .../members/{id}` | precisam de um 2º usuário |
+| rota que não existe, método errado, `{id}` que não é UUID, arquivo de `/files` que não existe | **500** `Unexpected error` |
+| corpo que não é JSON, `Content-Type` errado, campo obrigatório ausente, enum desconhecido | **500** |
+| upload sem a parte `file`, ou acima de 1 MB | **500** |
+| token ruim — até em rota pública | **401** com o motivo no `WWW-Authenticate` |
+| `HEAD` numa rota pública de `GET`, sem token | **401** (a lista de rotas públicas casa por método exato) |
+| caminho com `//`, `;`, `%2e`, `%2f`... | **401** `Bearer` (o firewall do Spring Security) |
 
-Os quatro últimos grupos exigem uma segunda conta descartável, criada via
-`POST /auth/anonymous`. É o próximo incremento do harness.
+Detalhes que só aparecem medindo: o Jackson converte escalares entre si (`123`
+num campo texto, `"90"` e `90.7` num inteiro, `1` num booleano, o **índice** num
+enum); o `UUID.fromString` aceita `1-1-1-1-1`; a senha passa de 72 bytes e o
+BCrypt devolve 400 com a mensagem dele; as mensagens de validação seguem o
+`Accept-Language`; e, com mais de uma violação, **a ordem do `fieldErrors` muda a
+cada chamada** no próprio Kotlin (o Go usa a ordem de declaração).
+Testes: `internal/httpx`, `internal/auth`, `internal/files`, `internal/server`.
+
+## 32. Jobs de notificação rodam mesmo com o envio desligado
+
+*Lido no código Kotlin, não medido.*
+
+No Kotlin, com `NOTIFICATIONS_ENABLED=false` os jobs agendados continuam rodando
+e registram como enviado o que não enviaram. Com dois processos no mesmo banco,
+um lado desligado engoliria os avisos do outro. No Go os jobs só rodam com o
+envio ligado, e `NOTIFICATIONS_SCHEDULER_ENABLED=false` os desliga à parte — é o
+recomendado enquanto o Kotlin estiver no ar.
+
+---
+
+## Cobertura: o que foi medido onde
+
+Os golden de `contract/golden/` vêm da **produção** e não têm os caminhos felizes
+de cadastro, verificação de e-mail, reset e troca de senha, exclusão de conta e
+login com Google — o token chega por e-mail, a exclusão destrói a conta de teste,
+o Google exige um ID token de verdade.
+
+Esses fluxos foram medidos no **ambiente local** (`contract/local/`, Kotlin no
+commit `4c22311` com Resend, RAWG e Google falsos) e estão em
+`contract/golden-local/`: 166 cenários, os 73 da suíte mais 93 dos fluxos
+(`contract/flows.py`). Kotlin e Go dão **zero diferenças** neles, e o `go test`
+compara o Go com essa gravação a cada execução.
+
+O que continua sem medição nenhuma:
+
+| O quê | Por quê |
+|---|---|
+| os fluxos felizes **em produção** | os mesmos motivos de sempre; a referência é o Kotlin local |
+| envio real de push (FCM) e de e-mail (Resend) | só contra servidores falsos |
+| ID token emitido pelo Google de verdade | idem — a chave é do ambiente local |
+| RAWG fora do ar pela API (§12) | exigiria derrubar o RAWG |
+| o que o Tomcat recusa antes do Spring (URL inválida, cabeçalho gigante) | fica no Kotlin até ele ser desligado |

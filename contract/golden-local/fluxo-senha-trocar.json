@@ -1,0 +1,28 @@
+{
+  "request": {
+    "method": "PUT",
+    "path": "/users/me/password",
+    "body": {
+      "currentPassword": "<redigido>",
+      "newPassword": "<redigido>",
+      "confirmPassword": "senha-do-fluxo-3"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "{\"message\":\"Senha alterada com sucesso.\"}",
+    "body": {
+      "message": "Senha alterada com sucesso."
+    }
+  }
+}

@@ -7,8 +7,7 @@ package sqlc
 import (
 	"database/sql/driver"
 	"fmt"
-
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 type RsvpStatus string
@@ -56,37 +55,37 @@ func (ns NullRsvpStatus) Value() (driver.Value, error) {
 
 type DeviceToken struct {
 	Token     string
-	UserID    pgtype.UUID
+	UserID    string
 	Platform  string
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Event struct {
-	ID                pgtype.UUID
+	ID                string
 	EventType         string
-	GroupID           pgtype.UUID
+	GroupID           *string
 	IsInstant         bool
-	OwnerID           pgtype.UUID
-	ScheduledDatetime pgtype.Timestamptz
+	OwnerID           string
+	ScheduledDatetime time.Time
 	Name              string
 	Description       *string
 	InviteCode        string
-	CreatedAt         pgtype.Timestamptz
+	CreatedAt         time.Time
 }
 
 type EventRsvp struct {
-	EventID   pgtype.UUID
-	UserID    pgtype.UUID
+	EventID   string
+	UserID    string
 	Status    string
 	IsPaid    bool
 	Obs       *string
-	CreatedAt pgtype.Timestamptz
+	CreatedAt time.Time
 }
 
 type EventTeam struct {
-	ID      pgtype.UUID
-	EventID pgtype.UUID
+	ID      string
+	EventID string
 	Order   int32
 	Name    string
 	Color   *string
@@ -97,49 +96,49 @@ type Game struct {
 	Slug            *string
 	Name            string
 	BackgroundImage *string
-	Released        pgtype.Date
+	Released        *time.Time
 	Rating          *string
 	Metacritic      *int32
 	DescriptionRaw  *string
 	Genres          []byte
 	Platforms       []byte
 	RawPayload      []byte
-	CachedAt        pgtype.Timestamptz
-	RefreshedAt     pgtype.Timestamptz
+	CachedAt        time.Time
+	RefreshedAt     time.Time
 }
 
 type GameplayEvent struct {
-	EventID  pgtype.UUID
+	EventID  string
 	GameID   *string
 	GameName string
 }
 
 type Group struct {
-	ID         pgtype.UUID
+	ID         string
 	Name       string
 	InviteCode string
 	ImageUrl   *string
-	OwnerID    pgtype.UUID
-	CreatedAt  pgtype.Timestamptz
+	OwnerID    string
+	CreatedAt  time.Time
 }
 
 type GroupMember struct {
-	ID      pgtype.UUID
-	GroupID pgtype.UUID
-	UserID  pgtype.UUID
+	ID      string
+	GroupID string
+	UserID  string
 }
 
 type NotificationDispatchLog struct {
-	ID               pgtype.UUID
-	UserID           pgtype.UUID
+	ID               string
+	UserID           string
 	NotificationType string
-	ReferenceID      pgtype.UUID
-	DispatchedDate   pgtype.Date
-	DispatchedAt     pgtype.Timestamptz
+	ReferenceID      string
+	DispatchedDate   time.Time
+	DispatchedAt     time.Time
 }
 
 type SportEvent struct {
-	EventID         pgtype.UUID
+	EventID         string
 	DurationMinutes int32
 	Arena           *string
 	PricePerPlayer  string
@@ -148,46 +147,46 @@ type SportEvent struct {
 }
 
 type TeamPlayer struct {
-	TeamID pgtype.UUID
-	UserID pgtype.UUID
+	TeamID string
+	UserID string
 	Role   *string
 }
 
 type User struct {
-	ID           pgtype.UUID
+	ID           string
 	Username     string
 	Displayname  string
 	AvatarUrl    *string
-	CreatedAt    pgtype.Timestamptz
+	CreatedAt    time.Time
 	AuthProvider int32
 }
 
 type UserCredential struct {
-	UserID                     pgtype.UUID
+	UserID                     string
 	PasswordHash               string
 	Roles                      string
-	CreatedAt                  pgtype.Timestamptz
+	CreatedAt                  time.Time
 	Email                      string
 	EmailVerified              bool
 	EmailVerificationToken     *string
-	EmailVerificationExpiresAt pgtype.Timestamptz
+	EmailVerificationExpiresAt *time.Time
 	PasswordResetToken         *string
-	PasswordResetExpiresAt     pgtype.Timestamptz
+	PasswordResetExpiresAt     *time.Time
 }
 
 type UserFeed struct {
-	UserID            pgtype.UUID
-	ID                pgtype.UUID
+	UserID            string
+	ID                string
 	Name              string
 	ImageUrl          *string
 	EntryType         string
 	IsFinished        bool
-	ScheduledDatetime pgtype.Timestamptz
+	ScheduledDatetime *time.Time
 }
 
 type UserGoogleCredential struct {
-	UserID    pgtype.UUID
+	UserID    string
 	GoogleID  string
 	Email     string
-	CreatedAt pgtype.Timestamptz
+	CreatedAt time.Time
 }

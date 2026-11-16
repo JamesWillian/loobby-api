@@ -47,7 +47,41 @@ type Config struct {
 
 	// BindHost sobrepoe o host de escuta. Vazio = automatico (ver ListenAddr).
 	BindHost string
+
+	// RawgBaseURL: a API do catalogo de jogos. So muda em teste.
+	RawgBaseURL string
+
+	// Resend (envio de email). A chave e obrigatoria, como no Kotlin.
+	ResendAPIKey  string
+	ResendBaseURL string
+
+	// GoogleClientIDs: os client ids (web, iOS, Android) aceitos como audiencia
+	// de um ID token do "Entrar com Google". Obrigatorios, como no Kotlin.
+	GoogleClientIDs []string
+	GoogleCertsURL  string
+
+	// FileStorageLocation: pasta dos uploads (avatares, imagens de grupo).
+	FileStorageLocation string
+
+	// Notificacoes push. Com NotificationsEnabled, o arquivo de credenciais do
+	// Firebase precisa existir -- senao o processo nao sobe, como no Kotlin.
+	NotificationsEnabled    bool
+	FirebaseCredentialsPath string
+
+	// NotificationSchedulerEnabled liga os jobs agendados (lembretes, pagamento
+	// pendente). Enquanto Kotlin e Go rodam juntos, os dois podem ficar ligados
+	// sem push duplicado -- o registro de envios no banco impede --, mas desligar
+	// um dos lados evita trabalho repetido.
+	NotificationSchedulerEnabled bool
+
+	// AllowUnsignedAnonRefresh reproduz uma falha de seguranca do Kotlin no
+	// /auth/refresh (aceitar refresh token de anonimo sem conferir a
+	// assinatura). Default false = corrigido. Ver auth.Service.Refresh.
+	AllowUnsignedAnonRefresh bool
 }
+
+// ResendFromEmail: o remetente fixo do application.yaml do Kotlin.
+const ResendFromEmail = "Loobby <noreply@mail.loobby.app>"
 
 // TLSEnabled informa se o servidor deve exigir TLS mutuo.
 func (c Config) TLSEnabled() bool { return c.TLSCertFile != "" }
@@ -74,6 +108,19 @@ func Load() (Config, error) {
 		TLSKeyFile:                 os.Getenv("TLS_KEY_FILE"),
 		TLSClientCAFile:            os.Getenv("TLS_CLIENT_CA_FILE"),
 		BindHost:                   os.Getenv("BIND_HOST"),
+
+		RawgBaseURL:   envOr("RAWG_BASE_URL", "https://api.rawg.io/api"),
+		ResendAPIKey:  os.Getenv("RESEND_API_KEY"),
+		ResendBaseURL: envOr("RESEND_BASE_URL", "https://api.resend.com"),
+		GoogleClientIDs: []string{
+			os.Getenv("GOOGLE_WEB_CLIENT_ID"), os.Getenv("GOOGLE_IOS_CLIENT_ID"), os.Getenv("GOOGLE_ANDROID_CLIENT_ID"),
+		},
+		GoogleCertsURL:               envOr("GOOGLE_CERTS_URL", "https://www.googleapis.com/oauth2/v3/certs"),
+		FileStorageLocation:          envOr("FILE_STORAGE_LOCATION", "./uploads"),
+		NotificationsEnabled:         envBool("NOTIFICATIONS_ENABLED", true),
+		FirebaseCredentialsPath:      envOr("FIREBASE_CREDENTIALS_PATH", "./secrets/loobby-fcm.json"),
+		NotificationSchedulerEnabled: envBool("NOTIFICATIONS_SCHEDULER_ENABLED", true),
+		AllowUnsignedAnonRefresh:     envBool("ALLOW_UNSIGNED_ANON_REFRESH", false),
 	}
 
 	var missing []string
@@ -85,6 +132,18 @@ func Load() (Config, error) {
 	}
 	if c.RawgAPIKey == "" {
 		missing = append(missing, "RAWG_API_KEY")
+	}
+	if c.ResendAPIKey == "" {
+		missing = append(missing, "RESEND_API_KEY")
+	}
+	for i, name := range []string{"GOOGLE_WEB_CLIENT_ID", "GOOGLE_IOS_CLIENT_ID", "GOOGLE_ANDROID_CLIENT_ID"} {
+		if c.GoogleClientIDs[i] == "" {
+			missing = append(missing, name)
+		}
+	}
+	// O segredo curto demais derruba o Kotlin na partida (JwtConfig); aqui tambem.
+	if c.JWTSecret != "" && len(c.JWTSecret) < 32 {
+		return c, fmt.Errorf("JWT_SECRET curto demais para HS256: use pelo menos 32 bytes")
 	}
 	if len(missing) > 0 {
 		return c, fmt.Errorf("variaveis de ambiente obrigatorias ausentes: %s", strings.Join(missing, ", "))

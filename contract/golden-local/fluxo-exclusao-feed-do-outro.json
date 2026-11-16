@@ -1,0 +1,47 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/users/feed",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-content-type-options": "nosniff",
+      "x-xss-protection": "0",
+      "x-frame-options": "DENY",
+      "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    },
+    "body_raw": "[{\"id\":\"6d8a8b15-45bb-4ad2-81a1-670165c55bf0\",\"userId\":\"de1e89d0-329c-4353-9a7e-956399d0b20b\",\"name\":\"fluxo-evento-do-outro\",\"imageUrl\":null,\"entryType\":\"EVENT\",\"isFinished\":false},{\"id\":\"8d2b473b-0303-4cc6-a126-cca799fa093f\",\"userId\":\"de1e89d0-329c-4353-9a7e-956399d0b20b\",\"name\":\"fluxo-evento-com-outro-confirmado\",\"imageUrl\":null,\"entryType\":\"EVENT\",\"isFinished\":false},{\"id\":\"e91c1b37-2907-4c47-a6e7-be3856943f27\",\"userId\":\"de1e89d0-329c-4353-9a7e-956399d0b20b\",\"name\":\"fluxo-grupo-com-outro-membro\",\"imageUrl\":null,\"entryType\":\"GROUP\",\"isFinished\":false}]",
+    "body": [
+      {
+        "id": "<id:evento-do-b>",
+        "userId": "<id:b>",
+        "name": "fluxo-evento-do-outro",
+        "imageUrl": null,
+        "entryType": "EVENT",
+        "isFinished": false
+      },
+      {
+        "id": "<id:evento-transferido>",
+        "userId": "<id:b>",
+        "name": "fluxo-evento-com-outro-confirmado",
+        "imageUrl": null,
+        "entryType": "EVENT",
+        "isFinished": false
+      },
+      {
+        "id": "<id:grupo-transferido>",
+        "userId": "<id:b>",
+        "name": "fluxo-grupo-com-outro-membro",
+        "imageUrl": null,
+        "entryType": "GROUP",
+        "isFinished": false
+      }
+    ]
+  }
+}
