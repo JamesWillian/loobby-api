@@ -121,8 +121,7 @@ expect kotlin -X GET  /games/a%2Fb
 expect kotlin -X GET  /games/a.b
 expect kotlin -X GET  --path-as-is /games/..
 
-echo "-- nao migradas e internas: ficam no Kotlin --"
-expect kotlin -X GET  /users/me
+echo "-- internas: ficam no Kotlin --"
 expect kotlin -X GET  /actuator/health
 expect kotlin -X GET  /internal/whoami
 
@@ -131,15 +130,70 @@ seen="$(curl -s -o /dev/null -D - "http://127.0.0.1:$P_PROXY/legal/privacy?utm=x
 if [[ "$seen" == "/legal/privacy?utm=x" ]]; then echo "  ok   uri preservada: $seen"
 else echo "  FAIL uri chegou como: $seen"; FAIL=1; fi
 
+echo "-- modulos ainda no Kotlin, segundo o painel do arquivo real --"
+U=54f29b67-cb8b-4435-8b72-43c17f2f4b8f
+side_of() { awk -v m="$1" '$1==m && ($2=="go;" || $2=="kotlin;") {gsub(";","",$2); print $2}' "$HERE/loobby-routes.conf"; }
+for pair in "files:POST /users/me/avatar" "notifications:POST /devices/register" "groups:GET /groups" \
+            "users:GET /users/feed" "events:POST /events/instant" "teams:GET /events/$U/teams" "auth:POST /auth/login"; do
+  mod="${pair%%:*}"; req="${pair#*:}"
+  expect "$(side_of "$mod")" -X "${req%% *}" "${req#* }"
+done
+
+echo "-- ensaio geral: todos os modulos ligados no painel --"
+sed -E 's/^(    [a-z]+ +)kotlin;$/\1go;/' "$HERE/loobby-routes.conf" | sed -E 's/^(    default +)go;$/\1kotlin;/' > "$WORK/routes-all.conf"
+sed -i.bak "s#$HERE/loobby-routes.conf#$WORK/routes-all.conf#" "$WORK/nginx.conf"
+"$NGINX" -t -p "$WORK" -c "$WORK/nginx.conf" -q
+"$NGINX" -p "$WORK" -c "$WORK/nginx.conf" -s reload
+streak=0
+for _ in $(seq 1 200); do
+  backend="$(curl -s -o /dev/null -D - -X POST "http://127.0.0.1:$P_PROXY/auth/login" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-backend"{print $2}')"
+  if [[ "$backend" == "go" ]]; then streak=$((streak+1)); else streak=0; fi
+  [[ $streak -ge 10 ]] && break
+  sleep 0.02
+done
+T=$U/teams/61d1ba14-2a43-4e31-a6b8-2ed31cadbcdf
+for req in \
+  "GET /files/avatars/$U/1789488875123.png" "HEAD /files/groups/$U/1.webp" "POST /users/me/avatar" "POST /groups/$U/image" \
+  "POST /devices/register" "DELETE /devices/fMEP0vJqS0:APA91bH-abc_123" "DELETE /devices/fMEP0vJqS0%3AAPA91bH" \
+  "POST /groups" "GET /groups" "GET /groups/$U" "PATCH /groups/$U" "DELETE /groups/$U" \
+  "GET /groups/invite/\$-2ISBVV" "GET /groups/invite/%24-2ISBVV" "POST /groups/$U/members" "GET /groups/$U/members" \
+  "DELETE /groups/$U/members/me" "DELETE /groups/$U/members/$U" \
+  "GET /users/me" "PATCH /users/me" "DELETE /users/me" "GET /users/feed" "PUT /users/me/password" \
+  "POST /groups/$U/events" "GET /groups/$U/events" "POST /events/instant" "GET /events/$U" "PUT /events/$U" "DELETE /events/$U" \
+  "GET /events/invite/\$-AB12-CD34" "PUT /events/$U/rsvps" "GET /events/$U/rsvps" "GET /events/$U/rsvps/me" "DELETE /events/$U/rsvps/me" \
+  "POST /events/$U/teams" "GET /events/$U/teams" "POST /events/$U/teams/auto-generate" "PUT /events/$T" "DELETE /events/$T" \
+  "POST /events/$T/players" "PUT /events/$T/players/$U" "DELETE /events/$T/players/$U" \
+  "POST /auth/anonymous" "POST /auth/register" "POST /auth/login" "POST /auth/google" "POST /auth/refresh" \
+  "POST /auth/resend-verification" "POST /auth/forgot-password" "POST /auth/reset-password" \
+  "GET /auth/verify-email?token=$U" "GET /auth/reset-password?token=$U"; do
+  if [[ "${req%% *}" == HEAD ]]; then expect go -I "${req#* }"; else expect go -X "${req%% *}" "${req#* }"; fi
+done
+
+echo "-- ensaio geral: variacoes ficam no Kotlin --"
+for req in \
+  "GET /files/avatars/$U/1.gif" "GET /files/outra/$U/1.png" "GET /files/avatars/$U/" "GET /files" "POST /files/avatars/$U/1.png" \
+  "GET /users/me/avatar" "GET /devices/register" "DELETE /devices/" "DELETE /devices/a%2Fb" \
+  "PUT /groups" "GET /groups/" "GET /groups/xyz" "GET /groups/1-1-1-1-1" "GET /groups/invite/" "GET /groups/invite/a%2Fb" \
+  "DELETE /groups/$U/members" "GET /groups/$U/members/me" \
+  "POST /users/me" "GET /users/me/" "GET /users/me/password" "GET /users" \
+  "GET /events/instant" "POST /events/$U" "GET /events" "DELETE /events/$U/rsvps" "PUT /events/$U/rsvps/me" \
+  "GET /events/$U/teams/auto-generate" "GET /events/$T" "GET /events/$T/players" "POST /events/$T/players/$U" \
+  "GET /auth/login" "POST /auth/verify-email" "POST /auth/login/" "POST /auth/logout" "GET /auth" \
+  "GET /actuator/health" "GET /nada"; do
+  expect kotlin -X "${req%% *}" "${req#* }"
+done
+expect kotlin -X OPTIONS -H "Origin: https://x.com" -H "Access-Control-Request-Method: POST" /auth/login
+HERE_ROUTES="$WORK/routes-all.conf"
+
 echo "-- kill switch: \"go loobby-kotlin\" devolve tudo ao Kotlin --"
 # sed -E com classes POSIX: o sed do macOS nao entende \s nem \+, e uma troca
 # que nao acontece faria este teste medir a config errada em silencio.
 sed -E 's/^([[:space:]]*go[[:space:]]+)loobby-go;/\1loobby-kotlin;/' \
-  "$HERE/loobby-routes.conf" > "$WORK/routes-killed.conf"
-if cmp -s "$HERE/loobby-routes.conf" "$WORK/routes-killed.conf"; then
+  "$HERE_ROUTES" > "$WORK/routes-killed.conf"
+if cmp -s "$HERE_ROUTES" "$WORK/routes-killed.conf"; then
   echo "  FAIL a troca do kill switch nao aconteceu -- o formato da linha \"go\" mudou?"; FAIL=1
 else
-  sed -i.bak "s#$HERE/loobby-routes.conf#$WORK/routes-killed.conf#" "$WORK/nginx.conf"
+  sed -i.bak "s#$HERE_ROUTES#$WORK/routes-killed.conf#" "$WORK/nginx.conf"
   "$NGINX" -p "$WORK" -c "$WORK/nginx.conf" -s reload
   # Logo apos o reload, o worker antigo e o novo aceitam conexoes ao mesmo tempo
   # por alguns milissegundos -- o nginx so manda o antigo sair depois que o novo
@@ -155,6 +209,8 @@ else
   expect kotlin -X GET /legal/child-safety
   expect kotlin -X GET "/games/search?q=zelda"
   expect kotlin -X GET /games/479836
+  expect kotlin -X POST /auth/login
+  expect kotlin -X GET /users/me
 fi
 
 echo

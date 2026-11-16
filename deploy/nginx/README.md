@@ -8,7 +8,7 @@ mútuo. Estes arquivos se **encaixam** no nginx existente; não o substituem.
 | Arquivo | Onde incluir | Muda quando |
 |---|---|---|
 | `loobby-upstreams.conf` | `http {}` | raramente — endereços e esquema dos dois lados |
-| `loobby-routes.conf` | `http {}` | **a cada módulo migrado** — é o estado da migração |
+| `loobby-routes.conf` | `http {}` | **a cada módulo migrado** — uma palavra no painel |
 | `loobby-proxy.conf` | `location / {}` de `api.loobby.app` | raramente |
 | `loobby-fallback.conf` | `server {}` de `api.loobby.app` | raramente |
 | `test-routing.sh` | — | junto com o `routes.conf`: cada rota nova ganha casos |
@@ -29,7 +29,7 @@ o resto fica no Kotlin. Em games, o id aceita só letras, dígitos, `-` e `_`.
 
 ## As redes de segurança
 
-- **Kill switch.** Na linha `go` do segundo `map` do `loobby-routes.conf`,
+- **Kill switch.** Na linha `go` do último `map` do `loobby-routes.conf`,
   `loobby-go` → `loobby-kotlin`, e `nginx -s reload`: todas as rotas migradas
   voltam ao Kotlin de uma vez, inclusive o esquema (HTTPS → HTTP).
 - **Fallback automático.** Se o Go não responder (máquina fora, rede, firewall),
@@ -89,19 +89,55 @@ switch ligado**, sem mandar nada para o Go ainda.
 Uma mudança por vez entre baselines: se o deploy do PR #1 e o cutover de uma rota
 caírem no mesmo intervalo, o `compare` mistura as duas causas.
 
-## Migrar a próxima rota
+## Migrar o próximo módulo
 
-1. Uma linha nova no primeiro `map` do `loobby-routes.conf`.
-2. Casos novos no `test-routing.sh` — a rota e as variações que devem **ficar** no Kotlin.
-3. `deploy/nginx/test-routing.sh` verde.
-4. Publicar o Go (`deploy/go/deploy.sh`) e fazer o cutover pelos passos 6 e 7.
+Todas as rotas de todos os módulos já estão no primeiro `map` do
+`loobby-routes.conf`. O que diz quem atende é o **painel** (o segundo `map`):
+
+```nginx
+map $loobby_module $loobby_route {
+    legal          go;
+    games          go;
+    files          kotlin;   # <- trocar por "go" é o cutover de files
+    ...
+```
+
+Para cada módulo, na ordem `files → notifications → groups → users → events →
+teams → auth`:
+
+1. Publicar o Go (`deploy/go/deploy.sh`) — uma vez basta, o binário já tem tudo.
+2. Captura **antes**: `python3 contract/capture.py --include-uploads --out contract/antes`.
+3. No painel, `kotlin` → `go` na linha do módulo; `nginx -t && nginx -s reload`.
+4. Captura **depois** e `python3 contract/compare.py contract/antes contract/depois`:
+   zero diferenças. Se houver, volte a palavra e recarregue.
+
+O que cada módulo exige antes de ligar:
+
+| Módulo | Antes de ligar |
+|---|---|
+| `files` | copiar os uploads para a máquina nova (`deploy/go/README.md`). Uploads e leitura migram juntos |
+| `notifications` | nada — só grava e apaga o token do aparelho |
+| `events` | `loobby-fcm.json` na máquina nova: é o Go que passa a mandar o push de confirmação e de evento novo |
+| `auth` | `RESEND_API_KEY` e os client ids do Google conferidos; a partir daqui o `/auth/refresh` recusa token forjado (`contract/ACHADOS.md` §22) |
+
+**Desligar o Kotlin** é um passo à parte, depois de `auth`: o que não casa com
+nenhuma rota (URL malformada, método errado, preflight, `/actuator/health`) ainda
+vai para ele. Troque `default kotlin;` por `default go;` **no painel**, passe
+`NOTIFICATIONS_SCHEDULER_ENABLED` para `true` no Go e só então pare o contêiner.
+
+Rota nova (que não existe hoje): uma linha no primeiro `map`, casos no
+`test-routing.sh`, e o teste verde.
 
 ## Testes
 
 ```bash
-deploy/nginx/test-routing.sh     # só o roteamento; sem banco, Kotlin nem Go
+deploy/nginx/test-routing.sh     # só o roteamento (133 casos); sem banco, Kotlin nem Go
 TEST_DATABASE_URL=postgres://postgres@127.0.0.1:54329/loobby deploy/nginx/test-tls.sh
 ```
+
+Os dois usam as portas 18080 e 18081: pare antes o ambiente do
+`contract/local/oracle.sh`, se estiver no ar. O `test-routing.sh` confere o painel
+do arquivo real e depois faz um ensaio geral com todos os módulos ligados.
 
 O `test-tls.sh` sobe o binário Go de verdade com TLS mútuo atrás do nginx com
 estes arquivos, e um Kotlin falso. Ele precisa de um Postgres com o schema

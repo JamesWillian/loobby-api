@@ -23,7 +23,8 @@ TimeoutStopSec=15s
 # de chegar aqui; este limite e a rede de seguranca do sistema.
 MemoryMax=256M
 
-# Endurecimento: o processo so precisa de rede e de ler os proprios arquivos.
+# Endurecimento: o processo so precisa de rede, de ler os proprios arquivos e de
+# escrever na pasta de uploads.
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
@@ -44,8 +45,11 @@ MemoryDenyWriteExecute=yes
 SystemCallArchitectures=native
 CapabilityBoundingSet=
 AmbientCapabilities=
-# Quando o modulo de arquivos migrar, o diretorio de uploads entra aqui:
-# ReadWritePaths=/var/lib/loobby/uploads
+# Unica pasta em que o processo escreve: os uploads, em /var/lib/loobby (o
+# systemd a cria, com o dono certo). Sem isto o ProtectSystem=strict impediria
+# ate a partida -- o Go cria a pasta de uploads ao subir.
+StateDirectory=loobby
+StateDirectoryMode=0750
 
 [Install]
 WantedBy=multi-user.target
