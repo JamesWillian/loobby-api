@@ -1,15 +1,15 @@
-// Comando api: o lado Go da migracao do Loobby.
+// Comando api: a API do Loobby em Go, porta completa da API Kotlin.
 //
 // Durante o strangler este processo roda ao lado do Kotlin, atras de um proxy que
 // direciona rota a rota. Os dois compartilham banco e JWT_SECRET, entao a
-// migracao e reversivel por rota. Ordem prevista:
-//
-//	legal -> games -> files -> notifications -> groups -> users -> events -> auth
+// migracao e reversivel por rota. Todos os modulos estao aqui: legal, games,
+// files, notifications, groups, users, events, teams e auth.
 package main
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,10 +17,20 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/JamesWillian/loobby-api/api-go/internal/auth"
 	"github.com/JamesWillian/loobby-api/api-go/internal/config"
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
+	"github.com/JamesWillian/loobby-api/api-go/internal/email"
+	"github.com/JamesWillian/loobby-api/api-go/internal/events"
+	"github.com/JamesWillian/loobby-api/api-go/internal/files"
 	"github.com/JamesWillian/loobby-api/api-go/internal/games"
+	"github.com/JamesWillian/loobby-api/api-go/internal/groups"
+	"github.com/JamesWillian/loobby-api/api-go/internal/notifications"
 	"github.com/JamesWillian/loobby-api/api-go/internal/server"
+	"github.com/JamesWillian/loobby-api/api-go/internal/teams"
+	"github.com/JamesWillian/loobby-api/api-go/internal/users"
 )
 
 func main() {
@@ -48,21 +58,14 @@ func run() error {
 	}
 	defer pool.Close()
 
-	// Valores do bloco rawg: do application.yaml do Kotlin.
-	rawg := games.NewRawgClient(games.RawgConfig{
-		APIKey:           cfg.RawgAPIKey,
-		BaseURL:          "https://api.rawg.io/api",
-		ConnectTimeout:   3 * time.Second,
-		ReadTimeout:      5 * time.Second,
-		SearchPageSize:   20,
-		FailureThreshold: 5,
-		OpenFor:          2 * time.Minute,
-	})
-	gamesHandler := games.NewHandler(games.NewService(rawg, games.NewStore(pool)))
+	deps, err := build(ctx, cfg, pool)
+	if err != nil {
+		return err
+	}
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr(),
-		Handler:           logging(server.Handler(server.Deps{Config: cfg, DB: pool, Games: gamesHandler})),
+		Handler:           logging(server.Handler(deps)),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,
@@ -102,6 +105,75 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), config.ShutdownTimeout)
 	defer cancel()
 	return srv.Shutdown(shutdownCtx)
+}
+
+// build constroi os modulos e os liga uns aos outros.
+func build(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (server.Deps, error) {
+	storage, err := files.NewStorage(cfg.FileStorageLocation)
+	if err != nil {
+		return server.Deps{}, fmt.Errorf("pasta de uploads: %w", err)
+	}
+
+	// Valores do bloco rawg: do application.yaml do Kotlin.
+	rawg := games.NewRawgClient(games.RawgConfig{
+		APIKey:           cfg.RawgAPIKey,
+		BaseURL:          cfg.RawgBaseURL,
+		ConnectTimeout:   3 * time.Second,
+		ReadTimeout:      5 * time.Second,
+		SearchPageSize:   20,
+		FailureThreshold: 5,
+		OpenFor:          2 * time.Minute,
+	})
+	gamesSvc := games.NewService(rawg, games.NewStore(pool))
+
+	// Push: com NOTIFICATIONS_ENABLED (o padrao), as credenciais do Firebase sao
+	// obrigatorias e a falta delas impede a partida, como no Kotlin.
+	var sender notifications.Sender = notifications.DisabledSender{}
+	if cfg.NotificationsEnabled {
+		fcm, err := notifications.NewFCM(pool, cfg.FirebaseCredentialsPath)
+		if err != nil {
+			return server.Deps{}, err
+		}
+		sender = fcm
+	} else {
+		slog.Warn("notificacoes DESLIGADAS: nenhum push sera enviado")
+	}
+	notifier := notifications.NewService(pool, sender)
+
+	// Os jobs so rodam com o envio ligado. (No Kotlin eles rodam mesmo com o
+	// envio desligado, registrando como "enviado" o que nao enviaram; com dois
+	// processos dividindo o banco, isso faria o lado desligado engolir os
+	// avisos do lado ligado.)
+	if cfg.NotificationsEnabled && cfg.NotificationSchedulerEnabled {
+		scheduler, err := notifications.NewScheduler(pool, notifier)
+		if err != nil {
+			return server.Deps{}, err
+		}
+		go scheduler.Run(ctx)
+	}
+
+	tokens := auth.NewTokens(cfg.JWTSecret)
+	authSvc := auth.NewService(pool, tokens,
+		email.NewResend(cfg.ResendAPIKey, config.ResendFromEmail, cfg.ResendBaseURL),
+		auth.NewGoogleVerifier(cfg.GoogleClientIDs, cfg.GoogleCertsURL),
+		auth.Options{BaseURL: cfg.BaseURL, AllowUnsignedAnonRefresh: cfg.AllowUnsignedAnonRefresh})
+	if cfg.AllowUnsignedAnonRefresh {
+		slog.Warn("ALLOW_UNSIGNED_ANON_REFRESH ligado: refresh token de anonimo e aceito sem conferir assinatura")
+	}
+
+	return server.Deps{
+		Config:  cfg,
+		DB:      pool,
+		Tokens:  tokens,
+		Auth:    auth.NewHandler(authSvc),
+		Users:   users.NewHandler(users.NewService(pool), storage),
+		Groups:  groups.NewHandler(groups.NewService(pool, storage)),
+		Events:  events.NewHandler(events.NewService(pool, notifier, gamesSvc)),
+		Teams:   teams.NewHandler(teams.NewService(pool)),
+		Games:   games.NewHandler(gamesSvc),
+		Devices: notifications.NewHandler(pool),
+		Files:   storage,
+	}, nil
 }
 
 func logging(next http.Handler) http.Handler {

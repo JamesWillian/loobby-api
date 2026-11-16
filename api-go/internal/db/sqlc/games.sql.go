@@ -7,8 +7,7 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 const findGame = `-- name: FindGame :one
@@ -33,13 +32,13 @@ type FindGameRow struct {
 	Slug            *string
 	Name            string
 	BackgroundImage *string
-	Released        pgtype.Date
+	Released        *time.Time
 	Rating          *string
 	Metacritic      *int32
 	DescriptionRaw  *string
 	Genres          []byte
 	Platforms       []byte
-	RefreshedAt     pgtype.Timestamptz
+	RefreshedAt     time.Time
 }
 
 // Cache local do catalogo RAWG. Porta do GameRepository + GameService do Kotlin.
@@ -94,14 +93,14 @@ type UpsertGameFromDetailParams struct {
 	Slug            *string
 	Name            *string
 	BackgroundImage *string
-	Released        pgtype.Date
+	Released        *time.Time
 	Rating          *string
 	Metacritic      *int32
 	DescriptionRaw  *string
 	Genres          *string
 	Platforms       *string
 	RawPayload      *string
-	Now             pgtype.Timestamptz
+	Now             time.Time
 }
 
 // GameService.upsertFromDetail: tudo do detalhe, inclusive a descricao -- que
@@ -153,13 +152,13 @@ type UpsertGameFromSearchParams struct {
 	Slug            *string
 	Name            *string
 	BackgroundImage *string
-	Released        pgtype.Date
+	Released        *time.Time
 	Rating          *string
 	Metacritic      *int32
 	Genres          *string
 	Platforms       *string
 	RawPayload      *string
-	Now             pgtype.Timestamptz
+	Now             time.Time
 }
 
 // GameService.upsertFromSearch. Busca nao traz descricao: description_raw fica

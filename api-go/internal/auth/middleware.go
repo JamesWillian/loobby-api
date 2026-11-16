@@ -1,17 +1,18 @@
-// Package auth valida os JWT emitidos pelo lado Kotlin.
+// Package auth e o Spring Security do lado Go: valida e emite os JWT do Loobby
+// e decide, por rota, quem precisa estar autenticado.
 //
-// Nao ha migracao de sessao: o Kotlin assina HS256 com JWT_SECRET, e o Go valida
-// com o MESMO segredo. Token emitido por um vale no outro, nos dois sentidos.
-// E o que permite o strangler rota a rota sem deslogar ninguem.
+// Nao ha migracao de sessao: o Kotlin assina HS256 com JWT_SECRET, e o Go usa o
+// MESMO segredo. Token emitido por um vale no outro, nos dois sentidos. E o que
+// permite o strangler rota a rota sem deslogar ninguem.
 package auth
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
 )
 
 type ctxKey int
@@ -31,125 +32,134 @@ func FromContext(ctx context.Context) (Principal, bool) {
 	return p, ok
 }
 
-// MustPrincipal so deve ser chamado dentro de handler protegido por Middleware.
+// MustPrincipal so deve ser chamado em rota protegida pelo Filter.
 func MustPrincipal(ctx context.Context) Principal {
 	p, _ := FromContext(ctx)
 	return p
 }
 
-type Middleware struct {
-	secret               []byte
-	acceptRefreshAsToken bool
+// UserID e o `UUID.fromString(jwt.subject)` que abre quase todo controller do
+// Kotlin. Quando o `sub` nao e um UUID, la isso lanca IllegalArgumentException
+// e a resposta e 400 "Invalid UUID string: <sub>" (medido) -- so alcancavel com
+// um token assinado com o segredo certo, entao e mais formalidade que caso real.
+func UserID(r *http.Request) (string, error) {
+	sub := MustPrincipal(r.Context()).UserID
+	id, ok := httpx.ParseJavaUUID(sub)
+	if !ok {
+		return "", httpx.BadRequest("Invalid UUID string: " + sub)
+	}
+	return id, nil
 }
 
-func NewMiddleware(secret string, acceptRefreshAsAccess bool) *Middleware {
-	return &Middleware{secret: []byte(secret), acceptRefreshAsToken: acceptRefreshAsAccess}
-}
-
-// Require exige JWT valido. Falha responde 401 com o mesmo envelope do Kotlin.
+// Filter reproduz a cadeia do Spring Security do Kotlin, e por isso envolve
+// TODAS as rotas -- inclusive as que nao existem. As regras, todas medidas:
 //
-// O Spring Security responde 401 com corpo VAZIO e o header WWW-Authenticate
-// quando falta ou falha o Bearer -- nao passa pelo ApiExceptionHandler. Isso foi
-// medido na baseline (golden erro-401-sem-token) e esta replicado aqui.
-func (m *Middleware) Require(next http.Handler) http.Handler {
+//  1. Caminho ou metodo que o StrictHttpFirewall recusa ("//", "..", ";",
+//     "%2F"...): 401 `Bearer`, mesmo com token valido.
+//  2. Authorization comecando com "bearer": o token e validado em QUALQUER
+//     rota, ate nas publicas. Token ruim em /legal/privacy tambem da 401.
+//  3. Sem token: so passam as rotas publicas (isPublic), comparadas por metodo
+//     exato. HEAD numa rota publica de GET exige token.
+//
+// O 401 sai com corpo vazio e WWW-Authenticate, sem passar pelo envelope de
+// erro da API -- no Kotlin quem responde e o filtro, nao um controller.
+type Filter struct {
+	tokens                *Tokens
+	acceptRefreshAsAccess bool
+	isPublic              func(method, path string) bool
+}
+
+func NewFilter(tokens *Tokens, acceptRefreshAsAccess bool, isPublic func(method, path string) bool) *Filter {
+	return &Filter{tokens: tokens, acceptRefreshAsAccess: acceptRefreshAsAccess, isPublic: isPublic}
+}
+
+// Formato do DefaultBearerTokenResolver. Sem diferenciar maiusculas: "bearer x"
+// e aceito (medido).
+var bearerPattern = regexp.MustCompile(`(?i)^Bearer ([a-zA-Z0-9\-._~+/]+=*)$`)
+
+const (
+	challengeBare = "Bearer"
+	errorURI      = `error_uri="https://tools.ietf.org/html/rfc6750#section-3.1"`
+)
+
+func (f *Filter) Wrap(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		raw, err := bearer(r)
-		if err != nil {
-			unauthorized(w, "")
+		if firewallRejects(r) {
+			unauthorized(w, challengeBare)
 			return
 		}
-		p, err := m.parse(raw)
-		if err != nil {
-			unauthorized(w, describe(err))
+
+		authenticated := false
+		if h := r.Header.Get("Authorization"); len(h) >= 6 && strings.EqualFold(h[:6], "bearer") {
+			m := bearerPattern.FindStringSubmatch(h)
+			if m == nil {
+				unauthorized(w, invalidToken("Bearer token is malformed"))
+				return
+			}
+			claims, terr := f.tokens.Verify(m[1])
+			if terr != nil {
+				unauthorized(w, invalidToken(terr.Description))
+				return
+			}
+			// O Kotlin NAO confere o claim `type` (ver config). Com a opcao
+			// desligada, o Go passa a recusar refresh token usado como access.
+			if !f.acceptRefreshAsAccess && claims.Type == "refresh" {
+				unauthorized(w, invalidToken("Refresh token is not an access token"))
+				return
+			}
+			authenticated = true
+			r = r.WithContext(context.WithValue(r.Context(), principalKey, Principal{
+				UserID: claims.Subject, Username: claims.Username, Roles: claims.Roles, Type: claims.Type,
+			}))
+		}
+
+		if !authenticated && !f.isPublic(r.Method, r.URL.Path) {
+			unauthorized(w, challengeBare)
 			return
 		}
-		ctx := context.WithValue(r.Context(), principalKey, p)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next.ServeHTTP(w, r)
 	})
 }
 
-func (m *Middleware) parse(raw string) (Principal, error) {
-	var claims jwt.MapClaims
-	_, err := jwt.ParseWithClaims(raw, &claims, func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("algoritmo inesperado")
-		}
-		return m.secret, nil
-	}, jwt.WithValidMethods([]string{"HS256"}))
-	if err != nil {
-		return Principal{}, err
-	}
-
-	p := Principal{
-		UserID:   str(claims["sub"]),
-		Username: str(claims["username"]),
-		Type:     str(claims["type"]),
-	}
-	p.Roles = roles(claims["roles"])
-
-	if p.UserID == "" {
-		return Principal{}, errors.New("token sem sub")
-	}
-	if !m.acceptRefreshAsToken && p.Type == "refresh" {
-		return Principal{}, errors.New("refresh token nao vale como access token")
-	}
-	return p, nil
-}
-
-// roles aceita as duas formas que o JwtAuthConverter do Kotlin aceita: lista, ou
-// string separada por virgula/espaco.
-func roles(raw any) []string {
-	switch v := raw.(type) {
-	case []any:
-		out := make([]string, 0, len(v))
-		for _, r := range v {
-			if s := strings.TrimSpace(str(r)); s != "" {
-				out = append(out, s)
-			}
-		}
-		return out
-	case string:
-		var out []string
-		for _, r := range strings.FieldsFunc(v, func(c rune) bool { return c == ',' || c == ' ' }) {
-			if s := strings.TrimSpace(r); s != "" {
-				out = append(out, s)
-			}
-		}
-		return out
-	default:
-		return nil
-	}
-}
-
-func bearer(r *http.Request) (string, error) {
-	h := r.Header.Get("Authorization")
-	if h == "" {
-		return "", errors.New("sem Authorization")
-	}
-	if len(h) < 7 || !strings.EqualFold(h[:7], "bearer ") {
-		return "", errors.New("Authorization nao e Bearer")
-	}
-	return strings.TrimSpace(h[7:]), nil
-}
-
-func describe(err error) string {
-	switch {
-	case errors.Is(err, jwt.ErrTokenExpired):
-		return `Bearer error="invalid_token", error_description="Jwt expired"`
-	default:
-		return `Bearer error="invalid_token"`
-	}
+func invalidToken(description string) string {
+	return `Bearer error="invalid_token", error_description="` + description + `", ` + errorURI
 }
 
 func unauthorized(w http.ResponseWriter, challenge string) {
-	if challenge == "" {
-		challenge = "Bearer"
-	}
 	w.Header().Set("WWW-Authenticate", challenge)
 	w.WriteHeader(http.StatusUnauthorized)
 }
 
-func str(v any) string {
-	s, _ := v.(string)
-	return s
+// firewallRejects reproduz o StrictHttpFirewall. No Kotlin, uma requisicao
+// recusada vira 400 interno, que e redespachado para /error, que exige
+// autenticacao e nao a tem (o filtro do Bearer nao roda de novo): o cliente ve
+// 401 `Bearer`. Medido com "/users//me" e token valido.
+func firewallRejects(r *http.Request) bool {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodPost, http.MethodPut,
+		http.MethodPatch, http.MethodDelete, http.MethodOptions:
+	default:
+		return true
+	}
+	raw, _, _ := strings.Cut(r.RequestURI, "?")
+	if raw == "" { // requisicao montada em teste
+		raw = r.URL.EscapedPath()
+	}
+	for i := 0; i < len(raw); i++ {
+		if raw[i] < 0x20 || raw[i] > 0x7e {
+			return true
+		}
+	}
+	lower := strings.ToLower(raw)
+	for _, bad := range []string{"//", ";", `\`, "%2f", "%25", "%2e", "%5c", "%3b", "%00", "%0a", "%0d"} {
+		if strings.Contains(lower, bad) {
+			return true
+		}
+	}
+	for _, seg := range strings.Split(raw, "/") {
+		if seg == "." || seg == ".." {
+			return true
+		}
+	}
+	return false
 }

@@ -8,35 +8,47 @@ Ordem: `legal → games → files → notifications → groups → users → eve
 
 ## Estado
 
-| Módulo | Situação |
-|---|---|
-| fundação (config, pool, JWT, TLS mútuo, envelope de erro, headers do Spring) | ✅ |
-| `legal` — 3 rotas | ✅ igual aos golden · aguardando cutover |
-| `games` — busca e detalhe | ✅ igual aos golden e a respostas gravadas da produção · aguardando cutover |
-| demais | — |
+**Os 53 endpoints estão implementados**, e o Go responde igual ao Kotlin nos 166
+cenários de `../contract/golden-local/`. O que falta é o cutover no nginx, módulo
+a módulo (`../deploy/nginx/README.md`): o painel liga hoje `legal` e `games`.
+
+Onde o Go difere do Kotlin **de propósito**: recusa refresh token forjado
+(`../contract/ACHADOS.md` §22), grava evento e detalhes numa transação só e sorteia
+outro username quando o do anônimo colide (§28). O resto — inclusive os defeitos —
+é reproduzido.
 
 ## Pacotes
 
 | Pacote | O quê |
 |---|---|
 | `cmd/api` | `main`: config, pool, módulos, servidor, shutdown gracioso |
-| `internal/server` | a cadeia HTTP completa; fica fora do `main` para os testes usarem a mesma fiação de produção |
+| `internal/server` | a cadeia HTTP: headers do Spring → filtro de autenticação → precedência de rotas → handler |
 | `internal/config` | env vars — **as mesmas** do `application.yaml` do Kotlin |
-| `internal/db` | pool `pgx` (5 conexões) e o código gerado pelo `sqlc` |
-| `internal/httpx` | envelope de erro, `Instant`, `Marshal`, `SpringHeaders` |
-| `internal/jackson` | escreve números e strings **como o Jackson** — testado contra o Jackson real |
-| `internal/auth` | middleware JWT HS256 |
-| `internal/health`, `internal/legal`, `internal/games` | as rotas |
-| `internal/contracttest` | compara uma resposta Go com o golden do Kotlin |
+| `internal/db` | pool `pgx`, transações e o código gerado pelo `sqlc` |
+| `internal/httpx` | envelope de erro, `Instant`, leitura de corpo como o Jackson, UUID como o Java, validação |
+| `internal/jackson`, `internal/validation`, `internal/kotlin` | números, mensagens e `trim()` **como** o Jackson, o Hibernate Validator e o Kotlin — testados contra os originais |
+| `internal/auth` | tokens HS256, filtro (o Spring Security do lado Go), login, cadastro, e-mail, reset, Google |
+| `internal/users`, `groups`, `events`, `teams`, `games`, `legal`, `files`, `notifications`, `health` | os módulos |
+| `internal/email`, `internal/password`, `internal/ids` | Resend, BCrypt e identificadores |
+| `internal/contracttest`, `internal/dbtest` | apoio aos testes |
 
 ## Rodar
 
-Mesmas variáveis do Kotlin: `DB_URL` (JDBC ou formato pgx), `JWT_SECRET`,
-`RAWG_API_KEY`, e `DB_USERNAME`/`DB_PASSWORD` se a URL não trouxer credenciais.
+Mesmas variáveis do Kotlin (lista comentada em `../deploy/go/api.env.example`).
+Obrigatórias: `DB_URL` (JDBC ou formato pgx), `JWT_SECRET` (32 bytes ou mais),
+`RAWG_API_KEY`, `RESEND_API_KEY` e os três `GOOGLE_*_CLIENT_ID`. Com
+`NOTIFICATIONS_ENABLED=true` (o padrão), o arquivo de credenciais do Firebase
+também precisa existir.
+
+O jeito mais curto de ver tudo funcionando é o ambiente local, que sobe o Go em
+`http://127.0.0.1:18081` com banco e serviços externos falsos:
 
 ```bash
-PORT=8081 go run ./cmd/api        # HTTP puro, só em 127.0.0.1
+../contract/local/oracle.sh up
 ```
+
+**Nunca aponte um Go de teste para o `DB_URL` do Supabase**: cadastro e exclusão
+de conta seriam escritas em produção.
 
 Com `TLS_CERT_FILE`, `TLS_KEY_FILE` e `TLS_CLIENT_CA_FILE` (os três juntos), o
 servidor exige TLS mútuo e escuta em todas as interfaces — é o modo de produção
@@ -46,25 +58,25 @@ nunca fica exposto na rede. `BIND_HOST` sobrepõe o host nos dois casos.
 ## Testes
 
 ```bash
-go test ./...
+go test ./...                                                                # sem banco: os de banco se pulam
+TEST_DATABASE_URL=postgres://postgres@127.0.0.1:54329/loobby go test ./...   # tudo
 ```
 
-Os testes que precisam de banco pulam sem `TEST_DATABASE_URL`. Para rodá-los, um
-Postgres 17 (a versão do Supabase) com o schema de produção:
+O Postgres dos testes é o do ambiente local (`../contract/local/oracle.sh up`
+cria o banco `loobby` com o schema de produção — que precisa do `pg_trgm`, que o
+dump não traz: `contract/ACHADOS.md` §20).
 
-```bash
-PG=/opt/homebrew/opt/postgresql@17/bin; D=/tmp/loobby-pg
-LC_ALL=C $PG/initdb -U postgres --auth=trust -E UTF8 --locale=C -D $D
-LC_ALL=C $PG/pg_ctl -D $D -o "-p 54329 -k '' -c listen_addresses=127.0.0.1" -l $D.log -w start
-$PG/psql -h 127.0.0.1 -p 54329 -U postgres -c "CREATE DATABASE loobby"
-$PG/psql -h 127.0.0.1 -p 54329 -U postgres -d loobby -c "CREATE EXTENSION pg_trgm"
-grep -v '^CREATE SCHEMA public;$' ../contract/schema.sql | $PG/psql -h 127.0.0.1 -p 54329 -U postgres -d loobby -q
-TEST_DATABASE_URL=postgres://postgres@127.0.0.1:54329/loobby go test ./...
-```
+Três camadas:
 
-O `LC_ALL` é exigência do Postgres no macOS. O `pg_trgm` não vem no dump
-(`contract/ACHADOS.md` §20), e o `CREATE SCHEMA public` do dump já existe num
-banco novo.
+- **`cmd/api` — `TestContratoIgualAoKotlin`.** Sobe o servidor inteiro, com a
+  fiação do `main` e um banco só dele, passa a suíte de contrato completa
+  (`capture.py` + `flows.py`, 166 cenários) e exige zero diferenças contra
+  `contract/golden-local`. Precisa de `python3`, `openssl` e `psql`.
+- **`internal/server`** — rotas públicas, precedência de rotas, e `legal` e `games`
+  byte a byte contra os golden de produção.
+- **cada pacote** — o que a suíte não alcança: conversões do corpo, UUID, senha,
+  mensagens de token, verificador do Google, refresh forjado, falha do Resend,
+  uploads, FCM contra servidor falso, registro de envios.
 
 ## Queries: `sqlc`
 
@@ -96,6 +108,8 @@ introduzido e pego.
 - numeric lido pelo protocolo binário; jsonb do cache sem re-escrever como o Jackson
 - resposta fresca de games relida do banco; `page` sem hexadecimal; trim do Go no lugar do do Java
 - o `FixEscapes` desligado; a chave do RAWG sem ser removida do erro
+- assunto do e-mail de reset; `obs` não limpo na exclusão de conta; tolerância de relógio do Google
+- refresh de anônimo lido sem conferir a assinatura
 
 ## Armadilhas do lado Go — todas travadas em teste
 

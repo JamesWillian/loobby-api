@@ -5,7 +5,11 @@ import "testing"
 func base(t *testing.T) {
 	t.Helper()
 	t.Setenv("DB_URL", "postgres://u:p@h/db")
-	t.Setenv("JWT_SECRET", "s")
+	t.Setenv("JWT_SECRET", "segredo-de-teste-com-mais-de-32-bytes-0123")
+	t.Setenv("RESEND_API_KEY", "r")
+	t.Setenv("GOOGLE_WEB_CLIENT_ID", "web")
+	t.Setenv("GOOGLE_IOS_CLIENT_ID", "ios")
+	t.Setenv("GOOGLE_ANDROID_CLIENT_ID", "android")
 	t.Setenv("RAWG_API_KEY", "k")
 	for _, k := range []string{"TLS_CERT_FILE", "TLS_KEY_FILE", "TLS_CLIENT_CA_FILE", "BIND_HOST", "PORT"} {
 		t.Setenv(k, "")
