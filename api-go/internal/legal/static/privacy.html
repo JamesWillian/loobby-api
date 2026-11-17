@@ -117,7 +117,7 @@
 <main>
 
     <h1>Política de Privacidade — Loobby</h1>
-    <p class="updated"><strong>Última atualização:</strong> 27 de abril de 2026</p>
+    <p class="updated"><strong>Última atualização:</strong> 16 de novembro de 2026</p>
 
     <h2>1. Quem somos</h2>
     <p>O Loobby é desenvolvido e operado por <strong>James Willian Da Mata</strong>, pessoa física, atuando como desenvolvedor independente. Para todos os efeitos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — LGPD), atuo como <strong>controlador</strong> dos dados pessoais tratados pelo aplicativo Loobby.</p>
@@ -128,8 +128,9 @@
     <ul>
         <li>Coletamos <strong>e-mail, senha (em hash), nome de usuário</strong> e, opcionalmente, <strong>nome de exibição e foto de perfil</strong>.</li>
         <li>Se você usar o login com Google, recebemos do Google <strong>e-mail, nome, foto</strong> e um identificador único da conta.</li>
-        <li>Não coletamos <strong>localização</strong>, <strong>lista de contatos</strong>, <strong>dados de cartão</strong>, <strong>identificadores de publicidade</strong>, e não usamos ferramentas de <strong>analytics ou rastreamento</strong>.</li>
-        <li>Compartilhamos dados com poucos prestadores: <strong>Google</strong> (login e notificações), <strong>Resend</strong> (envio de e-mails), <strong>AWS</strong> e <strong>Supabase</strong> (hospedagem e banco de dados).</li>
+        <li>No app Android, coletamos <strong>estatísticas de uso</strong> e <strong>relatórios de falhas</strong> por meio do Google (Firebase). Elas não ficam ligadas à sua conta e não são usadas para publicidade.</li>
+        <li>Não pedimos acesso à <strong>localização</strong> do aparelho, e não coletamos <strong>lista de contatos</strong>, <strong>dados de cartão</strong> nem <strong>identificadores de publicidade</strong>.</li>
+        <li>Compartilhamos dados com poucos prestadores: <strong>Google</strong> (login, notificações, estatísticas de uso e relatórios de falhas), <strong>Resend</strong> (envio de e-mails), <strong>AWS</strong> e <strong>Supabase</strong> (hospedagem e banco de dados).</li>
         <li>Você pode <strong>excluir sua conta a qualquer momento</strong> dentro do app. Seus dados pessoais são removidos imediatamente.</li>
         <li>O Loobby é destinado a usuários de <strong>13 anos ou mais</strong>.</li>
     </ul>
@@ -171,10 +172,21 @@
         <li><strong>Estado da conexão de rede</strong> do dispositivo, usado apenas em memória para indicar se o app está online ou offline. Não é transmitido aos nossos servidores.</li>
     </ul>
 
-    <h3>3.4 O que não coletamos</h3>
+    <h3>3.4 Estatísticas de uso e relatórios de falhas (app Android)</h3>
+    <p>No aplicativo Android, usamos dois serviços do Google (Firebase) para saber como o app é usado e para corrigir falhas. Eles coletam automaticamente:</p>
+    <ul>
+        <li><strong>Estatísticas de uso</strong> (Google Analytics para Firebase): quais telas são abertas, quais ações são realizadas (por exemplo, "criou um evento", "confirmou presença", "entrou com Google"), tempo de uso e abertura de notificações. Registramos apenas o tipo da ação. <strong>Não vão</strong> seu nome, e-mail, textos digitados, códigos de convite, nomes de grupos, de eventos ou de jogos, nem identificadores da sua conta, de grupos ou de eventos.</li>
+        <li><strong>Relatórios de falhas</strong> (Firebase Crashlytics): quando o app falha, o registro técnico da falha (o ponto do código onde ocorreu e o estado do app e do aparelho naquele momento) e a sequência de ações no app que veio antes dela. O app foi construído para não incluir dados pessoais nesses registros. A mensagem técnica de uma falha grave é gerada pelo sistema e pode, excepcionalmente, conter um trecho do dado que estava sendo processado.</li>
+        <li><strong>Identificadores de instalação</strong>: códigos aleatórios gerados pelo Firebase para cada instalação do app, usados para contar instalações ativas e quantas foram afetadas por uma falha. Não são ligados à sua conta nem ao seu e-mail, e mudam se você reinstalar o app.</li>
+        <li><strong>Dados do aparelho e do app</strong>: modelo, versão do Android, idioma e versão do app.</li>
+        <li><strong>Região aproximada</strong> (como país e cidade): estimada pelo Google a partir do endereço IP mascarado do aparelho. O app não acessa o GPS nem pede permissão de localização.</li>
+    </ul>
+    <p>Essas informações não são usadas para publicidade: o identificador de publicidade do Android não é coletado e a personalização de anúncios está desativada.</p>
+
+    <h3>3.5 O que não coletamos</h3>
     <p>Para evitar dúvidas, o Loobby <strong>não coleta</strong>:</p>
     <ul>
-        <li>Localização (GPS ou aproximada)</li>
+        <li>Localização do aparelho (GPS ou a localização aproximada do sistema); a única informação de região é a estimativa descrita na seção 3.4</li>
         <li>Lista de contatos</li>
         <li>Calendário</li>
         <li>Microfone ou câmera (apenas seleção de imagem da galeria, quando você escolhe enviar uma foto de perfil)</li>
@@ -182,7 +194,6 @@
         <li>Identificadores de publicidade (GAID/IDFA)</li>
         <li>Dados de cartão de crédito ou bancários</li>
         <li>Histórico de navegação</li>
-        <li>Métricas de uso, telemetria ou analytics</li>
     </ul>
 
     <h2>4. Para que usamos seus dados</h2>
@@ -198,6 +209,8 @@
                 <tr><td>Enviar notificações sobre seus eventos</td><td>Token de push (FCM)</td><td>Execução de contrato</td></tr>
                 <tr><td>Personalizar seu perfil (nome de exibição e foto)</td><td>Nome de exibição, foto</td><td>Consentimento (art. 7º, I)</td></tr>
                 <tr><td>Prevenir fraude, abuso e proteger contas</td><td>E-mail, hash de senha, dados de autenticação</td><td>Legítimo interesse (art. 7º, IX)</td></tr>
+                <tr><td>Entender como o app é usado e decidir o que melhorar (app Android)</td><td>Estatísticas de uso, identificador de instalação, dados do aparelho, região aproximada</td><td>Legítimo interesse (art. 7º, IX)</td></tr>
+                <tr><td>Detectar e corrigir falhas do app (app Android)</td><td>Relatórios de falhas, identificador de instalação, dados do aparelho</td><td>Legítimo interesse (art. 7º, IX)</td></tr>
             </tbody>
         </table>
     </div>
@@ -213,6 +226,8 @@
             <tbody>
                 <tr><td><strong>Google (Firebase Cloud Messaging)</strong></td><td>Entrega de notificações push</td><td>Token de push do dispositivo, conteúdo da notificação</td><td>EUA / global</td></tr>
                 <tr><td><strong>Google (Sign-In)</strong></td><td>Autenticação via conta Google</td><td>Verificação de token Google</td><td>EUA / global</td></tr>
+                <tr><td><strong>Google (Google Analytics para Firebase)</strong></td><td>Estatísticas de uso do app Android</td><td>Identificador de instalação, ações realizadas no app (sem conteúdo), dados do aparelho, região aproximada</td><td>EUA / global</td></tr>
+                <tr><td><strong>Google (Firebase Crashlytics)</strong></td><td>Relatórios de falhas do app Android</td><td>Identificador de instalação, registro técnico da falha, dados do aparelho</td><td>EUA / global</td></tr>
                 <tr><td><strong>Resend</strong></td><td>Envio de e-mails de verificação e recuperação de senha</td><td>Seu e-mail, conteúdo da mensagem</td><td>EUA</td></tr>
                 <tr><td><strong>Amazon Web Services (AWS)</strong></td><td>Hospedagem do servidor backend</td><td>Todos os dados processados pelo app</td><td>Brasil (São Paulo, sa-east-1)</td></tr>
                 <tr><td><strong>Supabase</strong></td><td>Banco de dados gerenciado</td><td>Todos os dados de conta e conteúdo</td><td>Brasil (São Paulo, sa-east-1)</td></tr>
@@ -238,6 +253,12 @@
                 <li><strong>Removidos imediatamente:</strong> e-mail, senha (hash), tokens de autenticação, identificador Google e tokens de push.</li>
                 <li><strong>Anonimizados:</strong> seu registro de usuário tem o nome de usuário esvaziado, o nome de exibição substituído por "[deleted]" e a foto removida. Isso preserva a integridade dos eventos e grupos dos quais você participou, sem permitir sua identificação.</li>
                 <li><strong>Conteúdo associado:</strong> grupos e eventos dos quais você era proprietário são transferidos para outro participante ou apagados, conforme a regra do app. Observações em RSVPs são apagadas.</li>
+            </ul>
+        </li>
+        <li><strong>Estatísticas de uso e relatórios de falhas</strong> (app Android): não ficam ligados à sua conta, por isso a exclusão da conta não os alcança. Eles expiram sozinhos:
+            <ul>
+                <li><strong>Relatórios de falhas (Crashlytics):</strong> mantidos pelo Google por 90 dias.</li>
+                <li><strong>Estatísticas de uso (Google Analytics):</strong> os registros por instalação são mantidos pelo Google por até 14 meses. Depois disso restam apenas números agregados, que não identificam ninguém.</li>
             </ul>
         </li>
         <li><strong>Logs do servidor:</strong> não armazenam dados pessoais identificáveis.</li>
@@ -269,13 +290,15 @@
     </ul>
     <p><strong>Como exercer:</strong> envie um e-mail para <a href="mailto:jammeswm@gmail.com">jammeswm@gmail.com</a> com o assunto "LGPD — [direito desejado]". Responderemos em até <strong>15 dias</strong>, conforme prazo da LGPD.</p>
     <p>A exclusão da conta também pode ser feita diretamente no app, em <strong>Configurações → Excluir conta</strong>, ou pelas instruções na página <a href="/legal/account-deletion">Excluir minha conta</a>.</p>
+    <p><strong>Sobre as estatísticas de uso e os relatórios de falhas:</strong> como eles não ficam ligados à sua conta nem ao seu e-mail, não temos como localizar os registros de uma pessoa específica. Eles expiram nos prazos da seção 6. Reinstalar o app, ou limpar os dados dele nas configurações do Android, gera um novo identificador de instalação.</p>
 
     <h2>9. Menores de idade</h2>
     <p>O Loobby é destinado a usuários com <strong>13 anos ou mais</strong>. Ao criar uma conta, o usuário declara possuir pelo menos essa idade. Não realizamos verificação ativa de idade.</p>
     <p>Caso identifiquemos uma conta pertencente a uma criança menor de 13 anos, ela será removida. Se você é responsável por uma criança e acredita que ela criou uma conta no Loobby, entre em contato pelo e-mail acima e providenciaremos a remoção.</p>
 
     <h2>10. Cookies, rastreadores e publicidade</h2>
-    <p>O aplicativo Loobby <strong>não utiliza cookies, rastreadores de terceiros nem identificadores de publicidade</strong>. Não exibimos anúncios e não recebemos remuneração de anunciantes.</p>
+    <p>O aplicativo Loobby <strong>não exibe anúncios, não utiliza cookies nem identificadores de publicidade</strong>, e não recebe remuneração de anunciantes. Seus dados não são usados nem compartilhados para publicidade ou para acompanhar você em outros apps e sites.</p>
+    <p>No app Android, as estatísticas de uso descritas na seção 3.4 são coletadas pelo Google Analytics para Firebase apenas para entendermos como o app é usado, com a personalização de anúncios desativada.</p>
 
     <h2>11. Alterações nesta política</h2>
     <p>Podemos atualizar esta política para refletir mudanças no aplicativo, novos prestadores de serviço ou requisitos legais. Quando a alteração for relevante, avisaremos com destaque dentro do app ou por e-mail antes que ela entre em vigor.</p>
