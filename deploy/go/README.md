@@ -1,5 +1,52 @@
 # Go na máquina nova
 
+## Produção hoje (desde 16/11/2026): só o Go, com nginx na mesma máquina
+
+O AWS (nginx + Kotlin) foi desligado e `api.loobby.app` aponta direto para a
+máquina nova (`163.176.222.85`, Oracle Cloud, Ubuntu 24.04, usuário `ubuntu`):
+
+```
+usuário ─▶ nginx :443 (Let's Encrypt) ─ HTTP 127.0.0.1:8080 ─▶ Go (systemd) ─▶ Supabase (pooler 6543)
+```
+
+| O quê | Onde |
+|---|---|
+| Binário / serviço | `/opt/loobby/api`, `loobby-api.service` (este diretório) |
+| Variáveis | `/etc/loobby/api.env` (`root:loobby 0640`), **sem** `TLS_*`: o Go escuta só em `127.0.0.1:8080` |
+| Firebase | `/etc/loobby/loobby-fcm.json` |
+| Uploads | `/var/lib/loobby/uploads` |
+| nginx | `nginx-api.loobby.app.conf` → `/etc/nginx/sites-available/api.loobby.app` |
+| Certificado | `/etc/letsencrypt/live/api.loobby.app/`, renovado pelo `certbot.timer` (webroot `/var/www/certbot`, recarrega o nginx) |
+| Firewall | `iptables` libera 22, 80 e 443 (`netfilter-persistent save`) |
+
+Diferenças do `api.env` em relação ao `.env` do Kotlin:
+
+- **`DB_URL`** no formato do pgx, com usuário e senha **escapados** dentro da URL (a
+  senha tem `@`) e sem `DB_USERNAME`/`DB_PASSWORD`:
+  `postgres://USUARIO:SENHA_ESCAPADA@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require&default_query_exec_mode=simple_protocol`.
+  O pooler em modo transação (6543) não suporta os prepared statements nomeados
+  que o pgx usa por padrão; o `simple_protocol` é o equivalente ao
+  `prepareThreshold=0` do JDBC, que **não** pode ir na URL do pgx. A suíte de
+  contrato passa inteira nesse modo.
+- `NOTIFICATIONS_SCHEDULER_ENABLED=true`: sem o Kotlin, os lembretes são do Go.
+
+Publicar uma versão nova (o `deploy.sh` usa `ssh` sem `-i`, então a chave entra
+por um agente):
+
+```bash
+eval "$(ssh-agent -s)" && ssh-add ~/Workspace/SSH/jammes-server/ssh-key-jammes-server.key
+deploy/go/deploy.sh ubuntu@163.176.222.85
+```
+
+**O Supabase do plano gratuito pausa por inatividade.** Em 16/11 o projeto estava
+`INACTIVE` e o Go não subia (`tenant/user ... not found` no pooler). Conferir com
+`supabase projects list`.
+
+O resto deste documento descreve o desenho anterior (nginx no AWS + TLS mútuo),
+mantido para referência.
+
+## Desenho anterior: nginx no AWS, Go por TLS mútuo
+
 ```
 usuário ─▶ nginx (AWS) ─ HTTP ─────────────▶ Kotlin (Docker, mesmo servidor)
                       └─ HTTPS + TLS mútuo ─▶ Go (máquina nova, systemd) ─▶ Supabase
