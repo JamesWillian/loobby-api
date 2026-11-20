@@ -29,6 +29,7 @@ outro username quando o do anônimo colide (§28). O resto — inclusive os defe
 | `internal/jackson`, `internal/validation`, `internal/kotlin` | números, mensagens e `trim()` **como** o Jackson, o Hibernate Validator e o Kotlin — testados contra os originais |
 | `internal/auth` | tokens HS256, filtro (o Spring Security do lado Go), login, cadastro, e-mail, reset, Google |
 | `internal/users`, `groups`, `events`, `teams`, `games`, `legal`, `files`, `notifications`, `health` | os módulos |
+| `internal/appconfig` | `GET /app/config` (pública): versão mínima de cada app e o aviso mostrado ao abrir. Primeira rota que não veio do Kotlin; muda-se editando `Current` e publicando |
 | `internal/email`, `internal/password`, `internal/ids` | Resend, BCrypt e identificadores |
 | `internal/contracttest`, `internal/dbtest` | apoio aos testes |
 

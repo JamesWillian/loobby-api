@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/JamesWillian/loobby-api/api-go/internal/appconfig"
 	"github.com/JamesWillian/loobby-api/api-go/internal/auth"
 	"github.com/JamesWillian/loobby-api/api-go/internal/config"
 	"github.com/JamesWillian/loobby-api/api-go/internal/events"
@@ -48,6 +49,7 @@ func Handler(d Deps) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /actuator/health", health.Handler(d.DB))
 	legal.Register(mux)
+	appconfig.Register(mux)
 	if d.Auth != nil {
 		d.Auth.Register(mux)
 	}
@@ -81,9 +83,10 @@ func Handler(d Deps) http.Handler {
 	return httpx.SpringHeaders(filter.Wrap(route(mux, d)))
 }
 
-// isPublic e a lista de permitAll() do SecurityConfig do Kotlin. A comparacao
-// e por metodo exato e caminho exato: HEAD numa rota de GET nao e publica, e
-// uma barra a mais no fim tambem nao (as duas coisas medidas).
+// isPublic e a lista de permitAll() do SecurityConfig do Kotlin, mais o
+// /app/config, que o app consulta antes de ter sessao. A comparacao e por
+// metodo exato e caminho exato: HEAD numa rota de GET nao e publica, e uma
+// barra a mais no fim tambem nao (as duas coisas medidas no Kotlin).
 func isPublic(method, path string) bool {
 	switch method {
 	case http.MethodPost:
@@ -94,7 +97,8 @@ func isPublic(method, path string) bool {
 		}
 	case http.MethodGet:
 		switch path {
-		case "/auth/verify-email", "/auth/reset-password", "/actuator/health", "/files", "/legal":
+		case "/auth/verify-email", "/auth/reset-password", "/actuator/health", "/files", "/legal",
+			"/app/config":
 			return true
 		}
 		return strings.HasPrefix(path, "/files/") || strings.HasPrefix(path, "/legal/")
