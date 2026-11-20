@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/auth"
@@ -62,6 +63,28 @@ func TestPreflightCORSIdenticoAoKotlin(t *testing.T) {
 	contracttest.AssertMatches(t, g, do(handler(fakeDB{}), "OPTIONS", "/legal/privacy", map[string]string{
 		"Origin": "https://exemplo.com", "Access-Control-Request-Method": "GET",
 	}))
+}
+
+// O app consulta /app/config ao abrir, antes de ter sessao: tem que responder
+// sem token, passando pela cadeia inteira, e nunca vir de cache.
+func TestAppConfigSemToken(t *testing.T) {
+	rec := do(handler(fakeDB{}), "GET", "/app/config", nil)
+	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "application/json" {
+		t.Fatalf("status %d, content-type %q: %s", rec.Code, rec.Header().Get("Content-Type"), rec.Body)
+	}
+	if rec.Header().Get("Cache-Control") != "no-cache, no-store, max-age=0, must-revalidate" ||
+		rec.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Errorf("headers: %v", rec.Header())
+	}
+	if !strings.HasPrefix(rec.Body.String(), `{"android":{"minVersion":`) {
+		t.Errorf("corpo: %s", rec.Body)
+	}
+	// Token ruim derruba ate rota publica (o filtro valida qualquer Bearer, como
+	// o Spring). Por isso o app chama esta rota sem token: um access vencido no
+	// header faria a verificacao de versao falhar justo na abertura.
+	if rec := do(handler(fakeDB{}), "GET", "/app/config", map[string]string{"Authorization": "Bearer vencido"}); rec.Code != http.StatusUnauthorized {
+		t.Errorf("com token invalido: esperava 401, veio %d", rec.Code)
+	}
 }
 
 func TestHealthDownQuandoOBancoCai(t *testing.T) {

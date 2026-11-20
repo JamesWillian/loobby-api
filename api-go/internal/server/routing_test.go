@@ -15,14 +15,16 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/groups"
 )
 
-// A lista de rotas publicas e a do SecurityConfig do Kotlin, comparada por
-// metodo exato e caminho exato (medido: HEAD e barra no fim nao sao publicos).
+// A lista de rotas publicas e a do SecurityConfig do Kotlin, mais o /app/config,
+// comparada por metodo exato e caminho exato (medido: HEAD e barra no fim nao
+// sao publicos).
 func TestRotasPublicas(t *testing.T) {
 	publicas := [][2]string{
 		{"POST", "/auth/anonymous"}, {"POST", "/auth/login"}, {"POST", "/auth/google"}, {"POST", "/auth/refresh"},
 		{"POST", "/auth/forgot-password"}, {"POST", "/auth/reset-password"},
 		{"GET", "/auth/verify-email"}, {"GET", "/auth/reset-password"}, {"GET", "/actuator/health"},
 		{"GET", "/legal/privacy"}, {"GET", "/legal/qualquer/coisa"}, {"GET", "/files/avatars/x/1.png"},
+		{"GET", "/app/config"},
 	}
 	for _, r := range publicas {
 		if !isPublic(r[0], r[1]) {
@@ -35,6 +37,7 @@ func TestRotasPublicas(t *testing.T) {
 		{"POST", "/auth/verify-email"}, {"GET", "/auth/anonymous/"}, {"POST", "/auth/login/"},
 		{"POST", "/files/x"}, {"GET", "/filesx"}, {"GET", "/users/me"}, {"GET", "/games/search"},
 		{"OPTIONS", "/legal/privacy"}, {"GET", "/"},
+		{"HEAD", "/app/config"}, {"POST", "/app/config"}, {"GET", "/app/config/"}, {"GET", "/app"},
 	}
 	for _, r := range protegidas {
 		if isPublic(r[0], r[1]) {
