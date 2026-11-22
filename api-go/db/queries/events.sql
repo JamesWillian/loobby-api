@@ -64,9 +64,6 @@ VALUES (sqlc.arg(event_id), sqlc.arg(duration_minutes), sqlc.narg(arena),
 -- ("25.50", "0.00") -- ver db.RegisterTypes.
 SELECT * FROM sport_events WHERE event_id = sqlc.arg(event_id);
 
--- name: FindSportsByEvents :many
-SELECT * FROM sport_events WHERE event_id = ANY (sqlc.arg(event_ids)::uuid[]);
-
 -- name: UpdateSport :exec
 UPDATE sport_events
 SET duration_minutes = sqlc.arg(duration_minutes), arena = sqlc.narg(arena),
@@ -99,10 +96,6 @@ WHERE event_id = ANY (sqlc.arg(event_ids)::uuid[]) AND user_id = sqlc.arg(user_i
 -- Sem ORDER BY, como no Kotlin: os "5 primeiros confirmados" saem na ordem do banco.
 SELECT * FROM event_rsvps
 WHERE event_id = ANY (sqlc.arg(event_ids)::uuid[]) AND status = sqlc.arg(status);
-
--- name: FindUnpaidRsvps :many
-SELECT * FROM event_rsvps
-WHERE event_id = ANY (sqlc.arg(event_ids)::uuid[]) AND status = sqlc.arg(status) AND is_paid = false;
 
 -- name: FindFirstOtherRsvp :one
 -- Proximo dono de um evento instantaneo: o confirmado mais antigo que nao e o dono atual.

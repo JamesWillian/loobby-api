@@ -1,10 +1,10 @@
 # Gera Go tipado a partir de SQL escrito a mao: `sqlc generate` (daqui).
-# O schema e o dump da producao (contract/schema.sql) -- a fonte de verdade, nao
-# as migrations do Kotlin, que divergiram dela (contract/ACHADOS.md, secao 8).
+# O schema sao as migracoes do goose (migrations/), na ordem: a 00001 e o dump da
+# producao, e cada nova muda o banco a partir dela. O sqlc ignora os trechos Down.
 version: "2"
 sql:
   - engine: postgresql
-    schema: ../contract/schema.sql
+    schema: migrations
     queries: db/queries
     gen:
       go:

@@ -4,6 +4,11 @@ Congela o comportamento observável da API Kotlin para servir de critério de ac
 da reescrita em Go. O projeto tem 1 teste (`contextLoads`) e 3 apps em produção;
 esta suíte é a rede de segurança.
 
+> **Hoje:** a migração terminou em 16/11/2026, e o Kotlin foi arquivado na tag
+> `arquivo/v1`. A suíte continua valendo como o contrato das rotas v1, que os
+> apps 1.3 usam: o `TestContratoIgualAoKotlin` (`api-go/cmd/api`) passa o Go por
+> ela a cada `go test`. O que segue descreve como ela serviu à migração.
+
 ## Arquivos
 
 | Arquivo | O quê |
@@ -16,7 +21,7 @@ esta suíte é a rede de segurança.
 | `ACHADOS.md` | **leia isto** — as divergências que quebrariam os apps, e os defeitos do Kotlin |
 | `flows.py` | os fluxos felizes que a produção não tem como gravar — **só roda local** |
 | `golden-local/` | a suíte inteira (73 + 93 fluxos) gravada do Kotlin rodando localmente |
-| `local/` | o ambiente local: Kotlin e Go lado a lado, com serviços externos falsos |
+| `local/` | o ambiente local: o Go com serviços externos falsos (o lado Kotlin ficou na tag `arquivo/v1`) |
 
 ## Uso
 
@@ -53,10 +58,10 @@ contra os golden sem precisar de servidor nem banco.
 | Gravado de | produção, pelo nginx | Kotlin local (`local/oracle.sh`), serviços externos falsos |
 | Cenários | 73 | 166 — os mesmos 73 e mais 93 dos fluxos de cadastro, e-mail, senha, exclusão e Google |
 | Serve para | o **cutover**: mover uma rota não pode mudar a captura | o **`go test`**: o Go inteiro contra o Kotlin, sem servidor nenhum no ar |
-| Regravar | depois de um deploy do Kotlin | `contract/local/oracle.sh record` — só regrava se Kotlin e Go concordarem |
+| Regravar | não se regrava mais: o Kotlin foi arquivado | não se regrava mais: o `record` do `oracle.sh` ficou na tag `arquivo/v1` |
 
 ```bash
-contract/local/oracle.sh compare    # sobe os dois lados, captura e compara: 0 diferenças
+contract/local/oracle.sh compare    # sobe o Go, captura e compara com golden-local: 0 diferenças
 ```
 
 Os dois lados locais diferem da produção em dois pontos esperados: os sete 500 da

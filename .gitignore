@@ -1,43 +1,14 @@
-HELP.md
-.gradle
+### Restos locais da API Kotlin, arquivada na tag arquivo/v1 ###
+.gradle/
+.kotlin/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
+### IDEs ###
 .idea
 *.iws
 *.iml
 *.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
 .vscode/
-
-### Kotlin ###
-.kotlin
 
 ### macOS ###
 .DS_Store
@@ -58,12 +29,7 @@ google-credentials.json
 .env.*
 !.env.example
 
-### Configs de produção ###
-application-prod.yml
-application-prod.yaml
-application-prod.properties
-
-### Uploads locais (em produção usa volume/cloud storage) ###
+### Uploads locais (em produção ficam em /var/lib/loobby/uploads) ###
 uploads/
 
 ### Supabase CLI (estado local do link, sem credenciais) ###

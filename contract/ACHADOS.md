@@ -419,6 +419,9 @@ do schema (`--schema=public`) não inclui o `CREATE EXTENSION`, então aplicar
 **Ação:** `CREATE EXTENSION pg_trgm SCHEMA public` antes do schema — o
 `api-go/README.md` traz o passo a passo do banco local de testes.
 
+**Hoje:** o dump virou a migração de base (`api-go/migrations/00001_baseline.sql`),
+que já cria a extensão.
+
 ## 21. A busca de jogos trata parâmetros de jeitos que só medindo
 
 Medido em produção em 23/10/2026. Pelo nginx, toda `GET /games/search` vai para

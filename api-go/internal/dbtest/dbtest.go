@@ -1,5 +1,5 @@
 // Package dbtest da aos testes um Postgres de verdade: o de TEST_DATABASE_URL,
-// com o schema de producao (ver api-go/README.md). Sem a variavel, o teste e
+// com as migracoes aplicadas (ver api-go/README.md). Sem a variavel, o teste e
 // pulado.
 //
 // O banco e dividido entre os pacotes, que o `go test` roda ao mesmo tempo.
@@ -9,13 +9,16 @@ package dbtest
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
 	"github.com/JamesWillian/loobby-api/api-go/internal/ids"
+	"github.com/JamesWillian/loobby-api/api-go/migrations"
 )
 
 // Pool abre o pool pelo db.Connect -- o mesmo caminho de producao, com os
@@ -61,4 +64,50 @@ func Delete(pool *pgxpool.Pool, userID string) {
 	} {
 		_, _ = pool.Exec(ctx, q, userID)
 	}
+}
+
+// EmptyDatabase cria, no servidor de TEST_DATABASE_URL, um banco vazio so deste
+// teste e devolve a URL dele. O banco e apagado no fim do teste.
+func EmptyDatabase(t *testing.T) string {
+	t.Helper()
+	admin := os.Getenv("TEST_DATABASE_URL")
+	if admin == "" {
+		t.Skip("TEST_DATABASE_URL nao definida")
+	}
+	u, err := url.Parse(admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := "loobby_teste_" + ids.New()[:8]
+	exec := func(sql string) error {
+		ctx := context.Background()
+		conn, err := pgx.Connect(ctx, admin)
+		if err != nil {
+			return err
+		}
+		defer conn.Close(ctx)
+		_, err = conn.Exec(ctx, sql)
+		return err
+	}
+	if err := exec("CREATE DATABASE " + name); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = exec("DROP DATABASE IF EXISTS " + name + " WITH (FORCE)") })
+	u.Path = "/" + name
+	return u.String()
+}
+
+// MigratedDatabase e o EmptyDatabase com as migracoes aplicadas.
+func MigratedDatabase(t *testing.T) string {
+	t.Helper()
+	dbURL := EmptyDatabase(t)
+	conn, err := migrations.Open(dbURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if _, err := migrations.Up(context.Background(), conn); err != nil {
+		t.Fatal(err)
+	}
+	return dbURL
 }

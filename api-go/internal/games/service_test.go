@@ -15,7 +15,7 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
 )
 
-// Integracao com Postgres: TEST_DATABASE_URL com contract/schema.sql aplicado.
+// Integracao com Postgres: TEST_DATABASE_URL com as migracoes aplicadas.
 func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	url := os.Getenv("TEST_DATABASE_URL")

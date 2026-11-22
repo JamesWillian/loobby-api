@@ -2,8 +2,8 @@
 
 Os 53 endpoints em 8 controllers, mais 2 rotas de infra. **Todos estão
 implementados em Go** (`api-go/`) e respondem igual ao Kotlin nos 166 cenários de
-`contract/golden-local/`. O que ainda falta é o cutover no nginx, módulo a módulo
-(`deploy/nginx/README.md`): hoje o painel liga só `legal` e `games`.
+`contract/golden-local/`. Desde 16/11/2026 o Go é o único backend em produção, e o
+Kotlin foi arquivado na tag `arquivo/v1` — os nomes de classe abaixo são os dele.
 
 Legenda de auth (de `config/security/SecurityConfig.kt`):
 `pub` = `permitAll` · `jwt` = `authenticated`

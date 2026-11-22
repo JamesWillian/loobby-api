@@ -3,7 +3,6 @@ package notifications
 import (
 	"context"
 	"log/slog"
-	"math/big"
 	"time"
 	_ "time/tzdata" // America/Sao_Paulo mesmo em maquina sem o banco de fusos
 
@@ -17,19 +16,20 @@ const (
 	reminderJobInterval = 5 * time.Minute // reminder-job-cron: "0 */5 * * * *"
 	reminderHoursBefore = 4
 	reminderWindow      = 15 * time.Minute
-	paymentDueLookahead = 30 * 24 * time.Hour
 )
 
 // Scheduler: NotificationScheduler. Dois jobs:
 //
-//   - todo dia as 8h (America/Sao_Paulo): "evento hoje, voce nao confirmou" e
-//     "pagamento pendente";
+//   - todo dia as 8h (America/Sao_Paulo): "evento hoje, voce nao confirmou";
 //   - a cada 5 minutos: lembrete de evento confirmado que comeca em ~4 horas.
+//
+// O aviso diario de "pagamento pendente" saiu em 2026-11 (Loobby 2.0, sem
+// pagamento). Os registros PAYMENT_DUE_DAILY antigos ficam no banco, sem uso.
 //
 // Nenhum push sai duas vezes: cada envio e registrado antes em
 // notification_dispatch_log, que tem restricao unica por (usuario, tipo,
-// evento, dia). Isso vale tambem ENTRE processos -- com Kotlin e Go rodando os
-// jobs ao mesmo tempo durante o strangler, so um dos dois envia.
+// evento, dia). Isso vale tambem entre processos: se dois rodarem os jobs ao
+// mesmo tempo, so um envia.
 type Scheduler struct {
 	q   *sqlc.Queries
 	svc *Service
@@ -97,9 +97,6 @@ func (s *Scheduler) dailyMorningJob(ctx context.Context) {
 	if err := s.dispatchEventTodayPendingRsvp(ctx, today); err != nil {
 		slog.Error("EVENT_TODAY_PENDING_RSVP falhou", "err", err)
 	}
-	if err := s.dispatchPaymentDueDaily(ctx, today); err != nil {
-		slog.Error("PAYMENT_DUE_DAILY falhou", "err", err)
-	}
 }
 
 // Evento de grupo que acontece hoje: avisa os membros que nao responderam nem
@@ -139,46 +136,6 @@ func (s *Scheduler) dispatchEventTodayPendingRsvp(ctx context.Context, today tim
 				s.svc.sendEventTodayPendingRsvp(ctx, userID, e)
 			})
 		}
-	}
-	return nil
-}
-
-// Evento pago nos proximos 30 dias: avisa, uma vez por dia, quem confirmou e
-// ainda nao pagou.
-func (s *Scheduler) dispatchPaymentDueDaily(ctx context.Context, today time.Time) error {
-	now := s.now()
-	events, err := s.q.FindEventsBetween(ctx, sqlc.FindEventsBetweenParams{StartAt: now, EndAt: now.Add(paymentDueLookahead)})
-	if err != nil || len(events) == 0 {
-		return err
-	}
-	byID := make(map[string]sqlc.Event, len(events))
-	ids := make([]string, 0, len(events))
-	for _, e := range events {
-		byID[e.ID] = e
-		ids = append(ids, e.ID)
-	}
-	sports, err := s.q.FindSportsByEvents(ctx, ids)
-	if err != nil {
-		return err
-	}
-	var paid []string
-	for _, sp := range sports {
-		if price, ok := new(big.Rat).SetString(sp.PricePerPlayer); ok && price.Sign() > 0 {
-			paid = append(paid, sp.EventID)
-		}
-	}
-	if len(paid) == 0 {
-		return nil
-	}
-	pending, err := s.q.FindUnpaidRsvps(ctx, sqlc.FindUnpaidRsvpsParams{EventIds: paid, Status: "YES"})
-	if err != nil {
-		return err
-	}
-	for _, r := range pending {
-		e := byID[r.EventID]
-		s.tryDispatch(ctx, r.UserID, TypePaymentDueDaily, e.ID, date(today), func() {
-			s.svc.sendPaymentDue(ctx, r.UserID, e)
-		})
 	}
 	return nil
 }
