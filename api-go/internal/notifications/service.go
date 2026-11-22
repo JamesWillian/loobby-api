@@ -16,7 +16,6 @@ const (
 	TypeRsvpConfirmedByPeer      = "RSVP_CONFIRMED_BY_PEER"
 	TypeEventTodayPendingRsvp    = "EVENT_TODAY_PENDING_RSVP"
 	TypeEventReminderHoursBefore = "EVENT_REMINDER_HOURS_BEFORE"
-	TypePaymentDueDaily          = "PAYMENT_DUE_DAILY"
 	TypeNewGroupEvent            = "NEW_GROUP_EVENT"
 )
 
@@ -161,12 +160,5 @@ func (s *Service) sendEventReminder(ctx context.Context, userID string, e sqlc.E
 	s.sender.SendToUsers(ctx, []string{userID}, Payload{
 		Title: e.Name, Body: "Começa em " + strconv.Itoa(hoursBefore) + " horas — se prepare!",
 		Type: TypeEventReminderHoursBefore, Data: eventData(e),
-	})
-}
-
-func (s *Service) sendPaymentDue(ctx context.Context, userID string, e sqlc.Event) {
-	s.sender.SendToUsers(ctx, []string{userID}, Payload{
-		Title: "Pagamento pendente", Body: "Você ainda não pagou " + e.Name,
-		Type: TypePaymentDueDaily, Data: eventData(e),
 	})
 }

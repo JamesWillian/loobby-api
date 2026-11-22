@@ -244,8 +244,8 @@ func TestFCMCredenciaisInvalidasImpedemAPartida(t *testing.T) {
 	}
 }
 
-// O registro de envios e a trava contra push repetido -- inclusive entre o
-// Kotlin e o Go rodando juntos: o segundo que tentar registrar perde.
+// O registro de envios e a trava contra push repetido -- inclusive entre dois
+// processos rodando os jobs: o segundo que tentar registrar perde.
 func TestTryDispatchEnviaUmaVezPorDia(t *testing.T) {
 	pool := dbtest.Pool(t)
 	user := dbtest.User(t, pool, 1)
@@ -254,12 +254,12 @@ func TestTryDispatchEnviaUmaVezPorDia(t *testing.T) {
 	ref := ids.New()
 	sent := 0
 	for range 3 {
-		s.tryDispatch(context.Background(), user, TypePaymentDueDaily, ref, day, func() { sent++ })
+		s.tryDispatch(context.Background(), user, TypeEventTodayPendingRsvp, ref, day, func() { sent++ })
 	}
 	if sent != 1 {
 		t.Errorf("mesmo usuario, tipo, referencia e dia: 1 envio, vieram %d", sent)
 	}
-	s.tryDispatch(context.Background(), user, TypePaymentDueDaily, ref, day.AddDate(0, 0, 1), func() { sent++ })
+	s.tryDispatch(context.Background(), user, TypeEventTodayPendingRsvp, ref, day.AddDate(0, 0, 1), func() { sent++ })
 	s.tryDispatch(context.Background(), user, TypeEventReminderHoursBefore, ref, day, func() { sent++ })
 	if sent != 3 {
 		t.Errorf("outro dia e outro tipo sao envios novos: vieram %d", sent)
