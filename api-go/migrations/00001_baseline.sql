@@ -1,29 +1,20 @@
+-- A base: o schema da produção de antes das migrações, tirado do dump de
+-- 08/09/2026 (pg_dump --schema-only --no-owner --no-privileges --schema=public)
+-- e conferido de novo contra a produção em 21/11/2026, sem diferenças.
 --
--- PostgreSQL database dump
+-- Num banco vazio (testes, ambiente local) ela cria tudo. Na produção ela não
+-- roda: o schema já existia, e ela é marcada como aplicada uma única vez, com
+-- `go run ./cmd/migrate baseline`.
 --
+-- O que difere do dump: sem os SET e os comandos do psql; sem o CREATE SCHEMA
+-- public, que já existe; com o pg_trgm, que o dump não registra
+-- (contract/ACHADOS.md §20). Também não estão aqui os GRANT da produção
+-- (loobby_backend, anon, authenticated, service_role): esses papéis só existem
+-- no Supabase. Sem Down: desfazer a base seria apagar o banco.
 
-\restrict IVIf9hGbzNu4p1ozCTrmhgLXu4T3LYqJBgDmkaexfhUVK0LCbFdLuxu4tQlT5ED
+-- +goose Up
 
--- Dumped from database version 17.6
--- Dumped by pg_dump version 18.6
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
-CREATE SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA public;
 
 
 --
@@ -48,6 +39,7 @@ CREATE TYPE public.rsvp_status AS ENUM (
 -- Name: add_owner_to_group_members(); Type: FUNCTION; Schema: public; Owner: -
 --
 
+-- +goose StatementBegin
 CREATE FUNCTION public.add_owner_to_group_members() RETURNS trigger
     LANGUAGE plpgsql
     AS $$begin
@@ -57,12 +49,14 @@ CREATE FUNCTION public.add_owner_to_group_members() RETURNS trigger
 
   return NEW;
 end;$$;
+-- +goose StatementEnd
 
 
 --
 -- Name: fn_auto_rsvp_owner(); Type: FUNCTION; Schema: public; Owner: -
 --
 
+-- +goose StatementBegin
 CREATE FUNCTION public.fn_auto_rsvp_owner() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -72,11 +66,8 @@ begin
   return new;
 end;
 $$;
+-- +goose StatementEnd
 
-
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
 
 --
 -- Name: device_tokens; Type: TABLE; Schema: public; Owner: -
@@ -767,10 +758,3 @@ ALTER TABLE public.user_google_credentials ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-
---
--- PostgreSQL database dump complete
---
-
-\unrestrict IVIf9hGbzNu4p1ozCTrmhgLXu4T3LYqJBgDmkaexfhUVK0LCbFdLuxu4tQlT5ED
-

@@ -61,21 +61,37 @@ pg_up() {
   fi
 }
 
-# mkdb <nome> [seed]: recria o banco com o schema de producao. O pg_trgm nao vem
-# no dump, e o "CREATE SCHEMA public" dele ja existe num banco novo (ACHADOS §20).
+# migrate_ <nome>: aplica as migracoes que faltam (api-go/cmd/migrate).
+MIGRATE_BUILT=
+migrate_() {
+  if [ -z "$MIGRATE_BUILT" ]; then
+    (cd "$ROOT/api-go" && go build -o "$WORK/loobby-migrate" ./cmd/migrate)
+    MIGRATE_BUILT=1
+  fi
+  MIGRATE_DATABASE_URL="postgres://postgres@127.0.0.1:$PG_PORT/$1" "$WORK/loobby-migrate" up >/dev/null
+}
+
+# mkdb <nome> [seed]: recria o banco, com as migracoes.
 mkdb() {
   # FORCE: derruba as conexoes de um Go que ainda nao terminou de parar
   psql_ -c "DROP DATABASE IF EXISTS $1 WITH (FORCE)" -c "CREATE DATABASE $1"
-  psql_ -d "$1" -c "CREATE EXTENSION pg_trgm SCHEMA public"
-  grep -v '^CREATE SCHEMA public;$' "$ROOT/contract/schema.sql" | psql_ -d "$1" >/dev/null
+  migrate_ "$1"
   if [ "${2:-}" = seed ]; then psql_ -d "$1" -f "$HERE/seed.sql"; fi
 }
 
 db_exists() { [ "$(psql_ -tA -c "SELECT 1 FROM pg_database WHERE datname='$1'")" = 1 ]; }
 
+# db_up <nome> [seed]: leva o banco a ultima migracao. O que nao existe -- ou
+# que vem do tempo em que o schema saia do dump, sem o historico do goose -- e
+# recriado: aqui nada e dado de verdade.
+db_up() {
+  if db_exists "$1" && migrate_ "$1" 2>/dev/null; then return 0; fi
+  mkdb "$1" "${2:-}"
+}
+
 dbs_up() {
-  db_exists loobby || mkdb loobby # o banco dos testes Go (TEST_DATABASE_URL)
-  db_exists loobby_go || mkdb loobby_go seed
+  db_up loobby # o banco dos testes Go (TEST_DATABASE_URL)
+  db_up loobby_go seed
 }
 
 # ---------------------------------------------------------------- fakes

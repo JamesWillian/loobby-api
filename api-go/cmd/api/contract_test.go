@@ -3,11 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +15,7 @@ import (
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/config"
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
+	"github.com/JamesWillian/loobby-api/api-go/internal/dbtest"
 	"github.com/JamesWillian/loobby-api/api-go/internal/server"
 )
 
@@ -34,36 +33,16 @@ import (
 // Precisa de um Postgres (TEST_DATABASE_URL) e de python3, openssl e psql no
 // PATH; sem eles, pula.
 func TestContratoIgualAoKotlin(t *testing.T) {
-	adminURL := os.Getenv("TEST_DATABASE_URL")
-	if adminURL == "" {
+	if os.Getenv("TEST_DATABASE_URL") == "" {
 		t.Skip("TEST_DATABASE_URL nao definida")
 	}
 	python, openssl, psql := tool(t, "python3"), tool(t, "openssl"), tool(t, "psql")
 	root := repoRoot(t)
 	work := t.TempDir()
 
-	// 1. Um banco so deste teste, com o schema de producao e o seed do ambiente
-	// local. Os outros pacotes usam o banco de TEST_DATABASE_URL ao mesmo tempo.
-	name := fmt.Sprintf("loobby_contrato_%d", os.Getpid())
-	u, err := url.Parse(adminURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	u.Path = "/" + name
-	dbURL := u.String()
-	sh(t, nil, psql, adminURL, "-q", "-v", "ON_ERROR_STOP=1",
-		"-c", "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)", "-c", "CREATE DATABASE "+name)
-	t.Cleanup(func() {
-		_ = exec.Command(psql, adminURL, "-q", "-c", "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)").Run()
-	})
-	schema, err := os.ReadFile(filepath.Join(root, "contract", "schema.sql"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	// O dump nao traz o pg_trgm e traz um CREATE SCHEMA que ja existe (ACHADOS §20).
-	schema = bytes.Replace(schema, []byte("\nCREATE SCHEMA public;\n"), []byte("\n"), 1)
-	sh(t, nil, psql, dbURL, "-q", "-v", "ON_ERROR_STOP=1", "-c", "CREATE EXTENSION pg_trgm SCHEMA public")
-	sh(t, schema, psql, dbURL, "-q", "-v", "ON_ERROR_STOP=1", "-o", os.DevNull)
+	// 1. Um banco so deste teste, com as migracoes e o seed do ambiente local.
+	// Os outros pacotes usam o banco de TEST_DATABASE_URL ao mesmo tempo.
+	dbURL := dbtest.MigratedDatabase(t)
 	sh(t, nil, psql, dbURL, "-q", "-v", "ON_ERROR_STOP=1", "-f", filepath.Join(root, "contract", "local", "seed.sql"))
 
 	// 2. Resend, RAWG e Google falsos -- os mesmos usados para gravar a referencia.

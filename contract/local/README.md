@@ -19,7 +19,9 @@ pasta de trabalho fora do repositório (`$LOOBBY_ORACLE_DIR`, padrão
 | `fakes.py` | Resend (guarda os e-mails), RAWG (dados dos golden) e as chaves do "Google" |
 | `seed.sql` | as duas contas de teste e o grupo que a suíte espera encontrar |
 
-O Postgres deste ambiente também serve aos testes Go, no banco `loobby`:
+Os bancos são montados pelas migrações (`api-go/migrations/`), e o `up` aplica
+as que faltam — rode de novo depois de criar uma. O Postgres deste ambiente
+também serve aos testes Go, no banco `loobby`:
 
 ```bash
 TEST_DATABASE_URL=postgres://postgres@127.0.0.1:54329/loobby go test ./...   # em api-go/

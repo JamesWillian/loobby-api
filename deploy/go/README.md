@@ -52,6 +52,9 @@ Depois, de qualquer lugar:
 curl -s https://api.loobby.app/actuator/health   # {"status":"UP"}
 ```
 
+Mudanças no banco não vão no deploy: as migrações rodam antes, da sua máquina
+(`api-go/README.md`, "Migrações").
+
 ## Preparar uma máquina do zero
 
 Nos comandos, `MAQUINA` é `usuario@ip-da-maquina`.
