@@ -1,16 +1,15 @@
-# api-go — o lado Go da Loobby API
+# api-go — a Loobby API
 
-Roda numa máquina separada, atrás do nginx do AWS, que encaminha rota a rota
-(`../deploy/`). Os dois lados compartilham banco e `JWT_SECRET`, então cada rota é
-migrável e reversível isoladamente.
-
-Ordem: `legal → games → files → notifications → groups → users → events → auth`.
+Roda na máquina da Oracle Cloud, atrás de um nginx na mesma máquina
+(`../deploy/go/README.md`). Substituiu a API Kotlin, que foi arquivada na tag
+`arquivo/v1`.
 
 ## Estado
 
-**Os 53 endpoints estão implementados**, e o Go responde igual ao Kotlin nos 166
-cenários de `../contract/golden-local/`. O que falta é o cutover no nginx, módulo
-a módulo (`../deploy/nginx/README.md`): o painel liga hoje `legal` e `games`.
+**Os 53 endpoints da v1** respondem igual ao Kotlin nos 166 cenários de
+`../contract/golden-local/`, e desde 16/11/2026 o Go é o único backend em
+produção. As rotas novas (a primeira é `/app/config`) não têm referência no
+Kotlin: são testadas só do lado Go.
 
 Onde o Go difere do Kotlin **de propósito**: recusa refresh token forjado
 (`../contract/ACHADOS.md` §22), grava evento e detalhes numa transação só e sorteia
@@ -35,8 +34,7 @@ outro username quando o do anônimo colide (§28). O resto — inclusive os defe
 
 ## Rodar
 
-Mesmas variáveis do Kotlin (lista comentada em `../deploy/go/api.env.example`).
-Obrigatórias: `DB_URL` (JDBC ou formato pgx), `JWT_SECRET` (32 bytes ou mais),
+Variáveis: lista comentada em `../deploy/go/api.env.example`. Obrigatórias: `DB_URL` (JDBC ou formato pgx), `JWT_SECRET` (32 bytes ou mais),
 `RAWG_API_KEY`, `RESEND_API_KEY` e os três `GOOGLE_*_CLIENT_ID`. Com
 `NOTIFICATIONS_ENABLED=true` (o padrão), o arquivo de credenciais do Firebase
 também precisa existir.
@@ -51,10 +49,11 @@ O jeito mais curto de ver tudo funcionando é o ambiente local, que sobe o Go em
 **Nunca aponte um Go de teste para o `DB_URL` do Supabase**: cadastro e exclusão
 de conta seriam escritas em produção.
 
-Com `TLS_CERT_FILE`, `TLS_KEY_FILE` e `TLS_CLIENT_CA_FILE` (os três juntos), o
-servidor exige TLS mútuo e escuta em todas as interfaces — é o modo de produção
-(`../deploy/go/README.md`). Sem eles, HTTP puro e **só loopback**: HTTP sem TLS
-nunca fica exposto na rede. `BIND_HOST` sobrepõe o host nos dois casos.
+Sem `TLS_*`, o servidor fala HTTP puro e **só no loopback** — é o modo de
+produção, atrás do nginx da mesma máquina (`../deploy/go/README.md`). Com
+`TLS_CERT_FILE`, `TLS_KEY_FILE` e `TLS_CLIENT_CA_FILE` (os três juntos), exige
+TLS mútuo e escuta em todas as interfaces, como no desenho anterior. `BIND_HOST`
+sobrepõe o host nos dois casos.
 
 ## Testes
 
@@ -152,12 +151,10 @@ A resposta fresca é montada com o que veio do RAWG, nunca relida do banco
 (`contract/ACHADOS.md` §3).
 
 **Parâmetros malformados dão 500.** `q` ausente ou vazio, `page=abc`: o Kotlin
-responde 500 "Unexpected error", e o Go também, até o Kotlin ser corrigido
+respondia 500 "Unexpected error", e o Go mantém, porque é o contrato dos apps 1.3
 (`contract/ACHADOS.md` §18 e §21).
 
-## Duas cópias dos HTML legais
+## HTML legais
 
-O `go:embed` não alcança fora do módulo, então durante o strangler os documentos
-existem aqui (`internal/legal/static/`) e em `../src/main/resources/legal/`.
-`legal_test.go` falha se as cópias divergirem. Depois do cutover, apague o
-`LegalController` e a cópia Kotlin juntos.
+Ficam em `internal/legal/static/`, embutidos no binário; a cópia do Kotlin saiu
+com ele. Mudar um texto legal é publicar a API.

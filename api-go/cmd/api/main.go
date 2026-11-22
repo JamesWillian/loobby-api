@@ -1,9 +1,7 @@
-// Comando api: a API do Loobby em Go, porta completa da API Kotlin.
-//
-// Durante o strangler este processo roda ao lado do Kotlin, atras de um proxy que
-// direciona rota a rota. Os dois compartilham banco e JWT_SECRET, entao a
-// migracao e reversivel por rota. Todos os modulos estao aqui: legal, games,
-// files, notifications, groups, users, events, teams e auth.
+// Comando api: a API do Loobby em Go. Comecou como porta completa da API
+// Kotlin (arquivada na tag arquivo/v1) e e o unico backend desde 16/11/2026.
+// Todos os modulos estao aqui: legal, games, files, notifications, groups,
+// users, events, teams, auth e appconfig.
 package main
 
 import (

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Servicos externos falsos para rodar Kotlin e Go localmente, lado a lado
-(contract/local/README.md). Sem dependencias fora da stdlib e do `openssl`.
+Servicos externos falsos para rodar o Go localmente (contract/local/README.md).
+Os enderecos do Kotlin, arquivado, continuam aqui sem uso. Sem dependencias fora da stdlib e do `openssl`.
 
     python3 contract/local/fakes.py PORTA --google-cert google.crt
 

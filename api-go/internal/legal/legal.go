@@ -1,10 +1,8 @@
 // Package legal serve os documentos legais publicos (privacidade, exclusao de
 // conta, seguranca infantil). Porta do LegalController do Kotlin.
 //
-// Os HTML ficam embutidos no binario. Durante o strangler existem DUAS copias --
-// esta e a de src/main/resources/legal -- porque o go:embed nao alcanca arquivos
-// fora do modulo. legal_test.go falha se elas divergirem. Depois do cutover, a
-// copia do Kotlin morre junto com o LegalController e esta passa a ser a unica.
+// Os HTML ficam embutidos no binario, e esta e a unica copia: a do Kotlin saiu
+// com ele (tag arquivo/v1). Mudar um texto legal e publicar a API.
 package legal
 
 import (

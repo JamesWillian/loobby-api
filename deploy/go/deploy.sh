@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Publica o Go na maquina nova: testa, compila para a arquitetura dela, troca o
-# binario e reinicia. Se o servico nao ficar de pe, volta o binario anterior.
+# Publica o Go na maquina de producao: testa, compila para a arquitetura dela,
+# troca o binario e reinicia. Se o servico nao ficar de pe, volta o binario anterior.
 #
-#     deploy/go/deploy.sh usuario@ip-da-maquina-nova
+#     deploy/go/deploy.sh usuario@ip-da-maquina
 #
-# Pressupoe a maquina ja preparada (deploy/go/README.md, passos 1 a 6).
+# Pressupoe a maquina ja preparada (deploy/go/README.md, "Preparar uma maquina do zero").
 set -euo pipefail
 
-TARGET="${1:?uso: $0 usuario@ip-da-maquina-nova}"
+TARGET="${1:?uso: $0 usuario@ip-da-maquina}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 echo "-- testes --"
@@ -58,4 +58,4 @@ exit 1
 REMOTE
 
 echo
-echo "Publicado. Confira a partir do AWS (deploy/go/README.md, passo 7)."
+echo "Publicado. Confira: curl -s https://api.loobby.app/actuator/health"

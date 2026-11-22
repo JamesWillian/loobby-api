@@ -68,10 +68,9 @@ type Config struct {
 	NotificationsEnabled    bool
 	FirebaseCredentialsPath string
 
-	// NotificationSchedulerEnabled liga os jobs agendados (lembretes, pagamento
-	// pendente). Enquanto Kotlin e Go rodam juntos, os dois podem ficar ligados
-	// sem push duplicado -- o registro de envios no banco impede --, mas desligar
-	// um dos lados evita trabalho repetido.
+	// NotificationSchedulerEnabled liga os jobs agendados (lembretes e avisos
+	// diarios). O registro de envios no banco impede push duplicado mesmo com
+	// mais de um processo rodando os jobs.
 	NotificationSchedulerEnabled bool
 
 	// AllowUnsignedAnonRefresh reproduz uma falha de seguranca do Kotlin no

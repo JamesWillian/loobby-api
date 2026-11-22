@@ -10,13 +10,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Connect abre o pool contra o mesmo Postgres que o Kotlin usa (Supabase).
+// Connect abre o pool contra o Postgres de producao (Supabase).
 //
 // O pool e pequeno de proposito. O banco e externo e gerenciado: cada conexao
-// custa dos dois lados, e o alvo de deploy e uma VM de 1 OCPU. O Kotlin roda com
-// Hikari em 5 conexoes; nao ha motivo para o Go pedir mais enquanto os dois
-// processos convivem durante o strangler -- somados, precisam caber no limite
-// do plano.
+// custa dos dois lados, e o alvo de deploy e uma VM de 1 OCPU. O Kotlin rodava
+// com Hikari em 5 conexoes, e o Go ficou no mesmo numero.
 func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {

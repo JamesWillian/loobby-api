@@ -8,8 +8,7 @@ import (
 // As paginas HTML que o AuthController devolve ao navegador e os dois emails.
 // Os arquivos em templates/ foram extraidos do codigo Kotlin (o texto entre
 // """ ... """.trimIndent()), com os marcadores $message, $email, $token,
-// $verifyUrl e $resetUrl mantidos. pages_test.go refaz a extracao e falha se o
-// Kotlin e estas copias divergirem.
+// $verifyUrl e $resetUrl mantidos. Com o Kotlin arquivado, esta e a unica copia.
 //
 //go:embed templates/*.html
 var templates embed.FS
