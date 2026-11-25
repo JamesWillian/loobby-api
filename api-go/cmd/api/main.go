@@ -1,7 +1,7 @@
 // Comando api: a API do Loobby em Go. Comecou como porta completa da API
 // Kotlin (arquivada na tag arquivo/v1) e e o unico backend desde 16/11/2026.
 // Todos os modulos estao aqui: legal, games, files, notifications, groups,
-// users, events, teams, auth e appconfig.
+// users, events, teams, auth, appconfig e gameplays (a 2.0, em /v2).
 package main
 
 import (
@@ -23,6 +23,7 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/email"
 	"github.com/JamesWillian/loobby-api/api-go/internal/events"
 	"github.com/JamesWillian/loobby-api/api-go/internal/files"
+	"github.com/JamesWillian/loobby-api/api-go/internal/gameplays"
 	"github.com/JamesWillian/loobby-api/api-go/internal/games"
 	"github.com/JamesWillian/loobby-api/api-go/internal/groups"
 	"github.com/JamesWillian/loobby-api/api-go/internal/notifications"
@@ -150,6 +151,18 @@ func build(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (server.D
 		go scheduler.Run(ctx)
 	}
 
+	// Gameplays (2.0). O encerramento automatico roda sempre; os pushes
+	// agendados, so com o envio e o agendador ligados, como os da v1.
+	gameplaysSvc := gameplays.NewService(pool, sender, gamesSvc)
+	gameplaysJobs, err := gameplays.NewJobs(pool, sender)
+	if err != nil {
+		return server.Deps{}, err
+	}
+	go gameplaysJobs.RunAutoEnd(ctx)
+	if cfg.NotificationsEnabled && cfg.NotificationSchedulerEnabled {
+		go gameplaysJobs.RunNotifications(ctx)
+	}
+
 	tokens := auth.NewTokens(cfg.JWTSecret)
 	authSvc := auth.NewService(pool, tokens,
 		email.NewResend(cfg.ResendAPIKey, config.ResendFromEmail, cfg.ResendBaseURL),
@@ -171,6 +184,8 @@ func build(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (server.D
 		Games:   games.NewHandler(gamesSvc),
 		Devices: notifications.NewHandler(pool),
 		Files:   storage,
+
+		Gameplays: gameplays.NewHandler(gameplaysSvc),
 	}, nil
 }
 

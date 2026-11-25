@@ -52,11 +52,12 @@ func User(t *testing.T, pool *pgxpool.Pool, authProvider int) string {
 	return id
 }
 
-// Delete apaga um usuario e o que depende dele. Grupos e eventos nao tem
-// ON DELETE CASCADE para o dono, e as credenciais do Google tambem nao.
+// Delete apaga um usuario e o que depende dele. Gameplays, grupos e eventos
+// nao tem ON DELETE CASCADE para quem criou, e as credenciais do Google tambem nao.
 func Delete(pool *pgxpool.Pool, userID string) {
 	ctx := context.Background()
 	for _, q := range []string{
+		`DELETE FROM gameplays WHERE creator_id = $1`,
 		`DELETE FROM events WHERE owner_id = $1`,
 		`DELETE FROM groups WHERE owner_id = $1`,
 		`DELETE FROM user_google_credentials WHERE user_id = $1`,
