@@ -12,6 +12,7 @@ import (
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
 	"github.com/JamesWillian/loobby-api/api-go/internal/db/sqlc"
+	"github.com/JamesWillian/loobby-api/api-go/internal/gameplays"
 	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
 	"github.com/JamesWillian/loobby-api/api-go/internal/kotlin"
 	"github.com/JamesWillian/loobby-api/api-go/internal/password"
@@ -206,6 +207,10 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, newPass, 
 // esvaziado: username "", displayname "[deleted]". Times e sorteios ja ignoram
 // usuario de username vazio.
 //
+// Na 2.0, votos, comentarios, denuncias e participacoes nas gameplays saem, e
+// as gameplays que a pessoa criou passam para outra (gameplays.DeleteUserData).
+// Nada disso aparece na resposta, que e a mesma da v1.
+//
 // Limite conhecido, igual no Kotlin: users.username e UNIQUE, entao so UMA
 // conta consegue ficar com username "". A segunda exclusao falha na ultima
 // etapa, a transacao e desfeita e a resposta e 500 (contract/ACHADOS.md).
@@ -258,6 +263,10 @@ func (s *Service) DeleteAccount(ctx context.Context, userID, pass string) error 
 			if err != nil {
 				return err
 			}
+		}
+
+		if err := gameplays.DeleteUserData(ctx, q, userID); err != nil {
+			return err
 		}
 
 		if err := q.ClearRsvpObsByUser(ctx, userID); err != nil {

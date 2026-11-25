@@ -4,12 +4,14 @@ package groups
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
 	"github.com/JamesWillian/loobby-api/api-go/internal/db/sqlc"
 	"github.com/JamesWillian/loobby-api/api-go/internal/files"
+	"github.com/JamesWillian/loobby-api/api-go/internal/gameplays"
 	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
 	"github.com/JamesWillian/loobby-api/api-go/internal/ids"
 )
@@ -215,7 +217,19 @@ func (s *Service) Leave(ctx context.Context, userID, groupID string) error {
 	if g.OwnerID == userID {
 		return httpx.BadRequest("Group owner cannot leave the group")
 	}
-	return s.q.DeleteMember(ctx, sqlc.DeleteMemberParams{GroupID: groupID, UserID: userID})
+	return s.deleteMember(ctx, groupID, userID)
+}
+
+// deleteMember tira o vinculo e, na mesma transacao, a participacao e os votos
+// abertos da pessoa nas gameplays ativas do grupo (a 2.0). A resposta da v1 nao
+// muda.
+func (s *Service) deleteMember(ctx context.Context, groupID, userID string) error {
+	return db.InTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		if err := q.DeleteMember(ctx, sqlc.DeleteMemberParams{GroupID: groupID, UserID: userID}); err != nil {
+			return err
+		}
+		return gameplays.MemberLeft(ctx, q, groupID, userID, time.Now())
+	})
 }
 
 // RemoveMember: GroupMemberService.removeMember. So o dono remove, e nao a si mesmo.
@@ -238,7 +252,7 @@ func (s *Service) RemoveMember(ctx context.Context, requesterID, groupID, member
 	if !isMember {
 		return httpx.BadRequest("User is not a member of this group")
 	}
-	return s.q.DeleteMember(ctx, sqlc.DeleteMemberParams(member))
+	return s.deleteMember(ctx, groupID, memberID)
 }
 
 // Members: GroupMemberService.listMembers. Na ordem em que o banco devolve os
