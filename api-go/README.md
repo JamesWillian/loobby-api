@@ -8,8 +8,9 @@ Roda na máquina da Oracle Cloud, atrás de um nginx na mesma máquina
 
 **Os 53 endpoints da v1** respondem igual ao Kotlin nos 166 cenários de
 `../contract/golden-local/`, e desde 16/11/2026 o Go é o único backend em
-produção. As rotas novas (a primeira é `/app/config`) não têm referência no
-Kotlin: são testadas só do lado Go.
+produção. As rotas novas não têm referência no Kotlin e são testadas só do lado
+Go: `/app/config` e as 19 rotas `/v2` das gameplays, a API da 2.0 (ver "Rotas da
+2.0: gameplays").
 
 Onde o Go difere do Kotlin **de propósito**: recusa refresh token forjado
 (`../contract/ACHADOS.md` §22), grava evento e detalhes numa transação só e sorteia
@@ -30,6 +31,7 @@ outro username quando o do anônimo colide (§28). O resto — inclusive os defe
 | `internal/auth` | tokens HS256, filtro (o Spring Security do lado Go), login, cadastro, e-mail, reset, Google |
 | `internal/users`, `groups`, `events`, `teams`, `games`, `legal`, `files`, `notifications`, `health` | os módulos |
 | `internal/appconfig` | `GET /app/config` (pública): versão mínima de cada app e o aviso mostrado ao abrir. Primeira rota que não veio do Kotlin; muda-se editando `Current` e publicando |
+| `internal/gameplays` | a 2.0: gameplays do grupo e únicas, participação, votação com desempate, comentários, encerramento e os jobs e pushes delas — ver "Rotas da 2.0" |
 | `internal/email`, `internal/password`, `internal/ids` | Resend, BCrypt e identificadores |
 | `internal/contracttest`, `internal/dbtest` | apoio aos testes |
 
@@ -115,6 +117,11 @@ URL num `read` silencioso:
 read -rs MIGRATE_DATABASE_URL && export MIGRATE_DATABASE_URL
 ```
 
+| Migração | O quê |
+|---|---|
+| `00001_baseline.sql` | o schema da produção de antes do goose |
+| `00002_gameplays.sql` | as seis tabelas da 2.0 (`gameplays`, `gameplay_participants`, `gameplay_games`, `gameplay_votes`, `gameplay_comments`, `gameplay_comment_reports`), ao lado das da v1, que não mudam |
+
 A `00001_baseline.sql` é o schema da produção de antes do goose (o dump de
 08/09/2026, conferido de novo em 21/11/2026). Num banco vazio ela cria tudo; na
 produção ela é marcada como aplicada **uma vez**, sem rodar — e até lá o `up` na
@@ -145,6 +152,98 @@ DO $$ BEGIN
 END $$;
 -- +goose StatementEnd
 ```
+
+Os dois são conferidos em teste (`migrations`): uma tabela do `public` sem RLS
+falha o `TestTodaTabelaDoPublicTemRLS`, e o `TestGrantAoLoobbyBackend` cria o
+papel no servidor de teste para conferir o GRANT das tabelas da 2.0.
+
+## Rotas da 2.0: gameplays
+
+A 2.0 transforma o Loobby numa ferramenta de gameplays online entre amigos. É uma
+API ao lado da v1, não em cima dela: rotas em `/v2`, tabelas da `00002`, nada da
+v1 lido ou escrito (eventos e RSVPs seguem para os apps 1.3 e 1.3.1). As tabelas
+compartilhadas são `users`, `groups`, `group_members`, `games` e `device_tokens`.
+O código é o `internal/gameplays`.
+
+Uma gameplay é **do grupo** (vista pelos membros) ou **única**, sem grupo (vista
+por quem entrou pelo convite, `$-` + 8 caracteres). Por enquanto tudo é privado: a
+gameplay pública está pausada. Modos: `VOTING` (votação), `FIXED` (jogo definido)
+e `FREE` (livre). Plataforma, uma por enquanto, guardada como lista em JSON para o
+crossplay: `PC`, `PLAYSTATION`, `XBOX`, `SWITCH`, `MOBILE`.
+
+| Rota | Quem pode | O quê |
+|---|---|---|
+| `POST /v2/groups/{groupId}/gameplays` | membro não anônimo | cria gameplay do grupo (201) |
+| `POST /v2/gameplays` | não anônimo | cria única, já com o convite (201) |
+| `GET /v2/groups/{groupId}/gameplays?status=active\|ended&before=&limit=` | membro | ativas; ou encerradas, da mais recente, em páginas (`before` = a última da página anterior) |
+| `GET /v2/me/gameplays` | qualquer | o Lobby: as ativas dos grupos da pessoa e as únicas em que entrou |
+| `GET /v2/gameplays/{id}` | quem tem acesso | detalhe: participantes, jogos, votos por rodada, resultado e `permissions` (os botões de quem lê) |
+| `PATCH /v2/gameplays/{id}` | criador ou dono do grupo (única: criador) | nome, descrição, horário, plataforma, jogo do FIXED; `voting.finalists` e `voting.multiVote` só o criador, antes do 1º voto |
+| `POST /v2/gameplays/{id}/end` | criador ou dono do grupo (única: criador) | Encerrar |
+| `GET /v2/invites/{code}` | qualquer | prévia da única |
+| `POST /v2/invites/{code}` | qualquer, até anônimo | entra na única como Pendente |
+| `PUT /v2/gameplays/{id}/participants/me` | não anônimo | `{"status": "GOING" \| "NOT_GOING" \| "PENDING"}` |
+| `DELETE /v2/gameplays/{id}/participants/me` | participante da única, menos o criador | sai da única (204) |
+| `POST /v2/gameplays/{id}/games` | membro não anônimo (única: criador) | `{"gameId"?, "name"}`: jogo do catálogo ou digitado |
+| `DELETE /v2/gameplays/{id}/games/{gameId}` | idem | remove o jogo da votação e os votos nele |
+| `PUT /v2/gameplays/{id}/votes/me` | não anônimo que não marcou Não vou | `{"votes": [ids dos jogos da votação]}`; vazia tira o voto |
+| `POST /v2/gameplays/{id}/tiebreak` | criador | Desempatar |
+| `GET /v2/gameplays/{id}/comments?before=&limit=` | quem tem acesso | comentários, mais novos primeiro |
+| `POST /v2/gameplays/{id}/comments` | não anônimo | `{"body"}`, 1 a 1000 caracteres (201) |
+| `DELETE /v2/gameplays/{id}/comments/{commentId}` | autor; dono do grupo; na única, o criador | apaga (204) |
+| `POST /v2/gameplays/{id}/comments/{commentId}/report` | quem tem acesso, até anônimo | denuncia; `{"reason"}` opcional (204) |
+
+Toda ação sobre a gameplay responde com o detalhe inteiro, já atualizado.
+
+**Regras, todas conferidas no servidor.** Cada escrita trava a linha da gameplay
+(`FOR UPDATE`), o que serializa votos, limite de jogos e desempate.
+
+- **Ativa** = não encerrada e `scheduled_at` + 24 h ainda no futuro. Ela encerra
+  pelo botão ou sozinha, 24 h depois do horário marcado. Encerrada é só leitura;
+  apagar e denunciar comentário continuam valendo.
+- **Criação:** quem cria entra como Vou. O horário aceita até 5 min no passado,
+  para "começar agora". O modo não muda depois.
+- **Votação:** até 20 jogos; repetido é o mesmo jogo do catálogo ou o mesmo nome,
+  sem diferenciar maiúsculas. Jogo digitado vale, sem capa (a capa vem do cache
+  `games`). Voto único, ou múltiplo (um voto por jogo); finalistas (1 a 20) e voto
+  múltiplo travam no primeiro voto. Votar estando Pendente passa para Vou; com Não
+  vou, é recusado; passar para Pendente ou Não vou apaga os votos da rodada aberta.
+  O voto é sempre visível.
+- **Resultado:** finalistas são os N mais votados com pelo menos 1 voto; um empate
+  na última vaga leva todos os empatados.
+- **Desempate:** só com 1 finalista e empate no 1º lugar. Abre a rodada seguinte só
+  com os empatados, sempre com 1 voto por pessoa; a anterior congela (votos e lista
+  de jogos). Se empatar de novo, o criador pode abrir outra rodada.
+- **Anônimo** entra em grupos e únicas e vê tudo; não responde, não vota, não
+  comenta, não mexe nos jogos e não cria. Pode denunciar.
+- **Saída do grupo** (sair ou ser removido): a pessoa perde a participação e os
+  votos abertos nas gameplays ativas daquele grupo.
+- **Exclusão de conta:** votos, comentários, denúncias e participações saem; a
+  gameplay do grupo que a pessoa criou passa para o dono do grupo, e a única, para
+  o participante não anônimo mais antigo (sem nenhum, ela é apagada).
+
+**Erros.** O envelope é o da v1, mas os status são os corretos e as mensagens vêm
+em português, prontas para o app mostrar: 400 para corpo ilegível (`Corpo da
+requisição inválido`) ou validação (`Dados inválidos`, com `fieldErrors`), 403 sem
+permissão, 404 quando não existe ou não há acesso (inclusive id que não é UUID) e
+409 para conflito de estado (encerrada, votação travada, desempate aberto, 20
+jogos). Rota que não existe continua 500, como na v1.
+
+**Pushes e jobs.** O `data` de cada push traz `type`, `gameplayId` e, na do grupo,
+`groupId`.
+
+| Tipo | Quando | Quem recebe |
+|---|---|---|
+| `GAMEPLAY_NEW_IN_GROUP` | na criação | membros do grupo, menos o criador |
+| `GAMEPLAY_TIEBREAK_OPENED` | ao Desempatar | quem marcou Vou, menos o criador |
+| `GAMEPLAY_REMINDER` | 1 h antes (job de 5 em 5 min) | quem marcou Vou |
+| `GAMEPLAY_TODAY_PENDING` | todo dia às 8h, America/Sao_Paulo | quem ainda não respondeu, menos anônimos |
+
+Os dois agendados usam o `notification_dispatch_log` (`reference_id` = id da
+gameplay) e só rodam com `NOTIFICATIONS_ENABLED` e
+`NOTIFICATIONS_SCHEDULER_ENABLED`, como os da v1. O job de encerramento roda de 5
+em 5 min **sempre**: ele só carimba o `ended_at` (as consultas já tratam como
+encerrada a que passou do prazo).
 
 ## Como cada módulo é provado
 
