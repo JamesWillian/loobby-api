@@ -84,7 +84,7 @@ const createGameplay = `-- name: CreateGameplay :exec
 INSERT INTO gameplays (id, group_id, creator_id, name, description, mode, platforms, scheduled_at,
                        invite_code, game_id, game_name, finalists, multi_vote, voting_round)
 VALUES ($1, $2, $3, $4, $5,
-        $6, $7, $8, $9,
+        $6, ($7::text)::jsonb, $8, $9,
         $10, $11, $12, $13,
         $14)
 `
@@ -96,7 +96,7 @@ type CreateGameplayParams struct {
 	Name        string
 	Description *string
 	Mode        string
-	Platforms   []byte
+	Platforms   string
 	ScheduledAt time.Time
 	InviteCode  *string
 	GameID      *string
@@ -113,6 +113,11 @@ type CreateGameplayParams struct {
 // "Ativa" = ended_at NULL e scheduled_at depois de `cutoff` (agora menos as
 // 24 h do encerramento automatico). O Go passa o cutoff, para a regra das 24 h
 // ficar num lugar so (gameplays.AutoEndAfter).
+//
+// platforms (jsonb) entra como texto: (sqlc.arg(platforms)::text)::jsonb, como
+// os jsonb de games.sql. Sem o ::text o sqlc tipa o parametro como []byte, e o
+// simple_protocol da producao (ver db.Connect) manda []byte como bytea ('\x5b...'):
+// o Postgres recusa com "invalid input syntax for type json" (SQLSTATE 22P02).
 func (q *Queries) CreateGameplay(ctx context.Context, arg CreateGameplayParams) error {
 	_, err := q.db.Exec(ctx, createGameplay,
 		arg.ID,
@@ -1206,7 +1211,7 @@ func (q *Queries) SetGameplayCreator(ctx context.Context, arg SetGameplayCreator
 const setGameplayDetails = `-- name: SetGameplayDetails :exec
 UPDATE gameplays
 SET name = $1, description = $2, scheduled_at = $3,
-    platforms = $4, game_id = $5, game_name = $6,
+    platforms = ($4::text)::jsonb, game_id = $5, game_name = $6,
     finalists = $7, multi_vote = $8
 WHERE id = $9
 `
@@ -1215,7 +1220,7 @@ type SetGameplayDetailsParams struct {
 	Name        string
 	Description *string
 	ScheduledAt time.Time
-	Platforms   []byte
+	Platforms   string
 	GameID      *string
 	GameName    *string
 	Finalists   *int16
