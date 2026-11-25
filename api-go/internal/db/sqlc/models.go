@@ -107,10 +107,72 @@ type Game struct {
 	RefreshedAt     time.Time
 }
 
+type Gameplay struct {
+	ID          string
+	GroupID     *string
+	CreatorID   string
+	Name        string
+	Description *string
+	Mode        string
+	Platforms   []byte
+	ScheduledAt time.Time
+	InviteCode  *string
+	GameID      *string
+	GameName    *string
+	Finalists   *int16
+	MultiVote   *bool
+	VotingRound *int16
+	EndedAt     *time.Time
+	EndedBy     *string
+	CreatedAt   time.Time
+}
+
+type GameplayComment struct {
+	ID         string
+	GameplayID string
+	UserID     string
+	Body       string
+	CreatedAt  time.Time
+}
+
+type GameplayCommentReport struct {
+	ID         string
+	CommentID  string
+	ReporterID string
+	Reason     *string
+	CreatedAt  time.Time
+}
+
 type GameplayEvent struct {
 	EventID  string
 	GameID   *string
 	GameName string
+}
+
+type GameplayGame struct {
+	ID         string
+	GameplayID string
+	GameID     *string
+	Name       string
+	AddedBy    *string
+	LastRound  int16
+	CreatedAt  time.Time
+}
+
+type GameplayParticipant struct {
+	GameplayID string
+	UserID     string
+	Status     string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
+type GameplayVote struct {
+	GameplayGameID string
+	VotingRound    int16
+	UserID         string
+	GameplayID     string
+	CreatedAt      time.Time
 }
 
 type Group struct {
