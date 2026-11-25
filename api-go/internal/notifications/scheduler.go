@@ -168,17 +168,24 @@ func (s *Scheduler) reminderJob(ctx context.Context) {
 // tryDispatch registra o envio e so entao envia. Se o registro ja existe (ou
 // outro processo o criou neste instante), nao envia.
 func (s *Scheduler) tryDispatch(ctx context.Context, userID, kind, referenceID string, day time.Time, send func()) {
+	DispatchOnce(ctx, s.q, userID, kind, referenceID, day, send)
+}
+
+// DispatchOnce e a trava do tryDispatch, aberta aos jobs de outros modulos (as
+// gameplays da 2.0): no maximo um envio por (usuario, tipo, referencia, dia).
+// day e o dia local como date do Postgres, a meia-noite em UTC.
+func DispatchOnce(ctx context.Context, q *sqlc.Queries, userID, kind, referenceID string, day time.Time, send func()) {
 	key := sqlc.DispatchLogExistsParams{
 		UserID: userID, NotificationType: kind, ReferenceID: referenceID, DispatchedDate: day,
 	}
-	already, err := s.q.DispatchLogExists(ctx, key)
+	already, err := q.DispatchLogExists(ctx, key)
 	if err != nil || already {
 		if err != nil {
 			slog.Error("registro de envio: consulta falhou", "tipo", kind, "err", err)
 		}
 		return
 	}
-	inserted, err := s.q.InsertDispatchLog(ctx, sqlc.InsertDispatchLogParams(key))
+	inserted, err := q.InsertDispatchLog(ctx, sqlc.InsertDispatchLogParams(key))
 	if err != nil {
 		slog.Error("registro de envio: gravacao falhou", "tipo", kind, "err", err)
 		return

@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"os"
+	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pressly/goose/v3"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/dbtest"
@@ -60,16 +63,16 @@ func TestUpNumBancoVazioCriaOSchema(t *testing.T) {
 	}
 }
 
-// A producao na primeira vez: o schema ja existe e o goose nunca rodou. up
-// recusa sem criar nada, status so le, baseline marca a base, e depois o up nao
-// roda a 00001.
+// A producao na primeira vez: o schema da base ja existe e o goose nunca rodou.
+// up recusa sem criar nada, status so le, baseline marca a base, e depois o up
+// roda as migracoes seguintes, mas nunca a 00001.
 func TestProducaoPrecisaDoBaselineAntesDoUp(t *testing.T) {
 	ctx := context.Background()
 	db := open(t, dbtest.EmptyDatabase(t))
-	if _, err := migrations.Up(ctx, db); err != nil {
+	if _, err := migrations.UpTo(ctx, db, migrations.BaselineVersion); err != nil {
 		t.Fatal(err)
 	}
-	// Fica como a producao: o schema, sem o historico.
+	// Fica como a producao: o schema da base, sem o historico.
 	if _, err := db.ExecContext(ctx, "DROP SCHEMA goose CASCADE"); err != nil {
 		t.Fatal(err)
 	}
@@ -96,12 +99,29 @@ func TestProducaoPrecisaDoBaselineAntesDoUp(t *testing.T) {
 	if marked, err := migrations.Baseline(ctx, db); err != nil || marked {
 		t.Errorf("segundo baseline: queria nada a fazer, veio %v (erro %v)", marked, err)
 	}
-	if results, err := migrations.Up(ctx, db); err != nil || len(results) != 0 {
-		t.Errorf("up depois do baseline: a base nao pode rodar, veio %v (erro %v)", results, err)
+	results, err := migrations.Up(ctx, db)
+	if err != nil || len(results) == 0 {
+		t.Fatalf("up depois do baseline: queria as migracoes seguintes, veio %v (erro %v)", results, err)
+	}
+	for _, r := range results {
+		if r.Source.Version <= migrations.BaselineVersion {
+			t.Errorf("up depois do baseline: a base nao pode rodar, rodou a %d", r.Source.Version)
+		}
+	}
+	if !exists(t, db, "SELECT to_regclass('public.gameplays') IS NOT NULL") {
+		t.Error("o up depois do baseline deveria criar as tabelas da 2.0")
 	}
 	status, err = migrations.Status(ctx, db)
-	if err != nil || status[0].State != goose.StateApplied {
-		t.Errorf("status depois do baseline: queria a base aplicada, veio %v (erro %v)", status, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range status {
+		if s.State != goose.StateApplied {
+			t.Errorf("status depois do up: %s ainda %s", s.Source.Path, s.State)
+		}
+	}
+	if again, err := migrations.Up(ctx, db); err != nil || len(again) != 0 {
+		t.Errorf("segundo up: queria nada a aplicar, veio %v (erro %v)", again, err)
 	}
 }
 
@@ -122,4 +142,80 @@ func TestOpenRecusaOPoolerDeTransacao(t *testing.T) {
 		t.Fatalf("a conexao de sessao deveria ser aceita: %v", err)
 	}
 	_ = db.Close()
+}
+
+// Toda tabela do public precisa de RLS: sem ele, os privilegios padrao do
+// Supabase dao ao anon e ao authenticated acesso total pela API de dados.
+// Uma migracao que esquecer o ENABLE ROW LEVEL SECURITY falha aqui.
+func TestTodaTabelaDoPublicTemRLS(t *testing.T) {
+	db := open(t, dbtest.MigratedDatabase(t))
+	rows, err := db.QueryContext(context.Background(), `
+		SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p') AND NOT c.relrowsecurity
+		ORDER BY 1`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var missing []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatal(err)
+		}
+		missing = append(missing, name)
+	}
+	if len(missing) > 0 {
+		t.Errorf("tabelas do public sem RLS: %s", strings.Join(missing, ", "))
+	}
+}
+
+// O papel loobby_backend so existe no Supabase, e as migracoes so dao o GRANT
+// a ele se ele existir. Aqui ele e criado no servidor de teste (sem login,
+// como o da producao) para conferir o GRANT das tabelas da 2.0.
+func TestGrantAoLoobbyBackend(t *testing.T) {
+	ctx := context.Background()
+	admin, err := pgx.Connect(ctx, adminURL(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer admin.Close(ctx)
+	var exists bool
+	if err := admin.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'loobby_backend')`).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		if _, err := admin.Exec(ctx, `CREATE ROLE loobby_backend NOLOGIN`); err != nil {
+			t.Fatal(err)
+		}
+		// Registrado antes do banco: roda depois de ele ser apagado. Se outro
+		// banco de teste tiver recebido o GRANT nesse meio-tempo, o papel fica
+		// -- sem login, nao atrapalha.
+		t.Cleanup(func() {
+			conn, err := pgx.Connect(context.Background(), adminURL(t))
+			if err == nil {
+				_, _ = conn.Exec(context.Background(), `DROP ROLE IF EXISTS loobby_backend`)
+				_ = conn.Close(context.Background())
+			}
+		})
+	}
+	db := open(t, dbtest.MigratedDatabase(t))
+	for _, table := range []string{"gameplays", "gameplay_participants", "gameplay_games",
+		"gameplay_votes", "gameplay_comments", "gameplay_comment_reports"} {
+		var ok bool
+		err := db.QueryRowContext(ctx, `SELECT has_table_privilege('loobby_backend', $1, 'SELECT, INSERT, UPDATE, DELETE')`,
+			"public."+table).Scan(&ok)
+		if err != nil || !ok {
+			t.Errorf("%s: o loobby_backend deveria ter SELECT, INSERT, UPDATE e DELETE (erro %v)", table, err)
+		}
+	}
+}
+
+func adminURL(t *testing.T) string {
+	t.Helper()
+	url := os.Getenv("TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("TEST_DATABASE_URL nao definida")
+	}
+	return url
 }

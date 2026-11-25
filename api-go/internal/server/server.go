@@ -18,6 +18,7 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/config"
 	"github.com/JamesWillian/loobby-api/api-go/internal/events"
 	"github.com/JamesWillian/loobby-api/api-go/internal/files"
+	"github.com/JamesWillian/loobby-api/api-go/internal/gameplays"
 	"github.com/JamesWillian/loobby-api/api-go/internal/games"
 	"github.com/JamesWillian/loobby-api/api-go/internal/groups"
 	"github.com/JamesWillian/loobby-api/api-go/internal/health"
@@ -43,6 +44,8 @@ type Deps struct {
 	Games   *games.Handler
 	Devices *notifications.Handler
 	Files   *files.Storage
+
+	Gameplays *gameplays.Handler // a 2.0, em /v2
 }
 
 func Handler(d Deps) http.Handler {
@@ -73,6 +76,9 @@ func Handler(d Deps) http.Handler {
 	}
 	if d.Files != nil {
 		d.Files.Register(mux)
+	}
+	if d.Gameplays != nil {
+		d.Gameplays.Register(mux)
 	}
 
 	tokens := d.Tokens
