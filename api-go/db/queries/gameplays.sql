@@ -5,12 +5,17 @@
 -- "Ativa" = ended_at NULL e scheduled_at depois de `cutoff` (agora menos as
 -- 24 h do encerramento automatico). O Go passa o cutoff, para a regra das 24 h
 -- ficar num lugar so (gameplays.AutoEndAfter).
+--
+-- platforms (jsonb) entra como texto: (sqlc.arg(platforms)::text)::jsonb, como
+-- os jsonb de games.sql. Sem o ::text o sqlc tipa o parametro como []byte, e o
+-- simple_protocol da producao (ver db.Connect) manda []byte como bytea ('\x5b...'):
+-- o Postgres recusa com "invalid input syntax for type json" (SQLSTATE 22P02).
 
 -- name: CreateGameplay :exec
 INSERT INTO gameplays (id, group_id, creator_id, name, description, mode, platforms, scheduled_at,
                        invite_code, game_id, game_name, finalists, multi_vote, voting_round)
 VALUES (sqlc.arg(id), sqlc.narg(group_id), sqlc.arg(creator_id), sqlc.arg(name), sqlc.narg(description),
-        sqlc.arg(mode), sqlc.arg(platforms), sqlc.arg(scheduled_at), sqlc.narg(invite_code),
+        sqlc.arg(mode), (sqlc.arg(platforms)::text)::jsonb, sqlc.arg(scheduled_at), sqlc.narg(invite_code),
         sqlc.narg(game_id), sqlc.narg(game_name), sqlc.narg(finalists), sqlc.narg(multi_vote),
         sqlc.narg(voting_round));
 
@@ -31,7 +36,7 @@ SELECT EXISTS (SELECT 1 FROM gameplays WHERE invite_code = sqlc.arg(invite_code)
 -- name: SetGameplayDetails :exec
 UPDATE gameplays
 SET name = sqlc.arg(name), description = sqlc.narg(description), scheduled_at = sqlc.arg(scheduled_at),
-    platforms = sqlc.arg(platforms), game_id = sqlc.narg(game_id), game_name = sqlc.narg(game_name),
+    platforms = (sqlc.arg(platforms)::text)::jsonb, game_id = sqlc.narg(game_id), game_name = sqlc.narg(game_name),
     finalists = sqlc.narg(finalists), multi_vote = sqlc.narg(multi_vote)
 WHERE id = sqlc.arg(id);
 

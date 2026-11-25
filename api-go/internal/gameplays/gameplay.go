@@ -182,7 +182,7 @@ func (s *Service) Patch(ctx context.Context, id, userID string, in patchInput) (
 
 		p := sqlc.SetGameplayDetailsParams{
 			ID: g.ID, Name: g.Name, Description: g.Description, ScheduledAt: g.ScheduledAt,
-			Platforms: g.Platforms, GameID: g.GameID, GameName: g.GameName,
+			Platforms: string(g.Platforms), GameID: g.GameID, GameName: g.GameName,
 			Finalists: g.Finalists, MultiVote: g.MultiVote,
 		}
 		if in.Name != nil {

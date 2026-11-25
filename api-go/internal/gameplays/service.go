@@ -198,9 +198,11 @@ func (st state) permissions(locked, tie bool) permissions {
 	}
 }
 
-func encodePlatforms(list []string) []byte {
+// encodePlatforms devolve o JSON como string: e o tipo do parametro de
+// CreateGameplay/SetGameplayDetails (ver db/queries/gameplays.sql).
+func encodePlatforms(list []string) string {
 	b, _ := json.Marshal(list) // lista de strings: nao falha
-	return b
+	return string(b)
 }
 
 func decodePlatforms(raw []byte) []string {
