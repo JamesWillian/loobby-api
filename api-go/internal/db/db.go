@@ -28,6 +28,15 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	cfg.HealthCheckPeriod = time.Minute
 	cfg.AfterConnect = RegisterTypes
 
+	// A producao usa o pooler do Supabase em modo transacao (6543), que nao aceita
+	// os prepared statements do modo padrao do pgx: o DB_URL de la traz
+	// default_query_exec_mode=simple_protocol (deploy/go/README.md). Forcar o modo
+	// aqui deixa testes, oraculo e producao iguais. No modo padrao o pgx descobre
+	// no servidor o tipo de cada parametro e aceita o que a producao recusa: um
+	// []byte num jsonb, que no simple_protocol vai como bytea e dava 500 ao criar
+	// gameplay -- com a suite inteira verde.
+	cfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("nao foi possivel criar o pool: %w", err)

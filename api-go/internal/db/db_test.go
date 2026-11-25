@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Integracao: precisa de um Postgres (ver api-go/README.md). Pula sem um.
@@ -57,5 +59,34 @@ func TestNumericPreservaAEscala(t *testing.T) {
 	}
 	if back != "0.00" {
 		t.Errorf("gravar \"0.0\" em numeric(4,2): voltou %q", back)
+	}
+}
+
+// Os testes de todos os pacotes abrem o pool pelo Connect. Se ele deixar de
+// forcar o simple_protocol da producao, eles voltam a aceitar parametros que a
+// producao recusa -- como o []byte num jsonb, que vai como bytea.
+func TestConnectUsaOModoDaProducao(t *testing.T) {
+	ctx := context.Background()
+	pool, err := Connect(ctx, testURL(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+
+	if got := pool.Config().ConnConfig.DefaultQueryExecMode; got != pgx.QueryExecModeSimpleProtocol {
+		t.Fatalf("DefaultQueryExecMode = %v, esperava %v", got, pgx.QueryExecModeSimpleProtocol)
+	}
+
+	// o que a producao fazia ao criar gameplay: []byte num jsonb
+	if _, err := pool.Exec(ctx, "SELECT $1::jsonb", []byte(`["PC"]`)); err == nil {
+		t.Error("[]byte num jsonb passou: o pool nao esta no simple_protocol")
+	}
+	// e o jeito certo: o JSON como texto
+	var back string
+	if err := pool.QueryRow(ctx, "SELECT (($1::text)::jsonb)::text", `["PC"]`).Scan(&back); err != nil {
+		t.Fatal(err)
+	}
+	if back != `["PC"]` {
+		t.Errorf("JSON como texto: voltou %q", back)
 	}
 }
