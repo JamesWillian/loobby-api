@@ -1059,6 +1059,138 @@ func (q *Queries) ListGameplaysStartingBetween(ctx context.Context, arg ListGame
 	return items, nil
 }
 
+const listHistoryGameplays = `-- name: ListHistoryGameplays :many
+SELECT g.id, g.group_id, g.creator_id, g.name, g.description, g.mode, g.platforms, g.scheduled_at, g.invite_code, g.game_id, g.game_name, g.finalists, g.multi_vote, g.voting_round, g.ended_at, g.ended_by, g.created_at FROM gameplays g
+JOIN gameplay_participants p ON p.gameplay_id = g.id
+WHERE p.user_id = $1 AND p.status = 'GOING'
+  AND (g.ended_at IS NOT NULL OR g.scheduled_at <= $2)
+  AND (g.group_id IS NULL OR EXISTS (SELECT 1 FROM group_members m
+                                     WHERE m.group_id = g.group_id AND m.user_id = $1))
+ORDER BY COALESCE(g.ended_at, g.scheduled_at + $3::integer * interval '1 second') DESC, g.id DESC
+LIMIT $4
+`
+
+type ListHistoryGameplaysParams struct {
+	UserID       string
+	Cutoff       time.Time
+	AfterSeconds int32
+	MaxRows      int32
+}
+
+// O Historico: as encerradas em que a pessoa marcou Vou, na ordem das
+// encerradas do grupo. A do grupo so entra enquanto ela e membro, porque o
+// detalhe da 404 a quem saiu; se ela voltar, a gameplay volta junto.
+func (q *Queries) ListHistoryGameplays(ctx context.Context, arg ListHistoryGameplaysParams) ([]Gameplay, error) {
+	rows, err := q.db.Query(ctx, listHistoryGameplays,
+		arg.UserID,
+		arg.Cutoff,
+		arg.AfterSeconds,
+		arg.MaxRows,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Gameplay
+	for rows.Next() {
+		var i Gameplay
+		if err := rows.Scan(
+			&i.ID,
+			&i.GroupID,
+			&i.CreatorID,
+			&i.Name,
+			&i.Description,
+			&i.Mode,
+			&i.Platforms,
+			&i.ScheduledAt,
+			&i.InviteCode,
+			&i.GameID,
+			&i.GameName,
+			&i.Finalists,
+			&i.MultiVote,
+			&i.VotingRound,
+			&i.EndedAt,
+			&i.EndedBy,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listHistoryGameplaysBefore = `-- name: ListHistoryGameplaysBefore :many
+SELECT g.id, g.group_id, g.creator_id, g.name, g.description, g.mode, g.platforms, g.scheduled_at, g.invite_code, g.game_id, g.game_name, g.finalists, g.multi_vote, g.voting_round, g.ended_at, g.ended_by, g.created_at FROM gameplays g
+JOIN gameplay_participants p ON p.gameplay_id = g.id
+WHERE p.user_id = $1 AND p.status = 'GOING'
+  AND (g.ended_at IS NOT NULL OR g.scheduled_at <= $2)
+  AND (g.group_id IS NULL OR EXISTS (SELECT 1 FROM group_members m
+                                     WHERE m.group_id = g.group_id AND m.user_id = $1))
+  AND (COALESCE(g.ended_at, g.scheduled_at + $3::integer * interval '1 second'), g.id)
+      < ($4::pg_catalog.timestamptz, $5::uuid)
+ORDER BY COALESCE(g.ended_at, g.scheduled_at + $3::integer * interval '1 second') DESC, g.id DESC
+LIMIT $6
+`
+
+type ListHistoryGameplaysBeforeParams struct {
+	UserID       string
+	Cutoff       time.Time
+	AfterSeconds int32
+	BeforeAt     time.Time
+	BeforeID     string
+	MaxRows      int32
+}
+
+// A pagina seguinte: as que encerraram antes da gameplay (before_at, before_id).
+func (q *Queries) ListHistoryGameplaysBefore(ctx context.Context, arg ListHistoryGameplaysBeforeParams) ([]Gameplay, error) {
+	rows, err := q.db.Query(ctx, listHistoryGameplaysBefore,
+		arg.UserID,
+		arg.Cutoff,
+		arg.AfterSeconds,
+		arg.BeforeAt,
+		arg.BeforeID,
+		arg.MaxRows,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Gameplay
+	for rows.Next() {
+		var i Gameplay
+		if err := rows.Scan(
+			&i.ID,
+			&i.GroupID,
+			&i.CreatorID,
+			&i.Name,
+			&i.Description,
+			&i.Mode,
+			&i.Platforms,
+			&i.ScheduledAt,
+			&i.InviteCode,
+			&i.GameID,
+			&i.GameName,
+			&i.Finalists,
+			&i.MultiVote,
+			&i.VotingRound,
+			&i.EndedAt,
+			&i.EndedBy,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLobbyGameplays = `-- name: ListLobbyGameplays :many
 SELECT g.id, g.group_id, g.creator_id, g.name, g.description, g.mode, g.platforms, g.scheduled_at, g.invite_code, g.game_id, g.game_name, g.finalists, g.multi_vote, g.voting_round, g.ended_at, g.ended_by, g.created_at FROM gameplays g
 WHERE g.ended_at IS NULL AND g.scheduled_at > $1

@@ -184,6 +184,13 @@ type Group struct {
 	CreatedAt  time.Time
 }
 
+type GroupLibrary struct {
+	GroupID   string
+	GameID    string
+	AddedBy   *string
+	CreatedAt time.Time
+}
+
 type GroupMember struct {
 	ID      string
 	GroupID string
@@ -251,4 +258,12 @@ type UserGoogleCredential struct {
 	GoogleID  string
 	Email     string
 	CreatedAt time.Time
+}
+
+type UserLibrary struct {
+	UserID         string
+	GameID         string
+	OwnedPlatforms []byte
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
