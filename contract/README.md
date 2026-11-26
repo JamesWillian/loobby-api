@@ -55,10 +55,10 @@ contra os golden sem precisar de servidor nem banco.
 
 | | `golden/` | `golden-local/` |
 |---|---|---|
-| Gravado de | produção, pelo nginx | Kotlin local (`local/oracle.sh`), serviços externos falsos |
-| Cenários | 73 | 166 — os mesmos 73 e mais 93 dos fluxos de cadastro, e-mail, senha, exclusão e Google |
+| Gravado de | produção, pelo nginx | Kotlin local (`local/oracle.sh`), serviços externos falsos. Seis cenários da exclusão de conta foram regravados do Go depois do conserto (`ACHADOS.md` §23 e §24) |
+| Cenários | 73 | 168 — os mesmos 73 e mais 95 dos fluxos de cadastro, e-mail, senha, exclusão e Google |
 | Serve para | o **cutover**: mover uma rota não pode mudar a captura | o **`go test`**: o Go inteiro contra o Kotlin, sem servidor nenhum no ar |
-| Regravar | não se regrava mais: o Kotlin foi arquivado | não se regrava mais: o `record` do `oracle.sh` ficou na tag `arquivo/v1` |
+| Regravar | não se regrava mais: o Kotlin foi arquivado | só quando o Go muda o contrato de propósito: o cenário vem da captura do Go que o `oracle.sh compare` deixa em `$WORK/cap-go`. O `record` do Kotlin ficou na tag `arquivo/v1` |
 
 ```bash
 contract/local/oracle.sh compare    # sobe o Go, captura e compara com golden-local: 0 diferenças
