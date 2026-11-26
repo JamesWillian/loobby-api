@@ -24,7 +24,9 @@ import (
 // cenarios do capture.py e os fluxos felizes do flows.py (cadastro, verificacao
 // de email, reset e troca de senha, exclusao de conta, login com Google). O
 // resultado tem que ser indistinguivel de contract/golden-local, que e essa
-// mesma suite gravada do Kotlin rodando localmente.
+// mesma suite gravada do Kotlin rodando localmente -- menos seis cenarios da
+// exclusao de conta, regravados do Go quando ele corrigiu o Kotlin
+// (contract/ACHADOS.md §23 e §24).
 //
 // E o teste que cobre os modulos de ponta a ponta: rota, filtro de
 // autenticacao, leitura do corpo, regra, SQL, gatilhos do banco e o formato

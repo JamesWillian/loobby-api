@@ -15,6 +15,8 @@ UPDATE users SET username = '', displayname = '[deleted]', avatar_url = NULL WHE
 `
 
 // Exclusao de conta: o registro fica (integridade referencial), sem dados pessoais.
+// Todas as contas excluidas ficam com o username vazio, que o indice unico
+// ignora (migracao 00003).
 func (q *Queries) AnonymizeUser(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, anonymizeUser, id)
 	return err
@@ -37,6 +39,15 @@ DELETE FROM user_credentials WHERE user_id = $1
 
 func (q *Queries) DeleteCredentials(ctx context.Context, userID string) error {
 	_, err := q.db.Exec(ctx, deleteCredentials, userID)
+	return err
+}
+
+const deleteGoogleCredentials = `-- name: DeleteGoogleCredentials :exec
+DELETE FROM user_google_credentials WHERE user_id = $1
+`
+
+func (q *Queries) DeleteGoogleCredentials(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, deleteGoogleCredentials, userID)
 	return err
 }
 

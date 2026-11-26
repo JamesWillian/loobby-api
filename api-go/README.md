@@ -6,16 +6,23 @@ Roda na máquina da Oracle Cloud, atrás de um nginx na mesma máquina
 
 ## Estado
 
-**Os 53 endpoints da v1** respondem igual ao Kotlin nos 166 cenários de
-`../contract/golden-local/`, e desde 16/11/2026 o Go é o único backend em
-produção. As rotas novas não têm referência no Kotlin e são testadas só do lado
-Go: `/app/config` e as 19 rotas `/v2` das gameplays, a API da 2.0 (ver "Rotas da
-2.0: gameplays").
+**Os 53 endpoints da v1** respondem igual ao Kotlin nos 168 cenários de
+`../contract/golden-local/`, menos nos seis da exclusão de conta que o Go corrigiu
+(abaixo). Desde 16/11/2026 o Go é o único backend em produção. As rotas novas não
+têm referência no Kotlin e são testadas só do lado Go: `/app/config` e as 19 rotas
+`/v2` das gameplays, a API da 2.0 (ver "Rotas da 2.0: gameplays").
 
-Onde o Go difere do Kotlin **de propósito**: recusa refresh token forjado
-(`../contract/ACHADOS.md` §22), grava evento e detalhes numa transação só e sorteia
-outro username quando o do anônimo colide (§28). O resto — inclusive os defeitos —
-é reproduzido.
+Onde o Go difere do Kotlin **de propósito**:
+
+- recusa refresh token forjado (`../contract/ACHADOS.md` §22);
+- conserta a exclusão de conta (§23 e §24): a segunda exclusão em diante e a de
+  conta Google funcionam, e a troca de senha de conta Google diz que ela não tem
+  senha. São os únicos consertos que mudam respostas: seis cenários do golden
+  foram regravados do Go;
+- grava evento e detalhes numa transação só;
+- sorteia outro username quando o do anônimo colide (§28).
+
+O resto, inclusive os defeitos, é reproduzido.
 
 ## Pacotes
 
@@ -75,7 +82,7 @@ Três camadas:
 
 - **`cmd/api` — `TestContratoIgualAoKotlin`.** Sobe o servidor inteiro, com a
   fiação do `main` e um banco só dele, passa a suíte de contrato completa
-  (`capture.py` + `flows.py`, 166 cenários) e exige zero diferenças contra
+  (`capture.py` + `flows.py`, 168 cenários) e exige zero diferenças contra
   `contract/golden-local`. Precisa de `python3`, `openssl` e `psql`.
 - **`internal/server`** — rotas públicas, precedência de rotas, e `legal` e `games`
   byte a byte contra os golden de produção.
@@ -121,6 +128,7 @@ read -rs MIGRATE_DATABASE_URL && export MIGRATE_DATABASE_URL
 |---|---|
 | `00001_baseline.sql` | o schema da produção de antes do goose |
 | `00002_gameplays.sql` | as seis tabelas da 2.0 (`gameplays`, `gameplay_participants`, `gameplay_games`, `gameplay_votes`, `gameplay_comments`, `gameplay_comment_reports`), ao lado das da v1, que não mudam |
+| `00003_contas_excluidas.sql` | troca a `UNIQUE` do `users.username` por um índice único que ignora o vazio, para caber mais de uma conta excluída (`../contract/ACHADOS.md` §23). Não depende de código novo: pode rodar antes ou depois do deploy |
 
 A `00001_baseline.sql` é o schema da produção de antes do goose (o dump de
 08/09/2026, conferido de novo em 21/11/2026). Num banco vazio ela cria tudo; na
@@ -263,6 +271,12 @@ introduzido e pego.
 - o `FixEscapes` desligado; a chave do RAWG sem ser removida do erro
 - assunto do e-mail de reset; `obs` não limpo na exclusão de conta; tolerância de relógio do Google
 - refresh de anônimo lido sem conferir a assinatura
+- exclusão de conta:
+  - a `UNIQUE` do username de volta;
+  - as credenciais do Google mantidas;
+  - a senha sem conferir, ou passada para trás pelo Google;
+  - anônimo conseguindo se excluir;
+  - o 404 de volta na troca de senha de conta Google
 
 ## Armadilhas do lado Go — todas travadas em teste
 

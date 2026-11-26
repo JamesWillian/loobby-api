@@ -38,6 +38,8 @@ UPDATE users SET auth_provider = sqlc.arg(auth_provider) WHERE id = sqlc.arg(id)
 
 -- name: AnonymizeUser :exec
 -- Exclusao de conta: o registro fica (integridade referencial), sem dados pessoais.
+-- Todas as contas excluidas ficam com o username vazio, que o indice unico
+-- ignora (migracao 00003).
 UPDATE users SET username = '', displayname = '[deleted]', avatar_url = NULL WHERE id = sqlc.arg(id);
 
 -- name: UserFeed :many
@@ -102,3 +104,6 @@ SELECT * FROM user_google_credentials WHERE google_id = sqlc.arg(google_id);
 -- name: InsertGoogleCredentials :exec
 INSERT INTO user_google_credentials (user_id, google_id, email)
 VALUES (sqlc.arg(user_id), sqlc.arg(google_id), sqlc.arg(email));
+
+-- name: DeleteGoogleCredentials :exec
+DELETE FROM user_google_credentials WHERE user_id = sqlc.arg(user_id);

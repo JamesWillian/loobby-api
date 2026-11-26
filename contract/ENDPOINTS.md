@@ -1,8 +1,9 @@
 # Inventário do contrato — Loobby API
 
 Os 53 endpoints em 8 controllers, mais 2 rotas de infra. **Todos estão
-implementados em Go** (`api-go/`) e respondem igual ao Kotlin nos 166 cenários de
-`contract/golden-local/`. Desde 16/11/2026 o Go é o único backend em produção, e o
+implementados em Go** (`api-go/`) e respondem igual ao Kotlin nos 168 cenários de
+`contract/golden-local/`, menos nos seis da exclusão de conta que o Go corrigiu
+(ACHADOS §23 e §24). Desde 16/11/2026 o Go é o único backend em produção, e o
 Kotlin foi arquivado na tag `arquivo/v1` — os nomes de classe abaixo são os dele.
 
 Legenda de auth (de `config/security/SecurityConfig.kt`):
@@ -41,8 +42,8 @@ token do Google, ou destrói a conta de teste. Ver "Cobertura" no `ACHADOS.md`.
 | ☑ | PATCH | `/users/me` | jwt | campos nulos: conferir se saem como `null` ou somem |
 | ☑ | POST | `/users/me/avatar` | jwt | multipart |
 | ☑ | GET | `/users/feed` | jwt | `user_feed` existe só no Supabase, não nas migrations |
-| ▣ | PUT | `/users/me/password` | jwt | conta Google: 404 (ACHADOS §24) |
-| ▣ | DELETE | `/users/me` | jwt | **só a 1ª exclusão funciona (ACHADOS §23)** |
+| ▣ | PUT | `/users/me/password` | jwt | conta Google: 400 dizendo que não tem senha (no Kotlin, 404 — ACHADOS §24) |
+| ▣ | DELETE | `/users/me` | jwt | conta Google se exclui só com o token, e cabem várias contas excluídas (no Kotlin, só a 1ª exclusão funcionava, e a da conta Google dava 404 — ACHADOS §23 e §24) |
 
 ## groups — `GroupController` (11)
 
@@ -133,5 +134,5 @@ Status **medidos**, não os que o código sugere — ver `ACHADOS.md` §5.
 | ☑ | credenciais erradas | **400**, não 401 |
 | ☑ | id inexistente (grupo, time) | **400**, não 404 |
 | ☑ | acesso a recurso de outro dono | 403 (a produção gravou 500 antes da correção — ACHADOS §11) |
-| ▣ | conflito (restrição única do banco) | **500** — `fluxo-cadastro-email-ja-usado`, `fluxo-exclusao-2a-conta` |
+| ▣ | conflito (restrição única do banco) | **500** — `fluxo-cadastro-email-ja-usado` |
 | ▣ | refresh token **vencido** (≠ inválido) | 200 para anônimo, 401 para conta com senha |

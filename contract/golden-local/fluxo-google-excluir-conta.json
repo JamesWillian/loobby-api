@@ -7,7 +7,7 @@
     }
   },
   "response": {
-    "status": 404,
+    "status": 200,
     "headers": {
       "content-type": "application/json",
       "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
@@ -18,14 +18,9 @@
       "x-frame-options": "DENY",
       "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     },
-    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:15.934692Z\",\"status\":404,\"error\":\"Not Found\",\"message\":\"Usuário não encontrado.\",\"path\":\"/users/me\",\"fieldErrors\":null}",
+    "body_raw": "{\"message\":\"Conta excluída com sucesso.\"}",
     "body": {
-      "timestamp": "<timestamp>",
-      "status": 404,
-      "error": "Not Found",
-      "message": "Usuário não encontrado.",
-      "path": "/users/me",
-      "fieldErrors": null
+      "message": "Conta excluída com sucesso."
     }
   }
 }

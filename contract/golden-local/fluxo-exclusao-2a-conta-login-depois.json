@@ -8,7 +8,7 @@
     }
   },
   "response": {
-    "status": 200,
+    "status": 400,
     "headers": {
       "content-type": "application/json",
       "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
@@ -19,16 +19,14 @@
       "x-frame-options": "DENY",
       "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     },
-    "body_raw": "{\"accessToken\":\"<redigido>\",\"refreshToken\":\"<redigido>\",\"expiresIn\":900,\"userId\":\"52c08f5d-b821-42d3-970a-b06f04fdd0ad\",\"username\":\"user_7f3fcc\",\"roles\":[\"USER\"]}",
+    "body_raw": "{\"timestamp\":\"2026-11-26T02:19:19.619144Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Invalid credentials\",\"path\":\"/auth/login\",\"fieldErrors\":null}",
     "body": {
-      "accessToken": "<redigido>",
-      "refreshToken": "<redigido>",
-      "expiresIn": 900,
-      "userId": "<id:c>",
-      "username": "user_<hex6>",
-      "roles": [
-        "USER"
-      ]
+      "timestamp": "<timestamp>",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Invalid credentials",
+      "path": "/auth/login",
+      "fieldErrors": null
     }
   }
 }

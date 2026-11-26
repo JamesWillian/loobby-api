@@ -7,8 +7,8 @@ rodando localmente (`contract/local/`). Tudo aqui é **medido**, não inferido d
 código — exceto os §28, §29 e §32, que vêm da leitura do código Kotlin e estão
 marcados assim.
 
-**Leia primeiro: §22 (falha de segurança em produção), §23 e §24 (exclusão de
-conta não funciona).**
+**Leia primeiro: §22 (falha de segurança em produção).** Os dois defeitos da
+exclusão de conta (§23 e §24) foram corrigidos no Go em 25/11/2026.
 
 Cada item é uma forma concreta do Go quebrar os apps em silêncio.
 
@@ -470,27 +470,58 @@ e houver anônimos com token antigo a preservar.
 **A produção continua vulnerável até o cutover de `auth`** (ou até corrigir o
 Kotlin: conferir a assinatura antes de ler o `sub`).
 
-## 23. Só UMA conta consegue ser excluída
+## 23. ~~Só UMA conta consegue ser excluída~~ CORRIGIDO no Go
 
 `DELETE /users/me` grava `username = ""` no usuário excluído, e `users.username`
-tem restrição `UNIQUE`. A primeira exclusão funciona; **da segunda em diante, 500**
-— a transação é desfeita e a conta continua existindo, com login e tudo. Medido
-nos dois lados (`fluxo-exclusao-2a-conta`).
+tinha restrição `UNIQUE`. A primeira exclusão funcionava; **da segunda em diante,
+500**. A transação era desfeita e a conta continuava existindo, com login e tudo.
+Medido nos dois lados (`fluxo-exclusao-2a-conta`). É exigência das lojas: a página
+`/legal/account-deletion` promete a exclusão.
 
-Se alguém já excluiu a conta em produção, ninguém mais consegue. É exigência das
-lojas (a página `/legal/account-deletion` promete a exclusão).
+**Correção (25/11/2026), na migração `00003_contas_excluidas.sql`:** a restrição
+virou um índice único parcial, que ignora o username vazio. O `""` ficou, em vez
+de `NULL`, por dois motivos:
 
-O Go reproduz o 500, de propósito: consertar exige decidir o que gravar no lugar
-(`NULL` com a coluna anulável, ou um nome único por conta excluída) e os times e
-sorteios hoje reconhecem excluído por `username` vazio. **Decisão sua**, para os
-dois lados ou logo depois do cutover de `users`.
+- os apps 1.3 e 1.3.1 declaram `username` não anulável, e um `null` derruba a
+  lista inteira de membros;
+- os apps e os times e sorteios do Go reconhecem a conta excluída pelo nome em
+  branco.
 
-## 24. Conta Google não consegue se excluir nem trocar senha
+Nenhuma resposta mudou além do 500. A migração não depende de código novo: o
+binário de antes já passa a excluir.
 
-`DELETE /users/me` e `PUT /users/me/password` procuram a linha de
+O golden registra o Go: `fluxo-exclusao-2a-conta` responde 200, e o login logo
+depois (`fluxo-exclusao-2a-conta-login-depois`) dá 400. O Kotlin daria 500 e 200.
+
+## 24. ~~Conta Google não consegue se excluir nem trocar senha~~ CORRIGIDO no Go
+
+`DELETE /users/me` e `PUT /users/me/password` procuravam a linha de
 `user_credentials`, que conta Google não tem: **404 "Usuário não encontrado."**
-(`fluxo-google-excluir-conta`). Mesmo sem o §23, quem entrou com Google não tem
-como excluir a própria conta pela API.
+(`fluxo-google-excluir-conta`, `fluxo-google-trocar-senha`). Mesmo sem o §23, quem
+entrava com o Google não tinha como excluir a própria conta pela API.
+
+**Correção (25/11/2026):**
+
+- **Exclusão.** A conta só com Google, que não tem senha, confirma com o próprio
+  token. Os apps 1.3 e 1.3.1 sempre pedem uma senha (recusam o campo em branco) e
+  mandam `{"password": ...}`. O valor é ignorado, e por isso a exclusão funciona
+  neles sem mudar o app. Conta com senha continua exigindo a senha certa, mesmo
+  se também tiver Google. Anônimo continua com 404.
+- **Credenciais do Google.** A exclusão passou a apagar a linha de
+  `user_google_credentials`, como a página `/legal/account-deletion` promete; nem o
+  Kotlin apagava. Sem isso, entrar de novo com o mesmo Google cairia na conta
+  excluída. Agora o e-mail some do `/users/me`
+  (`fluxo-google-excluir-conta-me-depois`), e o login seguinte cria outra conta
+  (`fluxo-google-login-depois-de-excluir`).
+- **Troca de senha.** Conta Google recebe **400 "Sua conta entra com o Google e
+  não tem senha."**. Os apps mostram na tela a mensagem dos 400; nos 404,
+  mostravam o texto cru da exceção. Anônimo continua com 404.
+
+**O risco aceito:** quem tiver o token de uma conta Google consegue excluí-la. Com
+o mesmo token, já dá para apagar os grupos dela. Pedir um ID token novo do Google
+fecharia isso, mas deixaria os apps 1.3 e 1.3.1 sem excluir conta Google até sair
+um app novo. Esse app também precisaria saber que a conta é Google, e o
+`/users/me` não diz o provedor.
 
 ## 25. Conta excluída continua "viva"
 
@@ -504,6 +535,9 @@ Medido depois da exclusão (`fluxo-exclusao-*`), igual nos dois lados:
   instantâneo passa para o confirmado mais antigo, ou some. Mas **evento de grupo
   fica com `ownerId` do excluído**;
 - o e-mail fica livre para um cadastro novo.
+
+A conta Google, que só se exclui no Go (§24), fica do mesmo jeito, com duas
+diferenças: o e-mail some do `/users/me`, e o mesmo Google pode criar outra conta.
 
 ## 26. E-mail: gravado como digitado, procurado de três jeitos
 
@@ -599,9 +633,11 @@ o Google exige um ID token de verdade.
 
 Esses fluxos foram medidos no **ambiente local** (`contract/local/`, Kotlin no
 commit `4c22311` com Resend, RAWG e Google falsos) e estão em
-`contract/golden-local/`: 166 cenários, os 73 da suíte mais 93 dos fluxos
-(`contract/flows.py`). Kotlin e Go dão **zero diferenças** neles, e o `go test`
-compara o Go com essa gravação a cada execução.
+`contract/golden-local/`: 168 cenários, os 73 da suíte mais 95 dos fluxos
+(`contract/flows.py`). Kotlin e Go davam **zero diferenças** neles. Desde o
+conserto da exclusão de conta (§23 e §24), seis cenários foram regravados do Go,
+de propósito; neles, o Kotlin daria a resposta antiga. O `go test` compara o Go
+com essa gravação a cada execução.
 
 O que continua sem medição nenhuma:
 
