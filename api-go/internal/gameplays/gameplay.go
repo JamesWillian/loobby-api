@@ -7,6 +7,7 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
 	"github.com/JamesWillian/loobby-api/api-go/internal/db/sqlc"
 	"github.com/JamesWillian/loobby-api/api-go/internal/ids"
+	"github.com/JamesWillian/loobby-api/api-go/internal/platform"
 )
 
 // Create cria a gameplay do grupo (groupID != nil) ou a unica, que ja nasce
@@ -49,7 +50,7 @@ func (s *Service) Create(ctx context.Context, userID string, groupID *string, in
 
 		p := sqlc.CreateGameplayParams{
 			ID: ids.New(), GroupID: groupID, CreatorID: userID, Name: in.Name, Description: in.Description,
-			Mode: in.Mode, Platforms: encodePlatforms(in.Platforms),
+			Mode: in.Mode, Platforms: platform.Encode(in.Platforms),
 			ScheduledAt: in.ScheduledAt.Round(time.Microsecond), // a precisao do Postgres
 		}
 		if groupID == nil {
@@ -197,7 +198,7 @@ func (s *Service) Patch(ctx context.Context, id, userID string, in patchInput) (
 			p.ScheduledAt = in.ScheduledAt.Round(time.Microsecond)
 		}
 		if in.Platforms != nil {
-			p.Platforms = encodePlatforms(in.Platforms)
+			p.Platforms = platform.Encode(in.Platforms)
 		}
 		if in.Game != nil {
 			p.GameID, p.GameName = in.Game.GameID, &in.Game.Name
@@ -292,6 +293,65 @@ func (s *Service) Lobby(ctx context.Context, userID string) ([]gameplaySummary, 
 		return nil, err
 	}
 	return s.summaries(ctx, s.q, list, userID, now)
+}
+
+// History: as encerradas em que userID marcou Vou, da que encerrou por ultimo,
+// em paginas como as encerradas do grupo (before = a ultima gameplay da pagina
+// anterior). A do grupo so aparece enquanto a pessoa e membro dele. A v1 fica
+// de fora: os eventos nao sao gameplays.
+func (s *Service) History(ctx context.Context, userID string, before *string, limit int) ([]gameplaySummary, error) {
+	now := s.now()
+	cutoff := now.Add(-AutoEndAfter)
+	var (
+		list []sqlc.Gameplay
+		err  error
+	)
+	if before == nil {
+		list, err = s.q.ListHistoryGameplays(ctx, sqlc.ListHistoryGameplaysParams{
+			UserID: userID, Cutoff: cutoff, AfterSeconds: autoEndSeconds, MaxRows: int32(limit),
+		})
+	} else {
+		var end time.Time
+		if end, err = s.historyCursor(ctx, userID, *before, now); err != nil {
+			return nil, err
+		}
+		list, err = s.q.ListHistoryGameplaysBefore(ctx, sqlc.ListHistoryGameplaysBeforeParams{
+			UserID: userID, Cutoff: cutoff, AfterSeconds: autoEndSeconds,
+			BeforeAt: end, BeforeID: *before, MaxRows: int32(limit),
+		})
+	}
+	if err != nil {
+		return nil, err
+	}
+	return s.summaries(ctx, s.q, list, userID, now)
+}
+
+// historyCursor: o before do Historico tem que ser uma encerrada em que a
+// pessoa marcou Vou -- o que impede de sondar gameplays alheias. Devolve
+// quando ela encerrou.
+func (s *Service) historyCursor(ctx context.Context, userID, id string, now time.Time) (time.Time, error) {
+	cursor, err := s.q.GetGameplay(ctx, id)
+	if db.NotFound(err) {
+		return time.Time{}, errBadCursor
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	end := endedAt(cursor, now)
+	if end == nil {
+		return time.Time{}, errBadCursor
+	}
+	mine, err := s.q.GetParticipant(ctx, sqlc.GetParticipantParams{GameplayID: id, UserID: userID})
+	if db.NotFound(err) {
+		return time.Time{}, errBadCursor
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	if mine.Status != StatusGoing {
+		return time.Time{}, errBadCursor
+	}
+	return *end, nil
 }
 
 // autoEndSeconds: AutoEndAfter como o SQL recebe.

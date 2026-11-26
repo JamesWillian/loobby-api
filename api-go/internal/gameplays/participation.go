@@ -6,6 +6,7 @@ import (
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
 	"github.com/JamesWillian/loobby-api/api-go/internal/db/sqlc"
+	"github.com/JamesWillian/loobby-api/api-go/internal/platform"
 )
 
 // Respond e o Vou / Nao vou / Pendente. Passar para Pendente ou Nao vou apaga
@@ -54,7 +55,7 @@ func (s *Service) Preview(ctx context.Context, code, userID string) (invitePrevi
 	}
 	now := s.now()
 	p := invitePreview{
-		ID: g.ID, Name: g.Name, Mode: g.Mode, Platforms: decodePlatforms(g.Platforms),
+		ID: g.ID, Name: g.Name, Mode: g.Mode, Platforms: platform.Decode(g.Platforms),
 		ScheduledAt: instant(g.ScheduledAt), AutoEndAt: instant(autoEndAt(g)), Status: statusOf(g, now),
 		EndedAt: instantPtr(endedAt(g, now)), Creator: refOf(users, g.CreatorID),
 	}
