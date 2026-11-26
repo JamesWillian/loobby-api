@@ -2,11 +2,13 @@ package gameplays
 
 import (
 	"context"
+	"slices"
 	"sort"
 	"time"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/db/sqlc"
 	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
+	"github.com/JamesWillian/loobby-api/api-go/internal/platform"
 )
 
 // tally e o resultado de uma rodada da votacao.
@@ -138,6 +140,74 @@ func fixedGame(g sqlc.Gameplay, cover map[string]*string) *gameRef {
 	return ref
 }
 
+// goingIDs: quem marcou Vou, na ordem das linhas (a em que cada um respondeu
+// pela ultima vez) -- a mesma dos participantes no detalhe.
+func goingIDs(rows []sqlc.GameplayParticipant) []string {
+	var out []string
+	for _, r := range rows {
+		if r.Status == StatusGoing {
+			out = append(out, r.UserID)
+		}
+	}
+	return out
+}
+
+// match: para cada jogo do catalogo, quem o tem (ver owners).
+type match map[string][]string
+
+// owners e o match de uma gameplay: entre os que vao (going), quem tem cada
+// jogo na biblioteca, marcado em pelo menos uma das plataformas da gameplay.
+// A biblioteca so e lida assim; nenhuma rota mostra a de outra pessoa.
+func owners(ctx context.Context, q *sqlc.Queries, going, gameIDs, platforms []string) (match, error) {
+	out := match{}
+	if len(going) == 0 || len(gameIDs) == 0 || len(platforms) == 0 {
+		return out, nil
+	}
+	rows, err := q.ListLibraryOwners(ctx, sqlc.ListLibraryOwnersParams{
+		UserIds: going, GameIds: gameIDs, Platforms: platforms,
+	})
+	if err != nil {
+		return nil, err
+	}
+	type pair struct{ game, user string }
+	has := map[pair]bool{}
+	for _, r := range rows {
+		has[pair{r.GameID, r.UserID}] = true
+	}
+	for _, game := range gameIDs {
+		for _, user := range going {
+			if has[pair{game, user}] && !slices.Contains(out[game], user) {
+				out[game] = append(out[game], user)
+			}
+		}
+	}
+	return out, nil
+}
+
+// of: quem tem o jogo, na ordem de quem vai. O digitado (sem gameId) nao esta
+// no catalogo, entao nao tem match.
+func (m match) of(users map[string]sqlc.User, gameID *string) []userRef {
+	out := []userRef{}
+	if gameID == nil {
+		return out
+	}
+	for _, id := range m[*gameID] {
+		out = append(out, refOf(users, id))
+	}
+	return out
+}
+
+// leading: o resultado que as listas mostram. E o da rodada aberta; enquanto o
+// desempate nao tem voto, vale o da rodada anterior, porque ele so abre quando
+// houve empate.
+func leading(games []sqlc.ListGameplayGamesRow, votes []sqlc.GameplayVote, round, finalists int) tally {
+	t := count(games, votes, round, finalists)
+	for t.round > 1 && len(t.finalists) == 0 {
+		t = count(games, votes, t.round-1, finalists)
+	}
+	return t
+}
+
 // detail monta a gameplay inteira para quem le (st.me).
 func (s *Service) detail(ctx context.Context, q *sqlc.Queries, st state) (gameplayResponse, error) {
 	g := st.g
@@ -182,7 +252,7 @@ func (s *Service) detail(ctx context.Context, q *sqlc.Queries, st state) (gamepl
 
 	resp := gameplayResponse{
 		ID: g.ID, GroupID: g.GroupID, Name: g.Name, Description: g.Description, Mode: g.Mode,
-		Platforms: decodePlatforms(g.Platforms), ScheduledAt: instant(g.ScheduledAt),
+		Platforms: platform.Decode(g.Platforms), ScheduledAt: instant(g.ScheduledAt),
 		AutoEndAt: instant(autoEndAt(g)), Status: statusOf(g, st.now), EndedAt: instantPtr(endedAt(g, st.now)),
 		InviteCode: g.InviteCode, Creator: refOf(users, g.CreatorID), CreatedAt: instant(g.CreatedAt),
 		MyStatus: st.status(), Participants: []participantResponse{},
@@ -227,6 +297,7 @@ func (s *Service) detail(ctx context.Context, q *sqlc.Queries, st state) (gamepl
 	})
 
 	locked, tie := false, false
+	going := goingIDs(rows)
 	switch g.Mode {
 	case ModeFixed:
 		var ids []string
@@ -237,7 +308,13 @@ func (s *Service) detail(ctx context.Context, q *sqlc.Queries, st state) (gamepl
 		if err != nil {
 			return gameplayResponse{}, err
 		}
-		resp.Game = fixedGame(g, cover)
+		own, err := owners(ctx, q, going, ids, resp.Platforms)
+		if err != nil {
+			return gameplayResponse{}, err
+		}
+		if ref := fixedGame(g, cover); ref != nil {
+			resp.Game = &fixedGameResponse{gameRef: *ref, Owners: own.of(users, ref.GameID)}
+		}
 	case ModeVoting:
 		round := st.round()
 		t := count(games, votes, round, finalistsOf(g))
@@ -248,10 +325,20 @@ func (s *Service) detail(ctx context.Context, q *sqlc.Queries, st state) (gamepl
 			Round: round, Games: []votingGame{},
 			Result: resultResponse{Round: round, FinalistIDs: t.finalists, Tie: t.tie},
 		}
+		var catalog []string
+		for _, gm := range games {
+			if gm.GameID != nil {
+				catalog = append(catalog, *gm.GameID)
+			}
+		}
+		own, err := owners(ctx, q, going, catalog, resp.Platforms)
+		if err != nil {
+			return gameplayResponse{}, err
+		}
 		for _, gm := range games {
 			vg := votingGame{
 				ID: gm.ID, GameID: gm.GameID, Name: gm.Name, CoverURL: gm.CoverUrl, AddedBy: gm.AddedBy,
-				Candidate: int(gm.LastRound) >= round, Rounds: []roundVotes{},
+				Candidate: int(gm.LastRound) >= round, Rounds: []roundVotes{}, Owners: own.of(users, gm.GameID),
 			}
 			for r := 1; r <= min(int(gm.LastRound), round); r++ {
 				rv := roundVotes{Round: r, Voters: []userRef{}}
@@ -355,7 +442,7 @@ func (s *Service) summaries(ctx context.Context, q *sqlc.Queries, list []sqlc.Ga
 
 	for _, g := range list {
 		item := gameplaySummary{
-			ID: g.ID, GroupID: g.GroupID, Name: g.Name, Mode: g.Mode, Platforms: decodePlatforms(g.Platforms),
+			ID: g.ID, GroupID: g.GroupID, Name: g.Name, Mode: g.Mode, Platforms: platform.Decode(g.Platforms),
 			ScheduledAt: instant(g.ScheduledAt), AutoEndAt: instant(autoEndAt(g)), Status: statusOf(g, now),
 			EndedAt: instantPtr(endedAt(g, now)), Creator: refOf(users, g.CreatorID), MyStatus: StatusPending,
 			GoingCount: len(going[g.ID]), GoingAvatars: []*string{}, Game: fixedGame(g, cover), Leading: []gameRef{},
@@ -373,7 +460,7 @@ func (s *Service) summaries(ctx context.Context, q *sqlc.Queries, list []sqlc.Ga
 		}
 		if g.Mode == ModeVoting && g.VotingRound != nil {
 			games := gamesOf[g.ID]
-			t := count(games, votesOf[g.ID], int(*g.VotingRound), finalistsOf(g))
+			t := leading(games, votesOf[g.ID], int(*g.VotingRound), finalistsOf(g))
 			byID := map[string]sqlc.ListGameplayGamesRow{}
 			for _, gm := range games {
 				byID[gm.ID] = gm
@@ -382,6 +469,7 @@ func (s *Service) summaries(ctx context.Context, q *sqlc.Queries, list []sqlc.Ga
 				gm := byID[id]
 				item.Leading = append(item.Leading, gameRef{GameID: gm.GameID, Name: gm.Name, CoverURL: gm.CoverUrl})
 			}
+			item.Tie = t.tie
 		}
 		out = append(out, item)
 	}

@@ -2,7 +2,6 @@ package gameplays
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"time"
@@ -196,21 +195,6 @@ func (st state) permissions(locked, tie bool) permissions {
 		Leave:           st.active() && st.single() && !st.creator(),
 		Moderate:        st.moderator(),
 	}
-}
-
-// encodePlatforms devolve o JSON como string: e o tipo do parametro de
-// CreateGameplay/SetGameplayDetails (ver db/queries/gameplays.sql).
-func encodePlatforms(list []string) string {
-	b, _ := json.Marshal(list) // lista de strings: nao falha
-	return string(b)
-}
-
-func decodePlatforms(raw []byte) []string {
-	var list []string
-	if err := json.Unmarshal(raw, &list); err != nil || list == nil {
-		return []string{}
-	}
-	return list
 }
 
 // inviteCode: "$-" + 8 caracteres de A-Z e 0-9, repetindo enquanto ja existir.

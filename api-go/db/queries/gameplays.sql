@@ -98,6 +98,32 @@ WHERE g.ended_at IS NULL AND g.scheduled_at > sqlc.arg(cutoff)
       END
 ORDER BY g.scheduled_at, g.id;
 
+-- name: ListHistoryGameplays :many
+-- O Historico: as encerradas em que a pessoa marcou Vou, na ordem das
+-- encerradas do grupo. A do grupo so entra enquanto ela e membro, porque o
+-- detalhe da 404 a quem saiu; se ela voltar, a gameplay volta junto.
+SELECT g.* FROM gameplays g
+JOIN gameplay_participants p ON p.gameplay_id = g.id
+WHERE p.user_id = sqlc.arg(user_id) AND p.status = 'GOING'
+  AND (g.ended_at IS NOT NULL OR g.scheduled_at <= sqlc.arg(cutoff))
+  AND (g.group_id IS NULL OR EXISTS (SELECT 1 FROM group_members m
+                                     WHERE m.group_id = g.group_id AND m.user_id = sqlc.arg(user_id)))
+ORDER BY COALESCE(g.ended_at, g.scheduled_at + sqlc.arg(after_seconds)::integer * interval '1 second') DESC, g.id DESC
+LIMIT sqlc.arg(max_rows);
+
+-- name: ListHistoryGameplaysBefore :many
+-- A pagina seguinte: as que encerraram antes da gameplay (before_at, before_id).
+SELECT g.* FROM gameplays g
+JOIN gameplay_participants p ON p.gameplay_id = g.id
+WHERE p.user_id = sqlc.arg(user_id) AND p.status = 'GOING'
+  AND (g.ended_at IS NOT NULL OR g.scheduled_at <= sqlc.arg(cutoff))
+  AND (g.group_id IS NULL OR EXISTS (SELECT 1 FROM group_members m
+                                     WHERE m.group_id = g.group_id AND m.user_id = sqlc.arg(user_id)))
+  AND (COALESCE(g.ended_at, g.scheduled_at + sqlc.arg(after_seconds)::integer * interval '1 second'), g.id)
+      < (sqlc.arg(before_at)::pg_catalog.timestamptz, sqlc.arg(before_id)::uuid)
+ORDER BY COALESCE(g.ended_at, g.scheduled_at + sqlc.arg(after_seconds)::integer * interval '1 second') DESC, g.id DESC
+LIMIT sqlc.arg(max_rows);
+
 -- name: ListGameplaysStartingBetween :many
 -- Lembrete e pendentes do dia: as que nao foram encerradas e comecam no intervalo.
 SELECT * FROM gameplays

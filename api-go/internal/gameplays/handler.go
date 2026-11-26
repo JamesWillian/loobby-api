@@ -22,6 +22,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v2/groups/{groupId}/gameplays", h.createInGroup)
 	mux.HandleFunc("GET /v2/groups/{groupId}/gameplays", h.listGroup)
 	mux.HandleFunc("GET /v2/me/gameplays", h.lobby)
+	mux.HandleFunc("GET /v2/me/history", h.history)
 	mux.HandleFunc("GET /v2/gameplays/{id}", h.get)
 	mux.HandleFunc("PATCH /v2/gameplays/{id}", h.patch)
 	mux.HandleFunc("POST /v2/gameplays/{id}/end", h.end)
@@ -130,18 +131,8 @@ func (h *Handler) listGroup(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, errBadStatus)
 		return
 	}
-	var before *string
-	if raw := query.Get("before"); raw != "" {
-		id, ok := httpx.PathUUID(raw)
-		if !ok {
-			httpx.Fail(w, r, errBadCursor)
-			return
-		}
-		before = &id
-	}
-	n, err := limit(r, defaultPage, maxPage)
-	if err != nil {
-		httpx.Fail(w, r, err)
+	before, n, ok := page(w, r)
+	if !ok {
 		return
 	}
 	userID, ok := me(w, r)
@@ -149,6 +140,38 @@ func (h *Handler) listGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.svc.ListGroup(r.Context(), userID, groupID, ended, before, n)
+	reply(w, r, http.StatusOK, resp, err)
+}
+
+// page le ?before= (a ultima gameplay da pagina anterior) e ?limit=, das
+// listas de encerradas.
+func page(w http.ResponseWriter, r *http.Request) (before *string, n int, ok bool) {
+	if raw := r.URL.Query().Get("before"); raw != "" {
+		id, valid := httpx.PathUUID(raw)
+		if !valid {
+			httpx.Fail(w, r, errBadCursor)
+			return nil, 0, false
+		}
+		before = &id
+	}
+	n, err := limit(r, defaultPage, maxPage)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return nil, 0, false
+	}
+	return before, n, true
+}
+
+func (h *Handler) history(w http.ResponseWriter, r *http.Request) {
+	before, n, ok := page(w, r)
+	if !ok {
+		return
+	}
+	userID, ok := me(w, r)
+	if !ok {
+		return
+	}
+	resp, err := h.svc.History(r.Context(), userID, before, n)
 	reply(w, r, http.StatusOK, resp, err)
 }
 

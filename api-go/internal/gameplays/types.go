@@ -18,7 +18,8 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
 )
 
-// Modos, status e plataformas, como saem no JSON e ficam no banco.
+// Modos e status, como saem no JSON e ficam no banco. As plataformas sao as
+// do pacote platform.
 const (
 	ModeVoting = "VOTING" // votacao entre jogos
 	ModeFixed  = "FIXED"  // jogo definido
@@ -30,9 +31,8 @@ const (
 )
 
 var (
-	modes     = []string{ModeVoting, ModeFixed, ModeFree}
-	statuses  = []string{StatusGoing, StatusNotGoing, StatusPending}
-	platforms = []string{"PC", "PLAYSTATION", "XBOX", "SWITCH", "MOBILE"}
+	modes    = []string{ModeVoting, ModeFixed, ModeFree}
+	statuses = []string{StatusGoing, StatusNotGoing, StatusPending}
 )
 
 const (
@@ -51,7 +51,7 @@ const (
 	maxComment     = 1000
 	maxReason      = 500
 
-	defaultPage      = 20 // encerradas do grupo
+	defaultPage      = 20 // encerradas do grupo e Historico
 	maxPage          = 50
 	defaultComments  = 50
 	maxCommentsPage  = 100
@@ -117,6 +117,13 @@ type votingGame struct {
 	Candidate bool         `json:"candidate"` // concorre na rodada aberta
 	MyVote    bool         `json:"myVote"`    // quem le votou nele na rodada aberta
 	Rounds    []roundVotes `json:"rounds"`    // uma entrada por rodada em que concorreu
+	Owners    []userRef    `json:"owners"`    // o match: quem vai e tem o jogo (ver owners)
+}
+
+// fixedGameResponse: o jogo definido, no detalhe, com o match.
+type fixedGameResponse struct {
+	gameRef
+	Owners []userRef `json:"owners"` // quem vai e tem o jogo (ver owners)
 }
 
 type resultResponse struct {
@@ -156,11 +163,11 @@ type gameplayResponse struct {
 	Permissions  permissions           `json:"permissions"`
 	Counts       counts                `json:"counts"`
 	Participants []participantResponse `json:"participants"`
-	Game         *gameRef              `json:"game"`   // FIXED
+	Game         *fixedGameResponse    `json:"game"`   // FIXED
 	Voting       *votingResponse       `json:"voting"` // VOTING
 }
 
-// gameplaySummary: um item das listas (Lobby, gameplays do grupo).
+// gameplaySummary: um item das listas (Lobby, gameplays do grupo, Historico).
 type gameplaySummary struct {
 	ID           string         `json:"id"`
 	GroupID      *string        `json:"groupId"`
@@ -177,7 +184,8 @@ type gameplaySummary struct {
 	GoingCount   int            `json:"goingCount"`
 	GoingAvatars []*string      `json:"goingAvatars"` // os primeiros; null para quem nao tem avatar
 	Game         *gameRef       `json:"game"`         // FIXED
-	Leading      []gameRef      `json:"leading"`      // VOTING: os finalistas da rodada aberta
+	Leading      []gameRef      `json:"leading"`      // VOTING: os finalistas (ver summaries)
+	Tie          bool           `json:"tie"`          // VOTING: com 1 finalista, empate no 1o lugar
 }
 
 // invitePreview: o que o convite mostra antes de a pessoa entrar.

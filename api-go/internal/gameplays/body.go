@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
+	"github.com/JamesWillian/loobby-api/api-go/internal/platform"
 )
 
 // A v2 le o corpo com o encoding/json, e nao com o httpx.Object: aqui nao ha
@@ -125,8 +126,8 @@ func checkPlatforms(f *fieldErrors, list []string) []string {
 	}
 	seen := map[string]bool{}
 	for _, p := range list {
-		if !slices.Contains(platforms, p) {
-			f.add("platforms", "Plataforma inválida: use PC, PLAYSTATION, XBOX, SWITCH ou MOBILE")
+		if !platform.Valid(p) {
+			f.add("platforms", platform.Invalid)
 			return nil
 		}
 		if seen[p] {

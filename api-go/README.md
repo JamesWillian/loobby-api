@@ -38,7 +38,9 @@ O resto, inclusive os defeitos, é reproduzido.
 | `internal/auth` | tokens HS256, filtro (o Spring Security do lado Go), login, cadastro, e-mail, reset, Google |
 | `internal/users`, `groups`, `events`, `teams`, `games`, `legal`, `files`, `notifications`, `health` | os módulos |
 | `internal/appconfig` | `GET /app/config` (pública): versão mínima de cada app e o aviso mostrado ao abrir. Primeira rota que não veio do Kotlin; muda-se editando `Current` e publicando |
-| `internal/gameplays` | a 2.0: gameplays do grupo e únicas, participação, votação com desempate, comentários, encerramento e os jobs e pushes delas — ver "Rotas da 2.0" |
+| `internal/gameplays` | a 2.0: gameplays do grupo e únicas, participação, votação com desempate, comentários, encerramento, Histórico, o match com as bibliotecas e os jobs e pushes delas — ver "Rotas da 2.0" |
+| `internal/library` | a 2.0: a biblioteca de jogos da pessoa (com o "tenho o jogo") e a do grupo — ver "Rotas da 2.0: bibliotecas" |
+| `internal/platform` | as 5 plataformas da 2.0 e a tradução das plataformas do RAWG para elas |
 | `internal/email`, `internal/password`, `internal/ids` | Resend, BCrypt e identificadores |
 | `internal/contracttest`, `internal/dbtest` | apoio aos testes |
 
@@ -129,6 +131,7 @@ read -rs MIGRATE_DATABASE_URL && export MIGRATE_DATABASE_URL
 | `00001_baseline.sql` | o schema da produção de antes do goose |
 | `00002_gameplays.sql` | as seis tabelas da 2.0 (`gameplays`, `gameplay_participants`, `gameplay_games`, `gameplay_votes`, `gameplay_comments`, `gameplay_comment_reports`), ao lado das da v1, que não mudam |
 | `00003_contas_excluidas.sql` | troca a `UNIQUE` do `users.username` por um índice único que ignora o vazio, para caber mais de uma conta excluída (`../contract/ACHADOS.md` §23). Não depende de código novo: pode rodar antes ou depois do deploy |
+| `00004_bibliotecas.sql` | as bibliotecas de jogos da 2.0, `user_library` e `group_library`. Tem que rodar **antes** do deploy do código que as usa: o detalhe de toda gameplay lê a `user_library` (o match) |
 
 A `00001_baseline.sql` é o schema da produção de antes do goose (o dump de
 08/09/2026, conferido de novo em 21/11/2026). Num banco vazio ela cria tudo; na
@@ -185,7 +188,8 @@ crossplay: `PC`, `PLAYSTATION`, `XBOX`, `SWITCH`, `MOBILE`.
 | `POST /v2/gameplays` | não anônimo | cria única, já com o convite (201) |
 | `GET /v2/groups/{groupId}/gameplays?status=active\|ended&before=&limit=` | membro | ativas; ou encerradas, da mais recente, em páginas (`before` = a última da página anterior) |
 | `GET /v2/me/gameplays` | qualquer | o Lobby: as ativas dos grupos da pessoa e as únicas em que entrou |
-| `GET /v2/gameplays/{id}` | quem tem acesso | detalhe: participantes, jogos, votos por rodada, resultado e `permissions` (os botões de quem lê) |
+| `GET /v2/me/history?before=&limit=` | qualquer | o Histórico: as encerradas em que a pessoa marcou Vou, da mais recente, em páginas como as encerradas do grupo |
+| `GET /v2/gameplays/{id}` | quem tem acesso | detalhe: participantes, jogos, votos por rodada, resultado, o match (`owners`) e `permissions` (os botões de quem lê) |
 | `PATCH /v2/gameplays/{id}` | criador ou dono do grupo (única: criador) | nome, descrição, horário, plataforma, jogo do FIXED; `voting.finalists` e `voting.multiVote` só o criador, antes do 1º voto |
 | `POST /v2/gameplays/{id}/end` | criador ou dono do grupo (única: criador) | Encerrar |
 | `GET /v2/invites/{code}` | qualquer | prévia da única |
@@ -228,7 +232,23 @@ Toda ação sobre a gameplay responde com o detalhe inteiro, já atualizado.
   votos abertos nas gameplays ativas daquele grupo.
 - **Exclusão de conta:** votos, comentários, denúncias e participações saem; a
   gameplay do grupo que a pessoa criou passa para o dono do grupo, e a única, para
-  o participante não anônimo mais antigo (sem nenhum, ela é apagada).
+  o participante não anônimo mais antigo (sem nenhum, ela é apagada). A biblioteca
+  da pessoa sai; o jogo que ela pôs na biblioteca de um grupo fica, com
+  `addedBy: null`.
+- **Listas** (Lobby, gameplays do grupo e Histórico): na votação, `leading` são os
+  finalistas da rodada aberta, e `tie` diz se é empate no 1º lugar (com 1
+  finalista). Enquanto o desempate não tem voto, valem os da rodada anterior: o
+  desempate só abre porque houve empate.
+- **Histórico:** só Vou, porque o status congela no encerramento. A gameplay do
+  grupo só aparece enquanto a pessoa é membro, já que o detalhe dá 404 a quem
+  saiu; se ela voltar, a gameplay volta, porque a saída só apaga a participação
+  nas ativas. O anônimo não responde, então não tem Histórico. Os eventos da v1
+  não entram.
+- **Match:** no detalhe, `voting.games[].owners` e `game.owners` são os
+  participantes com Vou que têm o jogo na biblioteca, marcado numa plataforma da
+  gameplay, na ordem dos participantes. O jogo digitado não está no catálogo e
+  vem com a lista vazia. É o único jeito de ver algo da biblioteca de outra
+  pessoa.
 
 **Erros.** O envelope é o da v1, mas os status são os corretos e as mensagens vêm
 em português, prontas para o app mostrar: 400 para corpo ilegível (`Corpo da
@@ -252,6 +272,48 @@ gameplay) e só rodam com `NOTIFICATIONS_ENABLED` e
 `NOTIFICATIONS_SCHEDULER_ENABLED`, como os da v1. O job de encerramento roda de 5
 em 5 min **sempre**: ele só carimba o `ended_at` (as consultas já tratam como
 encerrada a que passou do prazo).
+
+## Rotas da 2.0: bibliotecas
+
+O código é o `internal/library`, e as tabelas são as da `00004`. As duas
+bibliotecas só aceitam jogo do catálogo, pelo id do RAWG (o de `GET /games/{id}`).
+O que ainda não está no cache `games` é buscado no RAWG; o que ele não conhece, ou
+com o RAWG fora do ar, dá 404, como no `GET /games/{id}`. O app adiciona a partir
+da busca, que já grava cada resultado no cache.
+
+| Rota | Quem pode | O quê |
+|---|---|---|
+| `GET /v2/me/library` | qualquer, até anônimo | a biblioteca da pessoa, pelo nome do jogo |
+| `PUT /v2/me/library/{gameId}` | qualquer, até anônimo | `{"ownedPlatforms": [...]}`: adiciona o jogo, ou troca o "tenho o jogo"; lista vazia = só na biblioteca |
+| `DELETE /v2/me/library/{gameId}` | qualquer, até anônimo | tira o jogo (204, mesmo se ele não estava lá) |
+| `GET /v2/groups/{groupId}/library` | membro, até anônimo | a biblioteca do grupo, pelo nome do jogo |
+| `PUT /v2/groups/{groupId}/library/{gameId}` | membro não anônimo | adiciona; repetir não muda nada, nem o `addedBy` |
+| `DELETE /v2/groups/{groupId}/library/{gameId}` | membro não anônimo | tira (204, mesmo se ele não estava lá) |
+
+Um item da biblioteca da pessoa. O do grupo não tem `ownedPlatforms` nem
+`updatedAt`, e tem `addedBy`: o usuário, ou `null` se a conta foi excluída.
+
+```json
+{"gameId": "3498", "name": "Grand Theft Auto V", "coverUrl": "https://media.rawg.io/...",
+ "availablePlatforms": ["PC", "PLAYSTATION", "XBOX"], "ownedPlatforms": ["PC"],
+ "addedAt": "2026-11-26T01:00:00Z", "updatedAt": "2026-11-26T01:00:00Z"}
+```
+
+- **`availablePlatforms`** são as plataformas em que o jogo existe, tiradas do
+  `games.platforms` do RAWG: `pc`, `macos` e `linux` são `PC`; `playstation*`,
+  `ps-vita` e `psp`, `PLAYSTATION`; `xbox*`, `XBOX`; `nintendo-switch*`, `SWITCH`;
+  `ios` e `android`, `MOBILE`. Sem lista no RAWG, ou só com plataformas retrô, vem
+  `[]`, e o app oferece as 5.
+- **`ownedPlatforms`** aceita qualquer uma das 5, sem repetir, mesmo fora da lista
+  do RAWG, que às vezes vem incompleta. Sai na ordem das 5.
+- **Limites:** 500 jogos por pessoa e 100 por grupo (409). Mudar o que já está lá
+  continua valendo.
+- **Quem vê:** a biblioteca da pessoa, só ela. Os outros veem apenas o match, no
+  detalhe das gameplays que dividem com ela.
+- **Erros:** os da v2. 400 para corpo ilegível ou `ownedPlatforms` faltando ou
+  inválida (`fieldErrors`), 403 para quem não é membro ou é anônimo, 404 para o
+  grupo e o jogo (inclusive o id que não é só dígitos) e 409 para a biblioteca
+  cheia.
 
 ## Como cada módulo é provado
 

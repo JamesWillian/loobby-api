@@ -129,14 +129,15 @@ func TestGameplaysPelaAPI(t *testing.T) {
 	expect(call("DELETE", "/v2/gameplays/"+g.ID+"/comments/"+c.ID, as(owner), ""), http.StatusNoContent)
 
 	// listas
-	expect(call("GET", "/v2/me/gameplays", as(member), ""), http.StatusOK, `"id":"`+g.ID+`"`, `"leading":[{"gameId":null,"name":"Valorant"`)
+	expect(call("GET", "/v2/me/gameplays", as(member), ""), http.StatusOK, `"id":"`+g.ID+`"`,
+		`"leading":[{"gameId":null,"name":"Valorant"`, `"tie":false`)
 	expect(call("GET", "/v2/groups/"+group+"/gameplays", as(member), ""), http.StatusOK, `"id":"`+g.ID+`"`)
 	expect(call("GET", "/v2/groups/"+group+"/gameplays?status=ended", as(member), ""), http.StatusOK)
 	expect(call("GET", "/v2/groups/"+group+"/gameplays?status=talvez", as(member), ""), http.StatusBadRequest)
 
 	// a unica pelo convite, ate para o anonimo
 	rec = call("POST", "/v2/gameplays", as(owner), `{"name":"Unica","mode":"FIXED","platforms":["MOBILE"],"scheduledAt":"`+when+`","game":{"name":"Free Fire"}}`)
-	expect(rec, http.StatusCreated, `"game":{"gameId":null,"name":"Free Fire","coverUrl":null}`, `"voting":null`)
+	expect(rec, http.StatusCreated, `"game":{"gameId":null,"name":"Free Fire","coverUrl":null,"owners":[]}`, `"voting":null`)
 	var single struct {
 		ID         string `json:"id"`
 		InviteCode string `json:"inviteCode"`
@@ -150,4 +151,12 @@ func TestGameplaysPelaAPI(t *testing.T) {
 	expect(call("POST", "/v2/gameplays/"+g.ID+"/end", as(member), ""), http.StatusForbidden)
 	expect(call("POST", "/v2/gameplays/"+g.ID+"/end", as(owner), ""), http.StatusOK, `"status":"ENDED"`)
 	expect(call("POST", "/v2/gameplays/"+g.ID+"/end", as(owner), ""), http.StatusConflict, `"message":"Essa gameplay já foi encerrada"`)
+
+	// o Historico: a encerrada em que o dono marcou Vou, com o resultado
+	expect(call("GET", "/v2/me/history", as(owner), ""), http.StatusOK, `"id":"`+g.ID+`"`, `"status":"ENDED"`)
+	expect(call("GET", "/v2/me/history?limit=1&before="+g.ID, as(owner), ""), http.StatusOK)
+	expect(call("GET", "/v2/me/history?before=nao-e-uuid", as(owner), ""), http.StatusBadRequest,
+		`"message":"O parâmetro before não é uma gameplay dessa lista"`)
+	expect(call("GET", "/v2/me/history?limit=x", as(owner), ""), http.StatusBadRequest)
+	expect(call("GET", "/v2/me/history", nil, ""), http.StatusUnauthorized)
 }

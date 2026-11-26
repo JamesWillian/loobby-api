@@ -173,7 +173,7 @@ func TestTodaTabelaDoPublicTemRLS(t *testing.T) {
 
 // O papel loobby_backend so existe no Supabase, e as migracoes so dao o GRANT
 // a ele se ele existir. Aqui ele e criado no servidor de teste (sem login,
-// como o da producao) para conferir o GRANT das tabelas da 2.0.
+// como o da producao) para conferir o GRANT das tabelas da 2.0 (00002 e 00004).
 func TestGrantAoLoobbyBackend(t *testing.T) {
 	ctx := context.Background()
 	admin, err := pgx.Connect(ctx, adminURL(t))
@@ -202,7 +202,7 @@ func TestGrantAoLoobbyBackend(t *testing.T) {
 	}
 	db := open(t, dbtest.MigratedDatabase(t))
 	for _, table := range []string{"gameplays", "gameplay_participants", "gameplay_games",
-		"gameplay_votes", "gameplay_comments", "gameplay_comment_reports"} {
+		"gameplay_votes", "gameplay_comments", "gameplay_comment_reports", "user_library", "group_library"} {
 		var ok bool
 		err := db.QueryRowContext(ctx, `SELECT has_table_privilege('loobby_backend', $1, 'SELECT, INSERT, UPDATE, DELETE')`,
 			"public."+table).Scan(&ok)
