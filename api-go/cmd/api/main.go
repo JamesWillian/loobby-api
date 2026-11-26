@@ -26,6 +26,7 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/gameplays"
 	"github.com/JamesWillian/loobby-api/api-go/internal/games"
 	"github.com/JamesWillian/loobby-api/api-go/internal/groups"
+	"github.com/JamesWillian/loobby-api/api-go/internal/library"
 	"github.com/JamesWillian/loobby-api/api-go/internal/notifications"
 	"github.com/JamesWillian/loobby-api/api-go/internal/server"
 	"github.com/JamesWillian/loobby-api/api-go/internal/teams"
@@ -186,6 +187,7 @@ func build(ctx context.Context, cfg config.Config, pool *pgxpool.Pool) (server.D
 		Files:   storage,
 
 		Gameplays: gameplays.NewHandler(gameplaysSvc),
+		Library:   library.NewHandler(library.NewService(pool, gamesSvc)),
 	}, nil
 }
 

@@ -15,6 +15,7 @@ import (
 	"github.com/JamesWillian/loobby-api/api-go/internal/gameplays"
 	"github.com/JamesWillian/loobby-api/api-go/internal/httpx"
 	"github.com/JamesWillian/loobby-api/api-go/internal/kotlin"
+	"github.com/JamesWillian/loobby-api/api-go/internal/library"
 	"github.com/JamesWillian/loobby-api/api-go/internal/password"
 )
 
@@ -246,7 +247,8 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, newPass, 
 //
 // Na 2.0, votos, comentarios, denuncias e participacoes nas gameplays saem, e
 // as gameplays que a pessoa criou passam para outra (gameplays.DeleteUserData).
-// Nada disso aparece na resposta, que e a mesma da v1.
+// A biblioteca dela sai, e os jogos que ela pos na de um grupo ficam com o grupo
+// (library.DeleteUserData). Nada disso aparece na resposta, que e a mesma da v1.
 func (s *Service) DeleteAccount(ctx context.Context, userID, pass string) error {
 	return db.InTx(ctx, s.pool, func(q *sqlc.Queries) error {
 		if err := confirmDeletion(ctx, q, userID, pass); err != nil {
@@ -292,6 +294,9 @@ func (s *Service) DeleteAccount(ctx context.Context, userID, pass string) error 
 		}
 
 		if err := gameplays.DeleteUserData(ctx, q, userID); err != nil {
+			return err
+		}
+		if err := library.DeleteUserData(ctx, q, userID); err != nil {
 			return err
 		}
 

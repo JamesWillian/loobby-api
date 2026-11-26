@@ -126,6 +126,34 @@ func TestExclusaoDeContaLimpaAsGameplays(t *testing.T) {
 	}
 }
 
+// A exclusao de conta tambem limpa as bibliotecas: a da pessoa sai, e o jogo
+// que ela pos na biblioteca de um grupo fica com o grupo, sem quem o adicionou.
+func TestExclusaoDeContaLimpaAsBibliotecas(t *testing.T) {
+	b := novoBanco(t)
+	gone := b.conta(1, "senha-123", false)
+	owner := b.conta(1, "", false)
+	group := ids.New()
+	b.exec(`INSERT INTO groups (id, name, invite_code, owner_id) VALUES ($1, 'Turma', '$-BIB123', $2)`, group, owner)
+	b.exec(`INSERT INTO group_members (id, group_id, user_id) VALUES (gen_random_uuid(), $1, $2)`, group, gone)
+	b.exec(`INSERT INTO games (id, name) VALUES ('3498', 'GTA V'), ('4291', 'CS2')`)
+	b.exec(`INSERT INTO user_library (user_id, game_id, owned_platforms)
+	        VALUES ($1, '3498', '["PC"]'), ($1, '4291', '[]'), ($2, '3498', '["XBOX"]')`, gone, owner)
+	b.exec(`INSERT INTO group_library (group_id, game_id, added_by) VALUES ($1, '4291', $2)`, group, gone)
+
+	if err := NewService(b.pool).DeleteAccount(b.ctx, gone, "senha-123"); err != nil {
+		t.Fatal(err)
+	}
+	if n := b.count(`SELECT count(*) FROM user_library WHERE user_id = $1`, gone); n != 0 {
+		t.Errorf("biblioteca de quem excluiu a conta: %d jogos", n)
+	}
+	if n := b.count(`SELECT count(*) FROM user_library WHERE user_id = $1`, owner); n != 1 {
+		t.Errorf("a biblioteca dos outros fica: %d jogos", n)
+	}
+	if n := b.count(`SELECT count(*) FROM group_library WHERE group_id = $1 AND added_by IS NULL`, group); n != 1 {
+		t.Error("o jogo fica com o grupo, sem quem o adicionou")
+	}
+}
+
 // Contas excluidas uma depois da outra: todas ficam com o username vazio. Antes
 // da migracao 00003, a segunda dava 500 e continuava existindo
 // (contract/ACHADOS.md §23).
