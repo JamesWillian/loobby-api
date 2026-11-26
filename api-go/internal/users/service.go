@@ -27,7 +27,11 @@ func NewService(pool *pgxpool.Pool) *Service {
 	return &Service{pool: pool, q: sqlc.New(pool)}
 }
 
-var errUserNotFound = httpx.BadRequest("User not found")
+var (
+	errUserNotFound = httpx.BadRequest("User not found")
+	// errSemConta: o 404 da troca de senha e da exclusao de conta.
+	errSemConta = httpx.Status(http.StatusNotFound, "Usuário não encontrado.")
+)
 
 func findUser(ctx context.Context, q *sqlc.Queries, id string) (sqlc.User, error) {
 	u, err := q.FindUser(ctx, id)
@@ -35,6 +39,15 @@ func findUser(ctx context.Context, q *sqlc.Queries, id string) (sqlc.User, error
 		return sqlc.User{}, errUserNotFound
 	}
 	return u, err
+}
+
+// hasGoogle: a conta entra com o Google (tem linha em user_google_credentials).
+func hasGoogle(ctx context.Context, q *sqlc.Queries, userID string) (bool, error) {
+	_, err := q.FindGoogleCredentials(ctx, userID)
+	if db.NotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 func instant(u sqlc.User) *httpx.Instant {
@@ -172,6 +185,11 @@ func javaLen(s string) int { return len(utf16.Encode([]rune(s))) }
 
 // ChangePassword: UsersService.changePassword. A ordem das checagens e a do
 // Kotlin, e define qual mensagem sai quando ha mais de um problema.
+//
+// Conta so com Google nao tem senha para trocar. Ela recebe 400 com uma mensagem
+// que diz isso, e os apps mostram na tela a mensagem dos 400. O Kotlin respondia
+// 404 "Usuário não encontrado." (contract/ACHADOS.md §24). Anonimo continua com
+// esse 404.
 func (s *Service) ChangePassword(ctx context.Context, userID, current, newPass, confirm string) error {
 	if javaLen(newPass) < 6 {
 		return httpx.Status(http.StatusBadRequest, "A nova senha deve ter pelo menos 6 caracteres.")
@@ -185,7 +203,14 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, newPass, 
 	return db.InTx(ctx, s.pool, func(q *sqlc.Queries) error {
 		creds, err := q.FindCredentials(ctx, userID)
 		if db.NotFound(err) {
-			return httpx.Status(http.StatusNotFound, "Usuário não encontrado.")
+			google, err := hasGoogle(ctx, q, userID)
+			if err != nil {
+				return err
+			}
+			if google {
+				return httpx.Status(http.StatusBadRequest, "Sua conta entra com o Google e não tem senha.")
+			}
+			return errSemConta
 		}
 		if err != nil {
 			return err
@@ -201,30 +226,31 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, newPass, 
 	})
 }
 
-// DeleteAccount: UsersService.deleteAccount. Tudo numa transacao.
+// DeleteAccount: UsersService.deleteAccount, com os dois consertos do
+// contract/ACHADOS.md (§23 e §24). Tudo numa transacao.
+//
+// O que confirma a exclusao depende da conta (confirmDeletion):
+//   - com senha: a senha certa, como no Kotlin;
+//   - so com Google, que nao tem senha: o proprio token. Os apps 1.3 e 1.3.1
+//     sempre mandam o campo password, e aqui o valor e ignorado;
+//   - sem nenhuma das duas (anonima, ou ja excluida): 404, como no Kotlin.
 //
 // O registro em users nao e apagado -- outras tabelas apontam para ele. Ele e
-// esvaziado: username "", displayname "[deleted]". Times e sorteios ja ignoram
-// usuario de username vazio.
+// esvaziado: username "", displayname "[deleted]". Times e sorteios, aqui e nos
+// apps, reconhecem a conta excluida pelo username vazio. O indice unico do
+// username ignora o vazio (migracao 00003), entao cabem quantas contas forem
+// excluidas. No Kotlin so cabia uma: da segunda exclusao em diante, 500.
+//
+// As credenciais saem todas, as de senha e as do Google. Sem apagar as do
+// Google, entrar de novo com a mesma conta Google cairia na conta excluida.
 //
 // Na 2.0, votos, comentarios, denuncias e participacoes nas gameplays saem, e
 // as gameplays que a pessoa criou passam para outra (gameplays.DeleteUserData).
 // Nada disso aparece na resposta, que e a mesma da v1.
-//
-// Limite conhecido, igual no Kotlin: users.username e UNIQUE, entao so UMA
-// conta consegue ficar com username "". A segunda exclusao falha na ultima
-// etapa, a transacao e desfeita e a resposta e 500 (contract/ACHADOS.md).
 func (s *Service) DeleteAccount(ctx context.Context, userID, pass string) error {
 	return db.InTx(ctx, s.pool, func(q *sqlc.Queries) error {
-		creds, err := q.FindCredentials(ctx, userID)
-		if db.NotFound(err) {
-			return httpx.Status(http.StatusNotFound, "Usuário não encontrado.")
-		}
-		if err != nil {
+		if err := confirmDeletion(ctx, q, userID, pass); err != nil {
 			return err
-		}
-		if !password.Matches(pass, creds.PasswordHash) {
-			return httpx.Status(http.StatusUnauthorized, "Senha incorreta.")
 		}
 
 		// Grupos do usuario: passam para outro membro, ou somem se nao houver.
@@ -275,11 +301,38 @@ func (s *Service) DeleteAccount(ctx context.Context, userID, pass string) error 
 		if err := q.DeleteCredentials(ctx, userID); err != nil {
 			return err
 		}
+		if err := q.DeleteGoogleCredentials(ctx, userID); err != nil {
+			return err
+		}
 		if _, err := q.FindUser(ctx, userID); db.NotFound(err) {
-			return httpx.Status(http.StatusNotFound, "Usuário não encontrado.")
+			return errSemConta
 		} else if err != nil {
 			return err
 		}
 		return q.AnonymizeUser(ctx, userID)
 	})
+}
+
+// confirmDeletion: a conta com senha confirma a exclusao com a senha. A conta so
+// com Google confirma com o token que trouxe a requisicao ate aqui, porque nao
+// tem senha (contract/ACHADOS.md §24).
+func confirmDeletion(ctx context.Context, q *sqlc.Queries, userID, pass string) error {
+	creds, err := q.FindCredentials(ctx, userID)
+	switch {
+	case err == nil:
+		if !password.Matches(pass, creds.PasswordHash) {
+			return httpx.Status(http.StatusUnauthorized, "Senha incorreta.")
+		}
+		return nil
+	case !db.NotFound(err):
+		return err
+	}
+	google, err := hasGoogle(ctx, q, userID)
+	if err != nil {
+		return err
+	}
+	if !google {
+		return errSemConta
+	}
+	return nil
 }

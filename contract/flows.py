@@ -384,14 +384,16 @@ def exclusao_de_conta(c, ta, ida):
     c.record("fluxo-exclusao-email-liberado", "POST", "/auth/register",
              {"email": EMAIL_A, "password": SENHA}, token=tr, expect=200)
 
-    # A SEGUNDA conta a ser excluida: users.username e UNIQUE e a exclusao grava
-    # username "" -- so cabe uma (ACHADOS §23).
+    # Outra conta excluida (a terceira da suite, depois da Google). A exclusao
+    # grava username "", e no Kotlin a UNIQUE do username so deixava uma conta
+    # assim: daqui em diante era 500, e a conta continuava existindo. No Go, o
+    # indice unico ignora o vazio (ACHADOS §23).
     tc, _ = anon(c, "c")
     c.record("fluxo-exclusao-2a-cadastro", "POST", "/auth/register",
              {"email": EMAIL_C, "password": SENHA}, token=tc, expect=200)
-    c.record("fluxo-exclusao-2a-conta", "DELETE", "/users/me", {"password": SENHA}, token=tc, expect=500)
-    c.record("fluxo-exclusao-2a-conta-continua-existindo", "POST", "/auth/login",
-             {"email": EMAIL_C, "password": SENHA}, auth=False, expect=200)
+    c.record("fluxo-exclusao-2a-conta", "DELETE", "/users/me", {"password": SENHA}, token=tc, expect=200)
+    c.record("fluxo-exclusao-2a-conta-login-depois", "POST", "/auth/login",
+             {"email": EMAIL_C, "password": SENHA}, auth=False, expect=400)
 
 
 def login_com_google(c):
@@ -407,6 +409,7 @@ def login_com_google(c):
         return c.record(golden, "POST", "/auth/google", {"idToken": c.google_token(**claims)},
                         auth=False, expect=expect)
 
+    tg = None
     g = login("fluxo-google-conta-nova", 200, sub="google-sub-1", email="fluxo.google@teste.local",
               name="Fulana da Silva Sauro", picture=foto)
     if g and "accessToken" in g:
@@ -417,11 +420,10 @@ def login_com_google(c):
         login("fluxo-google-de-novo", 200, sub="google-sub-1", email="fluxo.google@teste.local",
               name="Outro Nome", picture="https://exemplo.com/outra.png", aud=IOS_CLIENT_ID, azp=IOS_CLIENT_ID)
         c.record("fluxo-google-me-de-novo", "GET", "/users/me", token=tg, expect=200)
-        # conta Google nao tem senha: nao troca senha nem consegue se excluir
+        # conta Google nao tem senha, e a troca de senha diz isso com um 400 (ACHADOS §24)
         c.record("fluxo-google-trocar-senha", "PUT", "/users/me/password",
                  {"currentPassword": "qualquer", "newPassword": SENHA, "confirmPassword": SENHA},
-                 token=tg, expect=404)
-        c.record("fluxo-google-excluir-conta", "DELETE", "/users/me", {"password": "qualquer"}, token=tg, expect=404)
+                 token=tg, expect=400)
         c.record("fluxo-google-reenviar-verificacao", "POST", "/auth/resend-verification", {}, token=tg, expect=404)
 
     # sem nome e sem foto: o nome vem do email; a foto entra no primeiro login que a trouxer
@@ -454,6 +456,16 @@ def login_com_google(c):
         c.record("fluxo-google-assinado-por-outra-chave", "POST", "/auth/google",
                  {"idToken": c.google_token(key=other, sub="google-sub-1", email="fluxo.google@teste.local")},
                  auth=False, expect=401)
+
+    # Por ultimo, porque acaba com a conta google-1, que os logins acima usam.
+    # A conta Google se exclui so com o token: o password que os apps sempre
+    # mandam e ignorado (ACHADOS §24). As credenciais do Google saem junto. O
+    # e-mail some do /users/me, e entrar de novo com o mesmo Google cria outra conta.
+    if tg:
+        c.record("fluxo-google-excluir-conta", "DELETE", "/users/me", {"password": "qualquer"}, token=tg, expect=200)
+        c.record("fluxo-google-excluir-conta-me-depois", "GET", "/users/me", token=tg, expect=200)
+        login("fluxo-google-login-depois-de-excluir", 200, sub="google-sub-1", email="fluxo.google@teste.local",
+              name="Fulana da Silva Sauro", picture=foto)
 
 
 def main():

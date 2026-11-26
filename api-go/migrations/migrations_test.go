@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pressly/goose/v3"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/dbtest"
@@ -208,6 +209,30 @@ func TestGrantAoLoobbyBackend(t *testing.T) {
 		if err != nil || !ok {
 			t.Errorf("%s: o loobby_backend deveria ter SELECT, INSERT, UPDATE e DELETE (erro %v)", table, err)
 		}
+	}
+}
+
+// A 00003: o username vazio, o da conta excluida, pode repetir; qualquer outro
+// continua unico, com o mesmo nome de restricao no erro (contract/ACHADOS.md §23).
+func TestUsernameVazioPodeRepetir(t *testing.T) {
+	ctx := context.Background()
+	db := open(t, dbtest.MigratedDatabase(t))
+	insert := func(username string) error {
+		_, err := db.ExecContext(ctx,
+			`INSERT INTO users (id, username, displayname) VALUES (gen_random_uuid(), $1, '[deleted]')`, username)
+		return err
+	}
+	for i := range 3 {
+		if err := insert(""); err != nil {
+			t.Fatalf("conta excluida %d: %v", i+1, err)
+		}
+	}
+	if err := insert("repetido"); err != nil {
+		t.Fatal(err)
+	}
+	var pg *pgconn.PgError
+	if err := insert("repetido"); !errors.As(err, &pg) || pg.Code != "23505" || pg.ConstraintName != "users_username_key" {
+		t.Errorf("username repetido: queria 23505 em users_username_key, veio %v", err)
 	}
 }
 

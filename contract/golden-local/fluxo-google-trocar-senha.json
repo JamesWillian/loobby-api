@@ -9,7 +9,7 @@
     }
   },
   "response": {
-    "status": 404,
+    "status": 400,
     "headers": {
       "content-type": "application/json",
       "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
@@ -20,12 +20,12 @@
       "x-frame-options": "DENY",
       "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     },
-    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:15.932865Z\",\"status\":404,\"error\":\"Not Found\",\"message\":\"Usuário não encontrado.\",\"path\":\"/users/me/password\",\"fieldErrors\":null}",
+    "body_raw": "{\"timestamp\":\"2026-11-26T02:19:19.136667Z\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Sua conta entra com o Google e não tem senha.\",\"path\":\"/users/me/password\",\"fieldErrors\":null}",
     "body": {
       "timestamp": "<timestamp>",
-      "status": 404,
-      "error": "Not Found",
-      "message": "Usuário não encontrado.",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Sua conta entra com o Google e não tem senha.",
       "path": "/users/me/password",
       "fieldErrors": null
     }

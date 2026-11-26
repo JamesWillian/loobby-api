@@ -7,7 +7,7 @@
     }
   },
   "response": {
-    "status": 500,
+    "status": 200,
     "headers": {
       "content-type": "application/json",
       "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
@@ -18,14 +18,9 @@
       "x-frame-options": "DENY",
       "vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
     },
-    "body_raw": "{\"timestamp\":\"2026-11-16T04:34:16.651212Z\",\"status\":500,\"error\":\"Internal Server Error\",\"message\":\"Unexpected error\",\"path\":\"/users/me\",\"fieldErrors\":null}",
+    "body_raw": "{\"message\":\"Conta excluída com sucesso.\"}",
     "body": {
-      "timestamp": "<timestamp>",
-      "status": 500,
-      "error": "Internal Server Error",
-      "message": "Unexpected error",
-      "path": "/users/me",
-      "fieldErrors": null
+      "message": "Conta excluída com sucesso."
     }
   }
 }
