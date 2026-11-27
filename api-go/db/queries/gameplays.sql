@@ -57,7 +57,15 @@ WHERE ended_at IS NULL AND scheduled_at <= sqlc.arg(cutoff);
 UPDATE gameplays SET creator_id = sqlc.arg(creator_id) WHERE id = sqlc.arg(id);
 
 -- name: DeleteGameplay :exec
+-- O resto vai junto, pelos ON DELETE CASCADE da 00002: participacoes, jogos da
+-- votacao (e os votos, pela FK composta), comentarios (e as denuncias deles).
 DELETE FROM gameplays WHERE id = sqlc.arg(id);
+
+-- name: CountGameplayReports :one
+-- As denuncias dos comentarios de uma gameplay: o que a exclusao leva junto.
+SELECT count(*) FROM gameplay_comment_reports r
+JOIN gameplay_comments c ON c.id = r.comment_id
+WHERE c.gameplay_id = sqlc.arg(gameplay_id);
 
 -- name: ListGameplaysByCreator :many
 SELECT * FROM gameplays WHERE creator_id = sqlc.arg(creator_id) ORDER BY created_at, id;

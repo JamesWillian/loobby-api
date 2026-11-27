@@ -2,6 +2,7 @@ package gameplays
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/JamesWillian/loobby-api/api-go/internal/db"
@@ -228,6 +229,51 @@ func (s *Service) End(ctx context.Context, id, userID string) (gameplayResponse,
 		now := st.now
 		return q.EndGameplay(ctx, sqlc.EndGameplayParams{ID: st.g.ID, EndedAt: &now, EndedBy: &userID})
 	})
+}
+
+// Delete exclui a gameplay, ativa ou encerrada: quem criou ou o dono do grupo
+// (na unica, so quem criou), os mesmos do Encerrar. O banco leva o resto junto
+// (ver DeleteGameplay), inclusive as denuncias dos comentarios; a linha no log
+// e o que sobra delas. Se ela estava ativa, quem marcou Vou recebe o aviso.
+func (s *Service) Delete(ctx context.Context, id, userID string) error {
+	var (
+		g       sqlc.Gameplay
+		ended   bool
+		going   []string
+		reports int64
+	)
+	err := db.InTx(ctx, s.pool, func(q *sqlc.Queries) error {
+		st, err := s.load(ctx, q, id, userID, true)
+		if err != nil {
+			return err
+		}
+		if !st.manager() {
+			return errNotManager
+		}
+		g, ended = st.g, !st.active()
+		if !ended {
+			// quem avisar sai antes do DELETE, que leva as participacoes junto
+			rows, err := q.ListParticipantsOfGameplays(ctx, []string{id})
+			if err != nil {
+				return err
+			}
+			for _, r := range rows {
+				if r.Status == StatusGoing && r.UserID != userID {
+					going = append(going, r.UserID)
+				}
+			}
+		}
+		if reports, err = q.CountGameplayReports(ctx, id); err != nil {
+			return err
+		}
+		return q.DeleteGameplay(ctx, id)
+	})
+	if err != nil {
+		return err
+	}
+	slog.Info("gameplay excluida", "gameplay", id, "por", userID, "encerrada", ended, "denuncias", reports)
+	s.notifyDeleted(g, going)
+	return nil
 }
 
 // ListGroup: as ativas do grupo, da mais proxima para a mais distante; ou as

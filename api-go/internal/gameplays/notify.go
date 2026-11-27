@@ -17,6 +17,7 @@ const (
 	TypeTiebreakOpened = "GAMEPLAY_TIEBREAK_OPENED" // o criador abriu o desempate
 	TypeReminder       = "GAMEPLAY_REMINDER"        // 1 h antes do inicio
 	TypeTodayPending   = "GAMEPLAY_TODAY_PENDING"   // as 8h, para quem nao respondeu
+	TypeDeleted        = "GAMEPLAY_DELETED"         // a gameplay ativa foi excluida
 )
 
 func pushData(g sqlc.Gameplay) map[string]string {
@@ -72,6 +73,24 @@ func (s *Service) notifyTiebreak(g sqlc.Gameplay) {
 		}
 		s.sender.SendToUsers(ctx, to, notifications.Payload{
 			Title: g.Name, Body: "Deu empate! Vote no desempate", Type: TypeTiebreakOpened, Data: pushData(g),
+		})
+	})
+}
+
+// notifyDeleted avisa quem marcou Vou na gameplay ativa que foi excluida; to
+// ja vem sem quem excluiu. O data nao leva o gameplayId: ela nao existe mais,
+// e sem ele o toque no push so abre o app, em vez de cair num 404.
+func (s *Service) notifyDeleted(g sqlc.Gameplay, to []string) {
+	if len(to) == 0 {
+		return
+	}
+	data := map[string]string{}
+	if g.GroupID != nil {
+		data["groupId"] = *g.GroupID
+	}
+	s.async("gameplay excluida", func(ctx context.Context) {
+		s.sender.SendToUsers(ctx, to, notifications.Payload{
+			Title: g.Name, Body: "Essa gameplay foi cancelada", Type: TypeDeleted, Data: data,
 		})
 	})
 }

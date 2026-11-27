@@ -194,6 +194,7 @@ func (st state) permissions(locked, tie bool) permissions {
 		Tiebreak:        st.active() && voting && st.creator() && tie,
 		Leave:           st.active() && st.single() && !st.creator(),
 		Moderate:        st.moderator(),
+		Delete:          st.manager(), // tambem na encerrada
 	}
 }
 
