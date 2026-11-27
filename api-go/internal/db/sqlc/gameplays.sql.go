@@ -79,6 +79,20 @@ func (q *Queries) CountGameplayGames(ctx context.Context, gameplayID string) (in
 	return count, err
 }
 
+const countGameplayReports = `-- name: CountGameplayReports :one
+SELECT count(*) FROM gameplay_comment_reports r
+JOIN gameplay_comments c ON c.id = r.comment_id
+WHERE c.gameplay_id = $1
+`
+
+// As denuncias dos comentarios de uma gameplay: o que a exclusao leva junto.
+func (q *Queries) CountGameplayReports(ctx context.Context, gameplayID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countGameplayReports, gameplayID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createGameplay = `-- name: CreateGameplay :exec
 
 INSERT INTO gameplays (id, group_id, creator_id, name, description, mode, platforms, scheduled_at,
@@ -151,6 +165,8 @@ const deleteGameplay = `-- name: DeleteGameplay :exec
 DELETE FROM gameplays WHERE id = $1
 `
 
+// O resto vai junto, pelos ON DELETE CASCADE da 00002: participacoes, jogos da
+// votacao (e os votos, pela FK composta), comentarios (e as denuncias deles).
 func (q *Queries) DeleteGameplay(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, deleteGameplay, id)
 	return err

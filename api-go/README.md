@@ -9,7 +9,7 @@ Roda na máquina da Oracle Cloud, atrás de um nginx na mesma máquina
 **Os 53 endpoints da v1** respondem igual ao Kotlin nos 168 cenários de
 `../contract/golden-local/`, menos nos seis da exclusão de conta que o Go corrigiu
 (abaixo). Desde 16/11/2026 o Go é o único backend em produção. As rotas novas não
-têm referência no Kotlin e são testadas só do lado Go: `/app/config` e as 19 rotas
+têm referência no Kotlin e são testadas só do lado Go: `/app/config` e as 21 rotas
 `/v2` das gameplays, a API da 2.0 (ver "Rotas da 2.0: gameplays").
 
 Onde o Go difere do Kotlin **de propósito**:
@@ -38,7 +38,7 @@ O resto, inclusive os defeitos, é reproduzido.
 | `internal/auth` | tokens HS256, filtro (o Spring Security do lado Go), login, cadastro, e-mail, reset, Google |
 | `internal/users`, `groups`, `events`, `teams`, `games`, `legal`, `files`, `notifications`, `health` | os módulos |
 | `internal/appconfig` | `GET /app/config` (pública): versão mínima de cada app e o aviso mostrado ao abrir. Primeira rota que não veio do Kotlin; muda-se editando `Current` e publicando |
-| `internal/gameplays` | a 2.0: gameplays do grupo e únicas, participação, votação com desempate, comentários, encerramento, Histórico, o match com as bibliotecas e os jobs e pushes delas — ver "Rotas da 2.0" |
+| `internal/gameplays` | a 2.0: gameplays do grupo e únicas, participação, votação com desempate, comentários, encerramento, exclusão, Histórico, o match com as bibliotecas e os jobs e pushes delas — ver "Rotas da 2.0" |
 | `internal/library` | a 2.0: a biblioteca de jogos da pessoa (com o "tenho o jogo") e a do grupo — ver "Rotas da 2.0: bibliotecas" |
 | `internal/platform` | as 5 plataformas da 2.0 e a tradução das plataformas do RAWG para elas |
 | `internal/email`, `internal/password`, `internal/ids` | Resend, BCrypt e identificadores |
@@ -192,6 +192,7 @@ crossplay: `PC`, `PLAYSTATION`, `XBOX`, `SWITCH`, `MOBILE`.
 | `GET /v2/gameplays/{id}` | quem tem acesso | detalhe: participantes, jogos, votos por rodada, resultado, o match (`owners`) e `permissions` (os botões de quem lê) |
 | `PATCH /v2/gameplays/{id}` | criador ou dono do grupo (única: criador) | nome, descrição, horário, plataforma, jogo do FIXED; `voting.finalists` e `voting.multiVote` só o criador, antes do 1º voto |
 | `POST /v2/gameplays/{id}/end` | criador ou dono do grupo (única: criador) | Encerrar |
+| `DELETE /v2/gameplays/{id}` | criador ou dono do grupo (única: criador) | exclui, ativa ou encerrada (204) |
 | `GET /v2/invites/{code}` | qualquer | prévia da única |
 | `POST /v2/invites/{code}` | qualquer, até anônimo | entra na única como Pendente |
 | `PUT /v2/gameplays/{id}/participants/me` | não anônimo | `{"status": "GOING" \| "NOT_GOING" \| "PENDING"}` |
@@ -212,7 +213,13 @@ Toda ação sobre a gameplay responde com o detalhe inteiro, já atualizado.
 
 - **Ativa** = não encerrada e `scheduled_at` + 24 h ainda no futuro. Ela encerra
   pelo botão ou sozinha, 24 h depois do horário marcado. Encerrada é só leitura;
-  apagar e denunciar comentário continuam valendo.
+  apagar e denunciar comentário, e excluir a gameplay, continuam valendo.
+- **Exclusão:** quem pode Encerrar exclui, também a encerrada (`permissions.delete`).
+  A gameplay sai inteira: o banco leva participações, jogos, votos, comentários e
+  as denúncias deles (os `ON DELETE CASCADE` da `00002`), e ela some das listas e
+  do Histórico de todos. Das denúncias sobra só a linha `gameplay excluida` no
+  log, com o id, quem excluiu e quantas foram junto. Na ativa, quem marcou Vou
+  recebe o `GAMEPLAY_DELETED`; o lembrete e o aviso das 8h param sozinhos.
 - **Criação:** quem cria entra como Vou. O horário aceita até 5 min no passado,
   para "começar agora". O modo não muda depois.
 - **Votação:** até 20 jogos; repetido é o mesmo jogo do catálogo ou o mesmo nome,
@@ -258,7 +265,8 @@ permissão, 404 quando não existe ou não há acesso (inclusive id que não é 
 jogos). Rota que não existe continua 500, como na v1.
 
 **Pushes e jobs.** O `data` de cada push traz `type`, `gameplayId` e, na do grupo,
-`groupId`.
+`groupId`. O `GAMEPLAY_DELETED` não traz o `gameplayId`: a gameplay não existe
+mais, e sem ele o toque no push só abre o app.
 
 | Tipo | Quando | Quem recebe |
 |---|---|---|
@@ -266,6 +274,7 @@ jogos). Rota que não existe continua 500, como na v1.
 | `GAMEPLAY_TIEBREAK_OPENED` | ao Desempatar | quem marcou Vou, menos o criador |
 | `GAMEPLAY_REMINDER` | 1 h antes (job de 5 em 5 min) | quem marcou Vou |
 | `GAMEPLAY_TODAY_PENDING` | todo dia às 8h, America/Sao_Paulo | quem ainda não respondeu, menos anônimos |
+| `GAMEPLAY_DELETED` | ao excluir a ativa ("Essa gameplay foi cancelada") | quem marcou Vou, menos quem excluiu |
 
 Os dois agendados usam o `notification_dispatch_log` (`reference_id` = id da
 gameplay) e só rodam com `NOTIFICATIONS_ENABLED` e

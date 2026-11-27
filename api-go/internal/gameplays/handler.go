@@ -25,6 +25,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v2/me/history", h.history)
 	mux.HandleFunc("GET /v2/gameplays/{id}", h.get)
 	mux.HandleFunc("PATCH /v2/gameplays/{id}", h.patch)
+	mux.HandleFunc("DELETE /v2/gameplays/{id}", h.deleteGameplay)
 	mux.HandleFunc("POST /v2/gameplays/{id}/end", h.end)
 	mux.HandleFunc("GET /v2/invites/{code}", h.preview)
 	mux.HandleFunc("POST /v2/invites/{code}", h.join)
@@ -224,6 +225,15 @@ func (h *Handler) patch(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := h.svc.Patch(r.Context(), id, userID, in)
 	reply(w, r, http.StatusOK, resp, err)
+}
+
+// deleteGameplay: 204, sem corpo, porque nao ha mais gameplay para devolver.
+func (h *Handler) deleteGameplay(w http.ResponseWriter, r *http.Request) {
+	id, userID, ok := withGameplay(w, r)
+	if !ok {
+		return
+	}
+	done(w, r, h.svc.Delete(r.Context(), id, userID))
 }
 
 func (h *Handler) end(w http.ResponseWriter, r *http.Request) {

@@ -159,4 +159,25 @@ func TestGameplaysPelaAPI(t *testing.T) {
 		`"message":"O parâmetro before não é uma gameplay dessa lista"`)
 	expect(call("GET", "/v2/me/history?limit=x", as(owner), ""), http.StatusBadRequest)
 	expect(call("GET", "/v2/me/history", nil, ""), http.StatusUnauthorized)
+
+	// excluir, ate a encerrada: os mesmos do Encerrar, 204 sem corpo, e depois 404
+	expect(call("GET", "/v2/gameplays/"+g.ID, as(owner), ""), http.StatusOK, `"delete":true`)
+	expect(call("GET", "/v2/gameplays/"+g.ID, as(member), ""), http.StatusOK, `"delete":false`)
+	expect(call("DELETE", "/v2/gameplays/"+g.ID, nil, ""), http.StatusUnauthorized)
+	expect(call("DELETE", "/v2/gameplays/"+g.ID, as(member), ""), http.StatusForbidden,
+		`"message":"Só quem criou a gameplay ou o dono do grupo pode fazer isso"`)
+	rec = call("DELETE", "/v2/gameplays/"+g.ID, as(owner), "")
+	expect(rec, http.StatusNoContent)
+	if rec.Body.Len() != 0 {
+		t.Errorf("o 204 nao tem corpo: %s", rec.Body)
+	}
+	expect(call("DELETE", "/v2/gameplays/"+g.ID, as(owner), ""), http.StatusNotFound, `"message":"Gameplay não encontrada"`)
+	expect(call("GET", "/v2/gameplays/"+g.ID, as(member), ""), http.StatusNotFound)
+	expect(call("DELETE", "/v2/gameplays/nao-e-uuid", as(owner), ""), http.StatusNotFound, `"path":"/v2/gameplays/nao-e-uuid"`)
+	if rec = call("GET", "/v2/me/history", as(owner), ""); strings.Contains(rec.Body.String(), g.ID) {
+		t.Errorf("a excluida sai do Historico: %s", rec.Body)
+	}
+	expect(call("DELETE", "/v2/gameplays/"+single.ID, as(anon, "ANON"), ""), http.StatusForbidden)
+	expect(call("DELETE", "/v2/gameplays/"+single.ID, as(owner), ""), http.StatusNoContent)
+	expect(call("GET", "/v2/invites/"+single.InviteCode, as(anon, "ANON"), ""), http.StatusNotFound)
 }

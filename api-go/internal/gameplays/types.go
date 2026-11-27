@@ -1,6 +1,6 @@
 // Package gameplays e a API da 2.0: gameplays do grupo e unicas (sem grupo),
 // participacao (Vou / Nao vou / Pendente), votacao de jogos com desempate,
-// comentarios com moderacao e encerramento, manual ou automatico.
+// comentarios com moderacao, encerramento (manual ou automatico) e exclusao.
 //
 // Tudo e novo: as rotas ficam em /v2, as tabelas sao as da migracao 00002, e
 // nada da v1 (eventos, RSVPs) e lido ou escrito. As tabelas compartilhadas sao
@@ -86,6 +86,7 @@ type permissions struct {
 	Tiebreak        bool `json:"tiebreak"`        // Desempatar
 	Leave           bool `json:"leave"`           // sair da unica
 	Moderate        bool `json:"moderate"`        // apagar comentario de qualquer um
+	Delete          bool `json:"delete"`          // excluir a gameplay, ativa ou encerrada
 }
 
 type counts struct {
